@@ -59,3 +59,108 @@ REACT = {
 }
 
 CONFIRM_DELETE = re.compile(r"^Delete$")
+
+
+# ============================================================================
+# PHASE 2: reading people, companies, search, notifications, Page analytics.
+# Every line below was measured on the live page on 2026-09-09 and the dump it
+# came from is committed under docs/surveys/. A LinkedIn change is a one-line
+# fix here.
+#
+# WHICH RENDERING EACH SURFACE SERVES (measured 2026-09-09, each twice)
+#   /in/<slug>/                       new React (SDUI) ONLY - [data-urn] 0, and
+#                                     .global-nav__me does not exist
+#   /company/<slug>/about/            classic org page, org-top-card-* classes
+#   /company/<id>/admin/analytics/    classic
+#   /search/results/people/           new React (SDUI) ONLY
+#   /search/results/content/          new React (SDUI) ONLY
+#   /notifications/                   classic, nt-card classes
+# Unlike the post permalink Phase 1 met, none of these was ever seen in a second
+# rendering, so there is no reload-until-classic dance here. If one day a dump
+# disagrees with another taken minutes later, that surface has gained a second
+# rendering and BOTH belong in this file.
+# ============================================================================
+
+# -- profile, the SDUI rendering --------------------------------- 2026-09-09
+# The class names are hashed and change without notice; the element IDs are
+# generated from the server-driven component names and are the only stable
+# handle on the page. The top card's id is
+# "com.linkedin.sdui.profile.card.ref<memberid>Topcard", so it is matched on the
+# SUFFIX; an id selector cannot be used directly because the id contains dots.
+PROFILE_TOPCARD = 'div[id$="Topcard"]'
+PROFILE_ABOUT_CARD = 'div[id$="About"]'
+PROFILE_ACTIVITY_CARD = 'div[id$="Activity"]'
+PROFILE_CONTACT_INFO = 'a[href*="/overlay/contact-info/"]'
+# The About card's expander reads "... more", not "see more" (measured
+# 2026-09-09: the collapsed text ends "… more"). Both spellings match.
+PROFILE_SEE_MORE = re.compile(u"^\s*(?:\u2026\s*)?(?:see\s+)?more\s*$", re.I)
+# The degree badge is a paragraph of its own reading "- 1st". It is rendered
+# TWICE on the same card, inside different responsive wrappers, and the two can
+# hold DIFFERENT values (measured: a 1st-degree profile carried both "- 1st" and
+# a hidden "- 2nd"). Only the visible one is read, and two visible ones that
+# disagree are a FAIL, never a first-in-document-order guess.
+DEGREE_TEXT = re.compile(u"^[\u00b7\u2022\s]*(1st|2nd|3rd\+?|You)\s*$", re.I)
+DEGREES = ("self", "1st", "2nd", "3rd", "3rd+")
+# The primary action, read from what the button SAYS. On the owner's own profile
+# none of these is present, which is why `degree` is "self" there and
+# `connection_state` is null.
+CONNECTION_STATES = ("Connect", "Pending", "Message", "Follow", "Following")
+COUNT_LINE = re.compile(r"^\s*([\d][\d,\.]*\+?|\d+(?:\.\d+)?[KMB])\s+(connections?|followers?)\s*$", re.I)
+
+# -- company, the classic org page ------------------------------- 2026-09-09
+# A Page ADMIN is redirected from /company/<id>/ and /company/<slug>/about/ to
+# /admin/dashboard/. ?viewAsMember=true serves the ordinary member page and was
+# measured NOT to redirect.
+COMPANY_MEMBER_VIEW = "https://www.linkedin.com/company/%s/about/?viewAsMember=true"
+COMPANY = {
+    "name": "h1.org-top-card-summary__title, .org-top-card-summary__title, h1",
+    "tagline": "p.org-top-card-summary__tagline, .org-top-card-summary__tagline",
+    "info_item": ".org-top-card-summary-info-list__info-item",
+    "about": "section.org-about-module__margin-bottom p.break-words, .org-about-module__margin-bottom p.break-words",
+    "details": "dl",
+    "term": "dt",
+    "definition": "dd",
+}
+FOLLOWERS_ITEM = re.compile(r"^\s*([\d][\d,\.]*|\d+(?:\.\d+)?[KMB])\s+followers?\s*$", re.I)
+
+# -- people search, the SDUI rendering --------------------------- 2026-09-09
+# A result is a div[role=listitem]; the person's name is the text of the FIRST
+# anchor to /in/ that sits inside a <p>, and that <p>'s parent holds two further
+# div > p pairs, the headline then the location. The outer anchor wrapping the
+# whole card also points at /in/ - matching on "p a" is what separates the name
+# from the card.
+SEARCH_ITEM = 'div[role="listitem"]'
+SEARCH_PERSON_NAME = 'p a[href*="/in/"]'
+SEARCH_PERSON_LINES = ':scope > div > p'
+# A content-search card carries NO permalink and no activity urn anywhere in its
+# DOM (measured: a[href*="urn:li:activity"] 0, [data-urn] 0, [data-id] 0, on
+# four consecutive loads). Its "Copy link to post" is a menu item with no href
+# that writes a shortened lnkd.in link to the clipboard.
+SEARCH_POST_MENU = re.compile(r"^Open control menu for post by (.+)$")
+COPY_LINK_ITEM = "Copy link to post"
+SHORT_LINK = re.compile(r"https://lnkd\.in/\S+")
+
+# -- notifications, the classic rendering ------------------------ 2026-09-09
+NOTIFICATION = {
+    "card": "article.nt-card",
+    "unread": "nt-card--unread",
+    "headline": "a.nt-card__headline",
+    "text": ".nt-card__text--3-line",
+    "actor_link": 'a[data-view-name="notification-card-image"]',
+    "when": "p.nt-card__time-ago",
+}
+NOTIFICATION_ACTOR = re.compile(u"^View (.+)[\u2019']s profile\.$")
+HIGHLIGHTED_URN = re.compile(r"highlightedUpdateUrn=([^&]+)")
+
+# -- Page analytics, the classic rendering ----------------------- 2026-09-09
+# THE TRAP ON THIS SURFACE. The only four-number headline card on
+# /admin/analytics/updates/ is titled "Your profile view highlights" and holds
+# the signed-in MEMBER's own profile-view numbers, not the Page's:
+# .member-analytics-addon-summary__list-item has four hits, the right shape and
+# the right four labels (Impressions / Reactions / Comments / Reposts), and
+# reading it returns the wrong entity's data with no error. It is named here so
+# that nobody reaches for it again.
+STATS_MEMBER_ADDON_DO_NOT_USE = ".member-analytics-addon-summary__list-item"
+STATS_ADMIN_HEADER_FOLLOWERS = re.compile(r"([\d][\d,\.]*)\s+followers?", re.I)
+STATS_TABLE = "table"
+STATS_TIME_RANGE = re.compile(r"Time range:\s*(.+?)\s*-\s*(.{4,25}?\d{4})", re.I)

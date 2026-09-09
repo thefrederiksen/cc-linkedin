@@ -23,6 +23,7 @@ import ctypes
 import ctypes.wintypes as wt
 import json
 import os
+import random
 import re
 import sys
 import time
@@ -31,6 +32,9 @@ from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout, Erro
 
 STATE_DIR = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), "cc-linkedin")
 LIVE_BUTTON = re.compile(r"^(Dismiss|Discard|Post|Schedule)$")
+DAY_KEY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+# the signed-in identity control, both renderings (see Browser.assert_signed_in)
+ME_BUTTON = re.compile(r"(^|\s)Me$")
 
 
 def log(msg):
@@ -146,11 +150,28 @@ def _pid_alive(pid):
 # ---------------------------------------------------------------- pacing
 
 class Pace(object):
-    """Daily caps and gaps for outbound actions, kept in a file so they hold
-    across sessions and agents. Reads are never paced."""
+    """Daily caps and gaps, kept in a file so they hold across sessions and
+    agents. TWO TRACKS, and they never touch each other.
+
+      * OUTBOUND - comment, react, connect, message, invite. 45 to 90 seconds
+        between actions, because these reach a person.
+      * VIEW - a profile or a company page actually opened, and one search
+        results page however many cards it holds. 3 to 8 seconds, cap 80 a day.
+        High-volume profile viewing is one of the top triggers for an account
+        warning, so reads are capped; but a read must not make the next comment
+        wait 90 seconds, and a page of 25 search results must not take an hour.
+
+    The gap is DRAWN from its range with random.uniform. It used to be
+    `hash(str(time.time())) % span`, which is not random in any useful sense -
+    CPython's hash of a string is deterministic within a run and the low bits of
+    a timestamp string are close to uniform only by accident. A rhythm that
+    looks fixed is exactly what pattern detection is for.
+    """
 
     CAPS = {"comment": 60, "react": 100, "connect": 20, "message": 30, "invite": 5}
-    GAP = (45, 90)     # seconds between outbound actions, drawn from this range
+    GAP = (45, 90)         # seconds between outbound actions
+    VIEW_CAP = 80          # profile/company/search pages opened per day
+    VIEW_GAP = (3, 8)      # seconds between reads
 
     def __init__(self):
         os.makedirs(STATE_DIR, exist_ok=True)
@@ -163,32 +184,61 @@ class Pace(object):
         except Exception:
             return {}
 
-    def before(self, kind):
-        """Wait out the gap and refuse over the cap. Call right before the action."""
-        data = self._load()
+    def _save(self, data):
         today = time.strftime("%Y-%m-%d")
-        day = data.get(today, {})
-        n = day.get(kind, 0)
-        cap = self.CAPS.get(kind)
-        if cap is not None and n >= cap:
-            die("daily cap reached for %s (%d today). Tomorrow." % (kind, n))
-        last = data.get("last_outbound", 0)
-        gap = self.GAP[0] + (hash(str(time.time())) % (self.GAP[1] - self.GAP[0]))
-        wait = last + gap - time.time()
-        if wait > 0:
-            log("pacing: %.0fs before the next %s" % (wait, kind))
-            time.sleep(wait)
-
-    def after(self, kind):
-        data = self._load()
-        today = time.strftime("%Y-%m-%d")
-        day = data.setdefault(today, {})
-        day[kind] = day.get(kind, 0) + 1
-        data["last_outbound"] = time.time()
-        for k in [k for k in data if k != "last_outbound" and k < today]:
+        for k in [k for k in data if DAY_KEY.match(k) and k < today]:
             del data[k]
         with open(self.path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=1)
+
+    def count(self, kind, when=None):
+        """How many of `kind` have been done today. Used by the selftest to prove
+        the view counter moved by exactly the number of views the run took."""
+        day = self._load().get(when or time.strftime("%Y-%m-%d"), {})
+        return day.get(kind, 0)
+
+    # -- outbound -----------------------------------------------------------
+
+    def before(self, kind):
+        """Wait out the gap and refuse over the cap. Call right before the action."""
+        data = self._load()
+        n = data.get(time.strftime("%Y-%m-%d"), {}).get(kind, 0)
+        cap = self.CAPS.get(kind)
+        if cap is not None and n >= cap:
+            die("daily cap reached for %s (%d today). Tomorrow." % (kind, n))
+        self._wait(data.get("last_outbound", 0), self.GAP, kind)
+
+    def after(self, kind):
+        data = self._load()
+        day = data.setdefault(time.strftime("%Y-%m-%d"), {})
+        day[kind] = day.get(kind, 0) + 1
+        data["last_outbound"] = time.time()
+        self._save(data)
+
+    # -- views --------------------------------------------------------------
+
+    def before_view(self, what="page"):
+        """One view = one profile, one company page, or one page of search
+        results. Refuses over the daily cap; never touches the outbound clock."""
+        data = self._load()
+        n = data.get(time.strftime("%Y-%m-%d"), {}).get("view", 0)
+        if n >= self.VIEW_CAP:
+            die("daily cap reached for views (%d today, cap %d). Tomorrow." % (n, self.VIEW_CAP))
+        self._wait(data.get("last_view", 0), self.VIEW_GAP, "view of %s" % what)
+
+    def after_view(self):
+        data = self._load()
+        day = data.setdefault(time.strftime("%Y-%m-%d"), {})
+        day["view"] = day.get("view", 0) + 1
+        data["last_view"] = time.time()
+        self._save(data)
+
+    def _wait(self, last, span, what):
+        gap = random.uniform(span[0], span[1])
+        wait = last + gap - time.time()
+        if wait > 0:
+            log("pacing: %.0fs before the next %s" % (wait, what))
+            time.sleep(wait)
 
 
 # ---------------------------------------------------------------- the tab
@@ -243,6 +293,40 @@ class Browser(object):
         if re.search(r"unusual activity|security verification|let's do a quick security check", body, re.I):
             die("LinkedIn is showing a security check on %s. Stop for today." % url)
         return body
+
+    def assert_signed_in(self, where):
+        """A PRESENCE check, run on every read navigation.
+
+        MEASURED 2026-09-09. The obvious test - "the page does not say Sign in" -
+        certifies a run that never happened: a profile page can contain those
+        words in its own content, and an authwall can be served without them. So
+        the test is for something that is only there when we ARE signed in: the
+        global navigation's own identity control.
+
+        It cannot be a class name either. On the classic pages
+        `.global-nav__me` is present (company about, notifications, Page admin);
+        on the new server-driven React pages it does not exist at all (a profile,
+        people search, content search all measured 0). What IS on every one of
+        them is a button whose accessible name is "Me" or ends in " Me" - on the
+        SDUI profile it reads "Me", on the classic company page it reads
+        "<the member's name> Me". That is the same control a person clicks, and
+        it is what this asserts.
+        """
+        try:
+            n = self.page.get_by_role("button", name=ME_BUTTON).count()
+        except PWError as exc:
+            die("could not read %s (%s)" % (where, str(exc).splitlines()[0][:120]))
+        if n == 0:
+            die("not signed in on %s: the global navigation has no identity control. "
+                "Sign the cencon Chrome back in - this is NOT an empty result." % where)
+        return n
+
+    def read(self, url, where, settle=6):
+        """Navigate for a READ: go there, prove we are signed in, prove we landed
+        where we asked. Returns the final URL."""
+        self.goto(url, settle=settle)
+        self.assert_signed_in(where)
+        return self.page.url
 
     def press(self, locator, what):
         """Activate a control with the keyboard: focus + Enter. A keystroke cannot

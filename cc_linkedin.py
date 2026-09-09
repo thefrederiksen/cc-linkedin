@@ -713,6 +713,20 @@ def main():
     post_verb("unreact", C.unreact, "remove our reaction", expect=False)
     post_verb("delete-post", C.delete_post, "delete one of our posts")
 
+    # -- Phase 2: reading people, companies, search, notifications, stats ----
+    from kit import people as P
+
+    sp = sub.add_parser("read-profile", help="print one person's profile as JSON")
+    sp.add_argument("url", help="a /in/ profile URL, or just the slug")
+    sp.add_argument("--expect", help="a phrase that must appear in the top card, or the verb refuses")
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=P.read_profile)
+
+    sp = sub.add_parser("read-company", help="print one company page as JSON")
+    sp.add_argument("url", help="a /company/ URL, or just the slug")
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=P.read_company)
+
     from kit import selftest as T
     sp = sub.add_parser("selftest", help="run every Phase 1 verb on our own post and Page, leaving nothing behind")
     sp.add_argument("--post", required=True, help="permalink of a post WE authored (comments go here)")
