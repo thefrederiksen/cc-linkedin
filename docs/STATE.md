@@ -54,6 +54,8 @@ read that as self-testimony and try to break it, not take it on trust.
 
 * Architect: session `82773ef4` on SOREN_NORTH. Holds the design and the merge
   authority. Does not build.
-* Manager: session `2ce1fdcd` "cc-linkedin - Manager - Phase 2, reading
-  and search", seated 2026-09-09 21:20. Killed when Phase 2 ends.
-* Inspector: Codex, seated per inspection, gone when its written review lands.
+* Manager: Phase 2's, session `2ce1fdcd`, finished and reaped 2026-09-09 after
+  confirming a clean tree at `55e3a68`. A fresh one is seated if the inspection
+  returns findings.
+* Inspector: Codex, session `af3d4f12`, seated 2026-09-09 against
+  `docs/inspection-phase-2-brief.md`. Gone when its written review lands.
