@@ -762,10 +762,20 @@ def main():
     sp.set_defaults(fn=A.stats)
 
     from kit import selftest as T
-    sp = sub.add_parser("selftest", help="run every Phase 1 verb on our own post and Page, leaving nothing behind")
+    sp = sub.add_parser("selftest",
+                        help="run every verb on things we own, leaving nothing behind")
     sp.add_argument("--post", required=True, help="permalink of a post WE authored (comments go here)")
-    sp.add_argument("--page", help="Page id for the publish + delete-post round trip")
+    sp.add_argument("--page", help="Page id for the publish + delete-post round trip, and for stats")
     sp.add_argument("--page-name", help="exact Page name")
+    sp.add_argument("--profile", default="https://www.linkedin.com/in/sorenfrederiksen/",
+                    help="the owner's own profile (row P2-1)")
+    sp.add_argument("--other-profile",
+                    help="a 1st- or 2nd-degree profile URL for row P2-2. REQUIRED and never "
+                         "committed: this repository is public. Without it the run fails.")
+    sp.add_argument("--company", default="centerconsulting-inc", help="company slug (row P2-4)")
+    sp.add_argument("--query-people", default="Soren Frederiksen mindzie",
+                    help="people search whose first row is the owner (row P2-5)")
+    sp.add_argument("--query-posts", default="mindzie", help="content search (row P2-6)")
     sp.add_argument("--port", type=int, default=9224)
     sp.set_defaults(fn=T.run)
 
