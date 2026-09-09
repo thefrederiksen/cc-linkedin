@@ -124,6 +124,13 @@ def run(a):
             failed += 1
         return ok, out
 
+    def attempt(name, fn, **kw):
+        """Run a Phase 2 verb WITHOUT counting it. Every Phase 2 row is counted
+        once, by its check - and row P2-3 is a row whose verb is SUPPOSED to
+        fail, so a runner that counted a non-zero exit would score the correct
+        behaviour as a defect and the whole run as red."""
+        return _run(name, fn, port=a.port, **kw)
+
     def check(row, ok, detail):
         nonlocal passed, failed
         if ok:
@@ -201,7 +208,7 @@ def run(a):
     views_before = pace.count("view")
 
     # -- P2-1: the owner's own profile ---------------------------------------
-    ok, out = step("read-profile", P.read_profile, url=a.profile)
+    ok, out = attempt("read-profile", P.read_profile, url=a.profile)
     recs = _records(out)
     r = recs[0] if recs else {}
     check("P2-1", ok and bool(recs)
@@ -214,7 +221,7 @@ def run(a):
 
     # -- P2-2: profile B, the only row that exercises the other half ----------
     want_b = (re.search(r"/in/([^/?#]+)", a.other_profile) or [None, a.other_profile.strip("/")])[1]
-    ok, out = step("read-profile B", P.read_profile, url=a.other_profile)
+    ok, out = attempt("read-profile B", P.read_profile, url=a.other_profile)
     recs = _records(out)
     r = recs[0] if recs else {}
     check("P2-2", ok and bool(recs)
@@ -228,14 +235,14 @@ def run(a):
              r.get("connection_state"), bool(r.get("name"))))
 
     # -- P2-3: a deliberately wrong --expect must REFUSE ----------------------
-    ok, out = step("read-profile X", P.read_profile, url=a.profile,
+    ok, out = attempt("read-profile X", P.read_profile, url=a.profile,
                    expect="Chief Marmalade Officer of Atlantis")
     check("P2-3", (not ok) and not _records(out) and "FAIL" in out,
           "wrong --expect refused: exited non-zero=%s, records printed=%d"
           % (not ok, len(_records(out))))
 
     # -- P2-4: the company page ----------------------------------------------
-    ok, out = step("read-company", P.read_company, url=a.company)
+    ok, out = attempt("read-company", P.read_company, url=a.company)
     recs = _records(out)
     r = recs[0] if recs else {}
     check("P2-4", ok and bool(recs)
@@ -244,13 +251,13 @@ def run(a):
           "company: name=%r followers=%r" % (r.get("name"), r.get("followers")))
 
     # -- P2-5: people search --------------------------------------------------
-    ok, out = step("search-people", Q.search_people, query=a.query_people, limit=5)
+    ok, out = attempt("search-people", Q.search_people, query=a.query_people, limit=5)
     recs = _records(out)
     check("P2-5", ok and bool(recs) and recs[0].get("url", "").rstrip("/") == SOREN.rstrip("/"),
           "first row url=%r" % (recs[0].get("url") if recs else None))
 
     # -- P2-6: content search, then the chain into Phase 1 --------------------
-    ok, out = step("search-posts", Q.search_posts, query=a.query_posts, limit=5)
+    ok, out = attempt("search-posts", Q.search_posts, query=a.query_posts, limit=5)
     recs = _records(out)
     check("P2-6a", ok and len(recs) >= 3
           and all(x.get("author") for x in recs)
@@ -258,7 +265,7 @@ def run(a):
           "rows=%d, every row has an author and a lnkd.in share_url=%s"
           % (len(recs), all(x.get("author") and "lnkd.in" in (x.get("share_url") or "") for x in recs)))
 
-    ok, out = step("search-posts -r", Q.search_posts, query=a.query_posts, limit=3, resolve=True)
+    ok, out = attempt("search-posts -r", Q.search_posts, query=a.query_posts, limit=3, resolve=True)
     recs = _records(out)
     resolved = [x for x in recs if "urn:li:activity" in (x.get("permalink") or "")
                 or re.search(r"urn:li:(activity|share|ugcPost):\d+", x.get("permalink") or "")]
@@ -266,7 +273,7 @@ def run(a):
           "resolved %d of %d rows to a post urn" % (len(resolved), len(recs)))
 
     if resolved:
-        ok, out = step("read-post chain", C.read_post, url=resolved[0]["permalink"])
+        ok, out = attempt("read-post chain", C.read_post, url=resolved[0]["permalink"])
         chain = _records(out)
         check("P2-6c", ok and bool(chain) and bool(chain[0].get("author")),
               "a resolved permalink fed to read-post returned author=%r"
@@ -275,14 +282,14 @@ def run(a):
         check("P2-6c", False, "no resolved permalink to feed to read-post")
 
     # -- P2-7: notifications --------------------------------------------------
-    ok, out = step("notifications", A.notifications, limit=10)
+    ok, out = attempt("notifications", A.notifications, limit=10)
     recs = _records(out)
     check("P2-7", ok and len(recs) >= 1 and all((x.get("text") or "").strip() for x in recs),
           "rows=%d, every row has text=%s"
           % (len(recs), all((x.get("text") or "").strip() for x in recs)))
 
     # -- P2-8: the Page's analytics -------------------------------------------
-    ok, out = step("stats", A.stats, page=a.page, page_name=a.page_name, days=30)
+    ok, out = attempt("stats", A.stats, page=a.page, page_name=a.page_name, days=30)
     recs = _records(out)
     r = recs[0] if recs else {}
     posts = r.get("posts") or []
