@@ -49,5 +49,6 @@ passing three times in a row on the live page with nothing left behind.
 
 * Architect: session `82773ef4` on SOREN_NORTH. Holds the design and the merge
   authority. Does not build.
-* Manager: seated per phase, killed when the phase ends.
+* Manager: session `2ce1fdcd` "cc-linkedin - Manager - Phase 2, reading
+  and search", seated 2026-09-09 21:20. Killed when Phase 2 ends.
 * Inspector: Codex, seated per inspection, gone when its written review lands.
