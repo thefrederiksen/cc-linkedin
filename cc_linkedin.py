@@ -727,6 +727,40 @@ def main():
     sp.add_argument("--port", type=int, default=9224)
     sp.set_defaults(fn=P.read_company)
 
+    from kit import search as Q
+
+    sp = sub.add_parser("search-people", help="search people, print each result as JSON")
+    sp.add_argument("query", help="what to search for")
+    sp.add_argument("--company", help="narrow to a current company")
+    sp.add_argument("--title", help="narrow to a job title")
+    sp.add_argument("--location", help="narrow to a location")
+    sp.add_argument("--limit", type=int, default=25, help="rows to return (hard cap 100)")
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=Q.search_people)
+
+    sp = sub.add_parser("search-posts", help="search posts, print each result as JSON")
+    sp.add_argument("query", help="what to search for")
+    sp.add_argument("--limit", type=int, default=25, help="rows to return (hard cap 100)")
+    sp.add_argument("--resolve", action="store_true",
+                    help="follow each short link in the browser to fill permalink (capped at 10 rows)")
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=Q.search_posts)
+
+    from kit import account as A
+
+    sp = sub.add_parser("notifications", help="print the notifications page as JSON, one row per line")
+    sp.add_argument("--limit", type=int, default=25)
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=A.notifications)
+
+    sp = sub.add_parser("stats", help="print a Page's own analytics as JSON")
+    sp.add_argument("--page", required=True, help="LinkedIn Page (organization) numeric id")
+    sp.add_argument("--page-name", help="exact Page name the analytics screen must show")
+    sp.add_argument("--days", type=int, default=30,
+                    help="window to drive the control to: 7, 15 or 30. 0 reports the window on screen.")
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=A.stats)
+
     from kit import selftest as T
     sp = sub.add_parser("selftest", help="run every Phase 1 verb on our own post and Page, leaving nothing behind")
     sp.add_argument("--post", required=True, help="permalink of a post WE authored (comments go here)")
