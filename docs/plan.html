@@ -1,0 +1,250 @@
+<title>cc-linkedin Build Plan</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#f4f6f9; --surface:#ffffff; --ink:#16212b; --muted:#5b6b7a; --line:#d5dde6;
+  --accent:#0a66c2; --accent-ink:#ffffff; --ok:#1a7f4b; --warn:#b4560a; --stage:#6b4fbb;
+  --term-bg:#101820; --term-fg:#dbe4ec; --term-dim:#7e8f9e; --term-ok:#7ee2a8; --term-fail:#ff8c8c;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0e141a; --surface:#161f28; --ink:#e6edf3; --muted:#9aabbb; --line:#2a3642;
+    --accent:#4c9be8; --accent-ink:#0b1420; --ok:#5ccf8f; --warn:#f0a35a; --stage:#a992f0;
+    --term-bg:#0a0f14; --term-fg:#dbe4ec; --term-dim:#6f8090;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0e141a; --surface:#161f28; --ink:#e6edf3; --muted:#9aabbb; --line:#2a3642;
+  --accent:#4c9be8; --accent-ink:#0b1420; --ok:#5ccf8f; --warn:#f0a35a; --stage:#a992f0;
+  --term-bg:#0a0f14; --term-fg:#dbe4ec; --term-dim:#6f8090;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font:16px/1.55 "IBM Plex Sans",system-ui,Segoe UI,Arial,sans-serif}
+main{max-width:1040px;margin:0 auto;padding:40px 24px 96px}
+h1,h2,h3{text-wrap:balance;line-height:1.2;margin:0}
+h1{font-size:34px;font-weight:600}
+h2{font-size:24px;font-weight:600;margin-top:56px;padding-top:24px;border-top:1px solid var(--line)}
+h3{font-size:17px;font-weight:600;margin-top:28px}
+p{max-width:68ch;margin:12px 0}
+.lead{font-size:18px;color:var(--muted);max-width:70ch}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:28px 0 8px}
+.strip a{display:block;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;color:inherit;text-decoration:none}
+.strip a:hover,.strip a:focus-visible{border-color:var(--accent);outline:none}
+.strip .n{font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;color:var(--accent);font-size:13px}
+.strip .t{font-weight:600;margin-top:4px}
+.strip .s{color:var(--muted);font-size:14px;margin-top:2px}
+.pill{display:inline-block;font-size:12px;font-weight:500;letter-spacing:.04em;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);vertical-align:middle;margin-left:8px}
+.pill.auto{border-color:var(--ok);color:var(--ok)}
+.pill.staged{border-color:var(--stage);color:var(--stage)}
+.pill.read{border-color:var(--accent);color:var(--accent)}
+.tablewrap{overflow-x:auto;margin:16px 0;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--line)}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;background:var(--ground)}
+tr:last-child td{border-bottom:0}
+td code,p code,li code{font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;font-size:13.5px;background:var(--ground);padding:1px 5px;border-radius:3px}
+.term{background:var(--term-bg);color:var(--term-fg);border-radius:6px;padding:16px 18px;margin:14px 0;overflow-x:auto;font:13.5px/1.5 "IBM Plex Mono",ui-monospace,Consolas,monospace;white-space:pre}
+.term .c{color:var(--term-dim)} .term .ok{color:var(--term-ok)} .term .bad{color:var(--term-fail)}
+.term .prompt{color:#9fc6ff}
+.steps{counter-reset:s;list-style:none;padding:0;margin:12px 0;max-width:72ch}
+.steps li{counter-increment:s;position:relative;padding:8px 0 8px 44px;border-bottom:1px dashed var(--line)}
+.steps li::before{content:counter(s);position:absolute;left:0;top:8px;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font:500 13px/28px "IBM Plex Mono",monospace;text-align:center}
+.steps li b{font-weight:600}
+.proof{color:var(--ok);font-weight:500}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:760px){.strip{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}}
+.callout{background:var(--surface);border-left:3px solid var(--accent);padding:12px 16px;margin:16px 0;max-width:72ch}
+.callout.warn{border-left-color:var(--warn)}
+ul.plain{max-width:72ch;padding-left:20px}
+ul.plain li{margin:6px 0}
+.tree{font:13.5px/1.6 "IBM Plex Mono",ui-monospace,Consolas,monospace;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 18px;white-space:pre;overflow-x:auto}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+<main>
+<div class="eyebrow">cc-linkedin, September 2026</div>
+<h1>Everything you do on LinkedIn by hand, done by the tool, proven every time</h1>
+<p class="lead">This is the build plan for growing <code>cc-linkedin</code> from "post to a Page" into the one toolkit for LinkedIn on this machine: comments, reactions, reading, search, connections, messages. Every verb has a mechanism copied from tools that already work, a proof it must see before it reports success, a test, and a place to run that test where a bug cannot embarrass us.</p>
+
+<div class="strip">
+  <a href="#p1"><div class="n">Phase 1</div><div class="t">Comments and reactions</div><div class="s">Builds now. Tested on Soren's own posts.</div></a>
+  <a href="#p2"><div class="n">Phase 2</div><div class="t">Reading people and search</div><div class="s">Read-only. JSON out.</div></a>
+  <a href="#p3"><div class="n">Phase 3</div><div class="t">Connections and messages</div><div class="s">Staged by default. You press Send.</div></a>
+  <a href="#p4"><div class="n">Phase 4</div><div class="t">More of posting</div><div class="s">Personal profile, edit, repost.</div></a>
+</div>
+
+<h2>How every verb works</h2>
+<p>The tool attaches to your already-signed-in Chrome (the <code>cencon</code> profile, port 9224), opens one background tab you never see, and drives LinkedIn the way a person does: it goes to the exact page, finds the one control by its name, acts, and then <em>looks</em> for the result. It never guesses coordinates and never reads an accessibility tree; that is what failed five times before. The mechanics come from the projects that already do this for a living: a production Playwright library for Page posts and first comments, a Selenium engagement framework updated in May 2026, and the verb list of Linked API, the commercial cloud-browser service.</p>
+
+<ol class="steps">
+  <li><b>Go to the exact page.</b> A post permalink or a profile URL. Never a feed: a feed has fifty comment boxes, a permalink has one.</li>
+  <li><b>Prove the target.</b> <code>--expect "a phrase from the post"</code> must be on the page, or the verb refuses. A wrong URL fails loudly instead of acting on a stranger.</li>
+  <li><b>Act on the one control.</b> Selectors from one dated file; submit and confirm buttons pressed by keyboard so a late click can never fall through to the page behind (the lesson from the Discard-over-Photo dialog).</li>
+  <li><b>See the result.</b> <span class="proof">The comment text inside this post's comment list, under our name.</span> The reaction button in its pressed state. The Connect button now reading "Pending". Never "no error".</li>
+  <li><b>Leave nothing.</b> Dialog discarded, tab closed, no native "Open" window on the desktop (checked by Win32 at the end of every run), and one line: <code>RESULT ...</code> or <code>FAIL ...</code> with exit 1.</li>
+</ol>
+
+<div class="two">
+<div>
+<h3>The contract every caller reads</h3>
+<div class="term"><span class="ok">RESULT</span> commented url=... comment_id=... seconds=14
+<span class="ok">RESULT</span> reacted url=... kind=like
+<span class="ok">RESULT</span> staged verb=connect profile=... shot=...
+<span class="ok">RESULT</span> connected profile=... state=Pending
+<span class="bad">FAIL</span> post does not contain 'whiteboard'; refusing to comment
+<span class="c">exit 0 on RESULT, exit 1 on FAIL, nothing left behind either way</span></div>
+</div>
+<div>
+<h3>Three kinds of verb</h3>
+<p><span class="pill read">read</span> Returns JSON, changes nothing, needs no approval.</p>
+<p><span class="pill auto">automatic</span> Acts on content: post, comment, react. Runs on its own under the pacing caps, with the permalink-plus-phrase guard.</p>
+<p><span class="pill staged">staged</span> Reaches a person's inbox: connection notes, messages. Composes, verifies, screenshots, stops. <code>--submit</code> sends, and the skill says you asked for it in that same message.</p>
+</div>
+</div>
+
+<h2 id="p1">Phase 1. Comments and reactions <span class="pill auto">automatic</span></h2>
+<p>Your instruction: use you and your own posts. So the comment tests run as you, from your signed-in profile, on a post you wrote. A comment appears under your own post for about a minute and is then deleted by the same tool. The one thing that needs a throwaway (deleting a post) is tested on the CenterConsulting page, which posts and deletes its own selftest post.</p>
+
+<div class="tablewrap"><table>
+<tr><th>Verb</th><th>Input</th><th>What the browser does</th><th>Proof it must see</th><th>Test</th></tr>
+<tr><td><code>read-post</code></td><td>permalink</td><td>Opens the permalink, expands "...more", reads author, text, media kind, reaction and comment counts.</td><td>Author and text non-empty; JSON on stdout.</td><td>mv-001: author CenterConsulting, Inc., text starts with the Jobs quote, media = video.</td></tr>
+<tr><td><code>read-comments</code></td><td>permalink</td><td>Opens the permalink, presses "Load more comments" until there are none, reads each comment row: author, headline, profile URL, text, time, replies nested.</td><td>Row count equals the card's comment count.</td><td>After <code>comment</code> on your post: the new comment is in the list with you as author.</td></tr>
+<tr><td><code>comment</code></td><td>permalink, text, <code>--expect</code></td><td>Verifies the phrase; focuses the ONE comment box; types by keystroke (a pasted string never enables the Post button); waits for Post to enable; presses it by keyboard.</td><td>The exact text appears as a comment row authored by us within 20 s.</td><td>Comment "cc-linkedin selftest &lt;time&gt;" on your post.</td></tr>
+<tr><td><code>reply</code></td><td>permalink, <code>--to</code> author or comment id, text</td><td>Finds exactly one matching comment row; its Reply; types; submits.</td><td>Reply nested under that comment, authored by us.</td><td>Reply to the selftest comment.</td></tr>
+<tr><td><code>react</code> / <code>unreact</code></td><td>permalink or comment, kind</td><td>Plain Like, or opens the reaction tray and picks celebrate, support, love, insightful, funny.</td><td>The button reports pressed and names the kind; unreact clears it.</td><td>React to your post, then unreact.</td></tr>
+<tr><td><code>delete-comment</code></td><td>permalink, <code>--match</code></td><td>Our comment row's menu, Delete, confirm by keyboard.</td><td>Row gone after reload.</td><td>Deletes the selftest reply, then the comment.</td></tr>
+<tr><td><code>delete-post</code></td><td>permalink</td><td>Our post's menu, Delete, confirm by keyboard.</td><td>Permalink no longer shows the post; gone from the Page's list.</td><td>Deletes the CC page's selftest post.</td></tr>
+<tr><td><code>selftest</code></td><td>page + your post URL</td><td>Runs the whole chain below in one go.</td><td>Every line above.</td><td>Passes three times in a row before the phase is called done.</td></tr>
+</table></div>
+
+<h3>What a selftest run looks like</h3>
+<div class="term"><span class="prompt">&gt;</span> cc-linkedin selftest --page 107519091 --page-name "CenterConsulting, Inc." ^
+    --post https://www.linkedin.com/feed/update/urn:li:activity:7503499656291622912/
+[15:02:11] read-post           mv-001: author=CenterConsulting, Inc. media=video text=1317 chars   <span class="ok">ok</span>
+[15:02:19] comment             typed 34 chars, Post enabled, pressed                                 <span class="ok">ok</span>
+[15:02:31] read-comments       6 rows, the selftest comment is row 1, author=Soren Frederiksen      <span class="ok">ok</span>
+[15:02:44] reply               nested under the selftest comment                                   <span class="ok">ok</span>
+[15:02:52] react like          aria-pressed=true                                                   <span class="ok">ok</span>
+[15:02:58] unreact             aria-pressed=false                                                  <span class="ok">ok</span>
+[15:03:10] delete-comment      reply gone, comment gone after reload                               <span class="ok">ok</span>
+[15:03:31] post (CC page)      selftest post published urn:li:activity:75035...                    <span class="ok">ok</span>
+[15:03:49] delete-post         permalink empty, gone from the Page list                            <span class="ok">ok</span>
+[15:03:50] leftovers           tabs closed, no native dialog, no draft                             <span class="ok">ok</span>
+<span class="ok">RESULT</span> selftest passed=10 failed=0 seconds=99</div>
+
+<h3>The comment mechanic, step by step</h3>
+<ol class="steps">
+  <li>Open the permalink in the background tab. Wait for the post card that carries <code>data-urn</code> = this activity.</li>
+  <li>Read the post text. If <code>--expect</code> is given and not found: <code>FAIL</code>, nothing typed.</li>
+  <li>Guard: if a comment authored by us with the same text already exists, <code>RESULT already-commented</code> and stop. (Copied from the Selenium framework; it exists because retries used to double-post.)</li>
+  <li>Click the card's own Comment button (scoped to the card, not the page), which opens the box. Focus the editor.</li>
+  <li>Type by keystroke, one Enter per newline. Read the editor back and compare.</li>
+  <li>Wait for the card's Post button to be enabled. Focus it, press Enter.</li>
+  <li>Poll the card's comment list for a row authored by us containing the text. <span class="proof">That row is the proof.</span> Return its comment id and the tab is closed.</li>
+</ol>
+
+<div class="callout warn">Two known traps go into the code as checks, not comments: on LinkedIn, Enter inside a <em>message</em> box sends, so messages (Phase 3) never press Enter while composing; and an unscoped "Post" button matches the Repost button of the post behind a dialog, so every button lookup is scoped to the card or dialog being acted on.</div>
+
+<h2 id="p2">Phase 2. Reading people and search <span class="pill read">read</span></h2>
+<p>Read-only, one JSON record per line, tested against things whose answers we know. Shapes follow the open-source linkedin-mcp-server, so a profile or company record looks the way other agent tools already expect.</p>
+<div class="tablewrap"><table>
+<tr><th>Verb</th><th>Input</th><th>What the browser does</th><th>Proof</th><th>Test</th></tr>
+<tr><td><code>read-profile</code></td><td>/in/ URL</td><td>Opens the profile; reads name, headline, location, about, current role, connection state (Connect, Pending, Message, 1st).</td><td>Name non-empty and matches the page title.</td><td>Your profile: name and headline contain known strings.</td></tr>
+<tr><td><code>read-company</code></td><td>/company/ URL</td><td>Name, tagline, followers, about, website.</td><td>Name matches.</td><td>CenterConsulting page.</td></tr>
+<tr><td><code>search-people</code></td><td>query, <code>--company</code>, <code>--title</code>, <code>--location</code>, <code>--limit</code></td><td>People search results; reads each result card; pages until the limit.</td><td>N rows with name and URL.</td><td>"Soren Frederiksen": first URL is yours. Hard cap 100 per run.</td></tr>
+<tr><td><code>search-posts</code></td><td>query, <code>--limit</code></td><td>Content search; reads cards and permalinks.</td><td>Every permalink contains <code>activity:</code>.</td><td>"mindzie" returns posts.</td></tr>
+<tr><td><code>notifications</code></td><td><code>--limit</code></td><td>Notifications page: kind, actor, target URL, time.</td><td>Rows printed.</td><td>Read-only smoke.</td></tr>
+<tr><td><code>stats</code></td><td>page id</td><td>Page analytics for 30 days: followers, impressions, engagements.</td><td>Numbers printed.</td><td>CC page.</td></tr>
+</table></div>
+<div class="term"><span class="prompt">&gt;</span> cc-linkedin search-people "process mining" --title "operating partner" --limit 3
+{"name": "...", "headline": "...", "location": "...", "url": "https://www.linkedin.com/in/...", "connection": "2nd"}
+{"name": "...", "headline": "...", "location": "...", "url": "https://www.linkedin.com/in/...", "connection": "3rd"}
+{"name": "...", "headline": "...", "location": "...", "url": "https://www.linkedin.com/in/...", "connection": "2nd"}
+<span class="ok">RESULT</span> search-people query="process mining" rows=3 seconds=21</div>
+
+<h2 id="p3">Phase 3. Connections and messages <span class="pill staged">staged</span></h2>
+<p>Anything that lands in another person's inbox composes and stops. You look at the screenshot and say send. The one real send per verb in testing goes to you: a connection note from the CenterConsulting page's admin identity is not possible (Pages do not connect), so the real round trip for <code>connect</code> and <code>message</code> needs one consenting person; until you name one, these verbs ship staged-only and their tests stop before Send.</p>
+<div class="tablewrap"><table>
+<tr><th>Verb</th><th>Input</th><th>What the browser does</th><th>Proof</th><th>Test</th><th>Cap</th></tr>
+<tr><td><code>connect</code></td><td>/in/ URL, <code>--note</code>, <code>--submit</code></td><td>Profile; Connect (or More, Connect); Add a note; types the note; verifies it; STOPS. With <code>--submit</code>: Send by keyboard.</td><td>Button reads "Pending".</td><td>Staged on any profile: note verified, dialog dismissed, button still "Connect". Real: the consenting person, then <code>withdraw</code>.</td><td>20/day, 100 per 7 days, 45-90 s gap</td></tr>
+<tr><td><code>withdraw</code></td><td>/in/ URL</td><td>Pending, Withdraw, confirm.</td><td>Button back to "Connect".</td><td>After the real connect test.</td><td></td></tr>
+<tr><td><code>message</code></td><td>/in/ or thread URL, text, <code>--submit</code></td><td>Message; verifies the recipient name in the thread header; composes by insertText (never Enter); STOPS. With <code>--submit</code>: presses Send.</td><td>Our text is the last bubble in the thread.</td><td>Staged on any connection; real to the consenting person, then <code>read-thread</code>.</td><td>30/day</td></tr>
+<tr><td><code>read-inbox</code></td><td><code>--limit</code>, <code>--unread</code></td><td>Messaging page: participant, last line, time, unread.</td><td>Rows printed.</td><td>Your inbox.</td><td></td></tr>
+<tr><td><code>read-thread</code></td><td>thread URL</td><td>Every message: sender, text, time.</td><td>Rows printed.</td><td>A thread of yours.</td><td></td></tr>
+<tr><td><code>invitations</code></td><td></td><td>Received invitations: name, URL, note.</td><td>Rows printed.</td><td>Read-only.</td><td></td></tr>
+<tr><td><code>follow</code> / <code>unfollow</code></td><td>/in/ or /company/ URL</td><td>Follow button.</td><td>Button state flips.</td><td>A public page, both directions.</td><td></td></tr>
+<tr><td><code>invite-to-follow</code></td><td>page id, /in/ URL</td><td>Page admin "Invite connections"; picks the person; Invite.</td><td>Row shows Invited; credits drop by one.</td><td>One consenting person.</td><td>5 per run</td></tr>
+</table></div>
+<div class="term"><span class="prompt">&gt;</span> cc-linkedin connect https://www.linkedin.com/in/someone/ --note "Enjoyed your post on ... " --expect "Someone Name"
+[15:20:03] profile open: Someone Name, headline "..."; button reads Connect
+[15:20:06] note typed: 143 chars, exact
+[15:20:07] screenshot D:\...\connect-someone.png
+[15:20:08] dialog dismissed; button still reads Connect
+<span class="ok">RESULT</span> staged verb=connect profile=https://www.linkedin.com/in/someone/ shot=... seconds=9
+<span class="c">Soren looks at the screenshot and says "send it"; the same command runs with --submit</span></div>
+
+<h2 id="p4">Phase 4. More of posting <span class="pill auto">automatic</span></h2>
+<div class="tablewrap"><table>
+<tr><th>Verb</th><th>Input</th><th>What the browser does</th><th>Proof</th><th>Test</th></tr>
+<tr><td><code>post --profile</code></td><td>text, media</td><td>The feed composer as Soren, not as a Page. The identity check refuses if the composer names a Page.</td><td>The post is on your activity page by its first line.</td><td>Staged only; a real one only when you ask, since that profile is mindzie content.</td></tr>
+<tr><td><code>edit-post</code></td><td>permalink, new text</td><td>Menu, Edit post, replace the text, Save.</td><td>The permalink shows the new text.</td><td>Edit the CC selftest post.</td></tr>
+<tr><td><code>repost</code></td><td>permalink, <code>--thoughts</code></td><td>Repost, "with your thoughts", composer, Post.</td><td>A new post on our list quoting the original.</td><td>Repost mv-001 from the page, then delete it.</td></tr>
+</table></div>
+
+<h2>Code shape</h2>
+<div class="two">
+<div>
+<div class="tree">cc-linkedin/
+  cc_linkedin.py          entry point; every existing command keeps working
+  cc_linkedin/
+    browser.py            attach, background tab, keyboard press, native-dialog watchdog
+    pace.py               daily caps + 45-90 s gaps, kept in %LOCALAPPDATA%\cc-linkedin\pace.json
+    selectors.py          one dated line per selector; a LinkedIn change is a one-file fix
+    post.py               today's post / schedule / unschedule
+    comments.py           read-post, read-comments, comment, reply, delete-comment, delete-post
+    reactions.py          react, unreact
+    people.py             read-profile, read-company, notifications, stats
+    search.py             search-people, search-posts
+    connections.py        connect, withdraw, follow, invitations, invite-to-follow
+    messaging.py          message, read-inbox, read-thread
+    selftest.py           the chain, one command
+  docs/PLAN.md            this plan, in text
+  .claude/skills/linkedin/SKILL.md</div>
+</div>
+<div>
+<h3>How each phase is proven</h3>
+<ul class="plain">
+  <li>Every phase lands as its own pull request on <code>thefrederiksen/cc-linkedin</code>, with the selftest transcript in the PR body.</li>
+  <li>"Done" is three consecutive clean selftest runs on the live page with zero leftovers.</li>
+  <li>The selftest runs before every commit and whenever a verb fails in real use; when LinkedIn changes a control, the failure names the selector and the fix is one line in <code>selectors.py</code>.</li>
+  <li>The global <code>linkedin</code> skill is updated with every verb as it lands, so any session that touches LinkedIn finds the one working recipe.</li>
+</ul>
+<h3>Pacing that is built in, not remembered</h3>
+<ul class="plain">
+  <li>Outbound actions wait 45-90 seconds apart, across sessions and agents, because the clock is a file, not a process.</li>
+  <li>Any "unusual activity" or CAPTCHA text is a <code>FAIL</code> and a stop for the day.</li>
+  <li>Reads have no caps except the 100-row search limit.</li>
+</ul>
+</div>
+</div>
+
+
+<h2 id="measured">What building Phase 1 measured (afternoon of 9 Sep)</h2>
+<div class="tablewrap"><table>
+<tr><th>Finding</th><th>Consequence in the tool</th></tr>
+<tr><td>LinkedIn serves the post permalink in <b>two renderings at random</b>: the classic app (<code>data-urn</code> cards, <code>comments-comment-entity</code> rows, Quill editor) and a new React app (hashed class names, TipTap editor, no <code>data-urn</code>). The same URL gave each within minutes.</td><td>The tool detects which it got. Accessible names are the same words in both and are used first; comment rows are mapped on the classic rendering and a verb that needs rows reloads until it gets it.</td></tr>
+<tr><td><b>Two Playwright clients on one Chrome block each other's navigations.</b> Seen when the video-pipeline session's scheduling run and this work overlapped.</td><td><code>kit/browser.py</code> holds a lock file per port; a second run waits and prints whose turn it is. Every verb, and the existing post command, go through it.</td></tr>
+<tr><td>The cencon Chrome <b>wedges</b> (renderer crashes; the profile launcher gained a real health probe and <code>restart</code> today).</td><td>A run caught by it ends with one FAIL line naming the port. Nothing is half-done: no verb prints RESULT before it has seen its proof.</td></tr>
+<tr><td>A reply box comes <b>pre-filled with the author's @mention</b>, and a comment's article holds <b>two buttons named "Reply"</b> (the action and the box's submit).</td><td>Submit is scoped to the comment form; the typed text must end the box; row matching uses the comment body only, so a parent never matches its own child's words.</td></tr>
+<tr><td>A comment's menu is an <b>unlabelled dropdown trigger</b> (Copy link / Edit / Delete) with a Cancel / Delete confirm.</td><td>Menu by class, Delete by text, confirm by keyboard, proof by the row being gone after a reload.</td></tr>
+<tr><td>Reactions: "React Like" carries <code>aria-pressed</code>; the pressed label reads "Unreact Like"; hovering opens React Celebrate / Support / Love / Insightful / Funny.</td><td><code>react --kind</code> and <code>unreact</code> read the state from that label; proven on Like and Celebrate.</td></tr>
+<tr><td>Deleting a parent comment deletes its replies with it.</td><td>The selftest deletes the reply first so both deletes are exercised.</td></tr>
+</table></div>
+<p>Phase 1 verbs live: <code>read-post</code>, <code>read-comments</code>, <code>comment</code>, <code>reply</code>, <code>react</code>, <code>unreact</code>, <code>delete-comment</code>, <code>delete-post</code>, <code>selftest</code>. Pacing is enforced from <code>%LOCALAPPDATA%\cc-linkedin\pace.json</code> across sessions (45-90 s between outbound actions, daily caps).</p>
+
+<h2>What I need from you</h2>
+<ul class="plain">
+  <li><b>Phase 1:</b> nothing. It builds on your own posts and the CC page. Give me the permalink of a post of yours you are happy to see a one-minute test comment on, or I use your most recent one.</li>
+  <li><b>Phase 3:</b> one consenting person for the single real connection-request and message round trip. Until then those verbs ship staged-only.</li>
+</ul>
+</main>

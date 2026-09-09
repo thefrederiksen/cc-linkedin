@@ -60,6 +60,8 @@ import time
 
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout, Error as PWError
 
+from kit.browser import BrowserLock
+
 VIDEO_EXT = (".mp4", ".mov", ".webm", ".avi", ".m4v", ".mpeg", ".mpg", ".wmv", ".flv")
 IMAGE_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp")
 FILE_INPUT = "input#media-editor-file-selector__file-input"
@@ -428,7 +430,11 @@ class Page(object):
         log("composer closed; waiting for the page to finish uploading")
         quiet_since = time.time()
         while time.time() - clicked < 600:
-            if pending:
+            # A request "pending" for two minutes is a long poll that happened
+            # to match, not an upload; it must not hold the run (one run sat
+            # ten minutes on such a request, 2026-09-09 14:45).
+            live = [t for t in pending.values() if time.time() - t < 120]
+            if live:
                 quiet_since = time.time()
             elif time.time() - quiet_since >= 15 and time.time() - clicked >= 20:
                 break
@@ -457,12 +463,32 @@ class Page(object):
 
 # ---------------------------------------------------------------- commands
 
+_LOCK = None
+
+
 def connect(p, port):
+    """Attach to Chrome, holding the one-run-per-browser lock for the rest of
+    the process. Two Playwright clients on one Chrome block each other's
+    navigations (measured 2026-09-09 14:34), so a second run waits its turn."""
+    global _LOCK
+    _LOCK = BrowserLock(port)
+    _LOCK.__enter__()
     try:
         return p.chromium.connect_over_cdp("http://localhost:%d" % port, timeout=15000)
     except PWError as exc:
+        release()
         die("no Chrome is listening on port %d (%s). Start the signed-in profile first, "
             "e.g. bh-profiles.ps1 up cencon" % (port, str(exc).splitlines()[0]))
+
+
+def release():
+    """Give the browser back. Called whenever a session ends, so a caller that
+    runs several commands in one process (the selftest) does not wait on a
+    lock its own process holds (that stall cost 462s on 2026-09-09)."""
+    global _LOCK
+    if _LOCK is not None:
+        _LOCK.__exit__(None, None, None)
+        _LOCK = None
 
 
 def cmd_post(a):
@@ -564,11 +590,12 @@ def cmd_post(a):
                     raise
                 except Exception as exc:
                     log("could not clear up: %s" % exc)
-            if ok and a.submit and not when:
+            if ok and a.submit and not when and getattr(a, "keep_tab", True):
                 log("leaving the tab open on the published post so it can be seen")
             else:
                 lp.close()
             browser.close()
+            release()
             if close_file_dialogs("the run"):
                 die("a native 'Open' file dialog was spawned during the run; cancelled it")
 
@@ -587,6 +614,7 @@ def cmd_scheduled(a):
         finally:
             lp.close()
             browser.close()
+            release()
 
 
 def cmd_unschedule(a):
@@ -625,6 +653,7 @@ def cmd_unschedule(a):
         finally:
             lp.close()
             browser.close()
+            release()
 
 
 def main():
@@ -655,6 +684,42 @@ def main():
     sp.add_argument("--page-name", required=True, help="exact Page name the composer must show")
     sp.add_argument("--match", required=True, help="words that appear in exactly one scheduled post")
     sp.set_defaults(fn=cmd_unschedule)
+
+    # -- Phase 1: comments and reactions (kit/comments.py) --------------------
+    from kit import comments as C
+
+    def post_verb(name, fn, help_, text=False, expect=True, extra=None):
+        sp = sub.add_parser(name, help=help_)
+        sp.add_argument("url", help="post permalink (contains urn:li:activity:...)")
+        sp.add_argument("--port", type=int, default=9224)
+        if expect:
+            sp.add_argument("--expect", help="a phrase that must be in the post, or the verb refuses")
+        if text:
+            sp.add_argument("--text", help="the text")
+            sp.add_argument("--text-file", help="UTF-8 file holding the text")
+        for args, kw in (extra or []):
+            sp.add_argument(*args, **kw)
+        sp.set_defaults(fn=fn)
+
+    post_verb("read-post", C.read_post, "print a post as JSON", expect=False)
+    post_verb("read-comments", C.read_comments, "print every comment as JSON, one per line", expect=False)
+    post_verb("comment", C.comment, "comment on a post", text=True)
+    post_verb("reply", C.reply, "reply to one comment", text=True,
+              extra=[(("--to",), {"required": True, "help": "words that appear in exactly one comment"})])
+    post_verb("delete-comment", C.delete_comment, "delete one of our comments", expect=False,
+              extra=[(("--match",), {"required": True, "help": "words that appear in exactly one comment"})])
+    post_verb("react", C.react, "react to a post",
+              extra=[(("--kind",), {"default": "like", "help": "like, celebrate, support, love, insightful, funny"})])
+    post_verb("unreact", C.unreact, "remove our reaction", expect=False)
+    post_verb("delete-post", C.delete_post, "delete one of our posts")
+
+    from kit import selftest as T
+    sp = sub.add_parser("selftest", help="run every Phase 1 verb on our own post and Page, leaving nothing behind")
+    sp.add_argument("--post", required=True, help="permalink of a post WE authored (comments go here)")
+    sp.add_argument("--page", help="Page id for the publish + delete-post round trip")
+    sp.add_argument("--page-name", help="exact Page name")
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=T.run)
 
     a = ap.parse_args()
     a.fn(a)

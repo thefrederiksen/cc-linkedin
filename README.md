@@ -14,6 +14,28 @@ cc-linkedin scheduled --page 107519091 --page-name "CenterConsulting, Inc."
 cc-linkedin unschedule --page 107519091 --page-name "CenterConsulting, Inc." --match "opening words"
 ```
 
+## Comments, reactions, deletes
+
+```
+cc-linkedin read-post <permalink>                       JSON: author, text, media, counts
+cc-linkedin read-comments <permalink>                   JSON per comment: id, author, url, text, when, is_reply
+cc-linkedin comment <permalink> --expect "phrase" --text "..."
+cc-linkedin reply <permalink> --to "words in one comment" --expect "phrase" --text "..."
+cc-linkedin react <permalink> --expect "phrase" --kind like|celebrate|support|love|insightful|funny
+cc-linkedin unreact <permalink>
+cc-linkedin delete-comment <permalink> --match "words in one of our comments"
+cc-linkedin delete-post <permalink> --expect "phrase"
+cc-linkedin selftest --post <our post> --page ID --page-name NAME
+```
+
+Every writing verb refuses unless `--expect` is found in the post, waits its
+turn for the browser (one run per Chrome, lock in `%LOCALAPPDATA%\cc-linkedin`),
+paces itself (45-90 s between outbound actions, daily caps), and proves the
+result before printing RESULT. `selftest` runs the whole chain on our own post
+and a throwaway Page post; three consecutive clean runs is the bar for a change.
+See `docs/PLAN.md` for the full toolkit plan and `docs/plan.html` for the same
+with mock-ups.
+
 ## How it works
 
 Playwright, used as a library, attaches to Chrome over its remote debugging
