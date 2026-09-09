@@ -25,7 +25,7 @@ cc-linkedin react <permalink> --expect "phrase" --kind like|celebrate|support|lo
 cc-linkedin unreact <permalink>
 cc-linkedin delete-comment <permalink> --match "words in one of our comments"
 cc-linkedin delete-post <permalink> --expect "phrase"
-cc-linkedin selftest --post <our post> --page ID --page-name NAME
+cc-linkedin selftest --post <our post> --page ID --page-name NAME --other-profile <a /in/ URL>
 ```
 
 Every writing verb refuses unless `--expect` is found in the post, waits its
@@ -35,6 +35,43 @@ result before printing RESULT. `selftest` runs the whole chain on our own post
 and a throwaway Page post; three consecutive clean runs is the bar for a change.
 See `docs/PLAN.md` for the full toolkit plan and `docs/plan.html` for the same
 with mock-ups.
+
+## Reading people, companies, search, notifications, Page stats
+
+```
+cc-linkedin read-profile <profile URL or slug> [--expect "phrase"]
+cc-linkedin read-company <company URL or slug>
+cc-linkedin search-people "query" [--company X] [--title X] [--location X] [--limit N]
+cc-linkedin search-posts "query" [--limit N] [--resolve]
+cc-linkedin notifications [--limit N]
+cc-linkedin stats --page ID [--page-name NAME] [--days 7|15|30|0]
+```
+
+All read-only, all JSON. The rule the whole block hangs on: **a read that comes
+back empty is a failure, never a result.** Every verb asserts the signed-in
+identity control is PRESENT before it reads, asserts it landed on the entity it
+was asked for, and names its required fields; zero rows from a search or from
+notifications is a FAIL, because a broken selector and an empty result set look
+identical from here and the broken selector is far more likely.
+
+Reads are paced on their OWN clock - 3 to 8 seconds apart, 80 a day - so a
+profile read never makes the next comment wait 90 seconds. One view is a profile
+or a company page opened, or one page of search results however many cards it
+holds. `notifications` and `stats` cost nothing: they are our own screens.
+
+Two things worth knowing before you use them:
+
+* `search-posts` gives you `share_url` (a `lnkd.in` link) and `permalink` (the
+  real `urn:li:activity` URL, or null). There is no field called `url`, because
+  a content-search card genuinely carries no permalink - see `kit/search.py` for
+  what was measured. `--resolve` follows each short link in the browser to fill
+  `permalink`, capped at 10 rows, and that is what feeds a result straight into
+  the comment and reaction verbs above.
+* `stats` reports `followers` and one row per post, plus `sum_of_posts` - which
+  is what it says it is, the sum of the rows in the Page's Content engagement
+  table, not LinkedIn's own aggregate. `--days` drives the window control and
+  then checks the range the page states, because LinkedIn's own default is
+  fifteen days, not thirty.
 
 ## How it works
 

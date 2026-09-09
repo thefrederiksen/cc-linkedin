@@ -1,151 +1,207 @@
 # Phase 2 report
 
-Written by the Manager, kept current through the build. The Architect reads this;
-the fleet message only points at it.
-
+The Manager's, written through the build and finished 2026-09-09 evening.
 Branch `phase-2-reading` in the worktree `D:/ReposFred/cc-linkedin.mission`.
-Every command below was run as `py -3.11 D:/ReposFred/cc-linkedin.mission/cc_linkedin.py`
-or `D:/ReposFred/cc-linkedin.mission/cc-linkedin.cmd`, never the `cc-linkedin` on
-PATH, which runs the shared checkout and would prove nothing about this branch.
+
+**Every command in this report was run as
+`py -3.11 D:/ReposFred/cc-linkedin.mission/cc_linkedin.py`.** Never the
+`cc-linkedin` on PATH: that runs the shared checkout, which is `main`, and a
+proof produced by it would say nothing about this branch.
+
+Status: **built, pushed, three consecutive clean runs.** Ready for the
+Architect to call the Codex inspection.
 
 ---
 
-## TWO RULINGS NEEDED (2026-09-09, 17:20)
+## What it does for the owner
 
-Both are places where the live page contradicts the settled design. Neither is a
-matter of taste and neither can be decided inside the Manager's mandate, because
-each one changes an acceptance row. Everything else in Phase 2 is unaffected and
-is being built while these wait.
+Six new read verbs, all JSON, all read-only, none of which writes anything to
+LinkedIn:
 
-### Ruling 1 - `search-posts` cannot return a permalink (row P2-6)
+| Verb | What it gives back |
+|---|---|
+| `read-profile` | name, headline, location, about, current company, degree, connection state, connections, followers |
+| `read-company` | name, tagline, industry, followers as an integer, size, website, location, about |
+| `search-people` | a ranked list: name, profile URL, headline, location, degree |
+| `search-posts` | a ranked list: author, text, age, a share link, and - on request - the real permalink |
+| `notifications` | text, who did it, where it points, how long ago, read or unread |
+| `stats` | the Page's followers, its window, one row per post, and the sum of those rows |
 
-The design requires every `search-posts` row to carry a `url` containing
-`urn:li:activity`, "so the result feeds straight into Phase 1's verbs". Measured
-on the live content-search page, `https://www.linkedin.com/search/results/content/?keywords=mindzie`:
+`README.md` and `.claude/skills/linkedin/SKILL.md` both carry the new block, so
+the next agent finds them without reading this.
 
-* The page is served ONLY in the new server-driven React rendering. Loaded four
-  times, minutes apart: `[data-urn]` 0 every time, `[data-id]` 0 every time,
-  `[data-sdui-screen]` 1 every time. There is no classic rendering to fall back
-  to, unlike the post permalink Phase 1 met.
-* A result card carries NO permalink. Six cards on the first page, and
-  `a[href*="/feed/update/"]` counts 1 - and that one belongs to a quoted post
-  inside a card, not to the card itself. `a[href*="urn:li:activity"]` counts 0.
-* The card's own control menu has "Copy link to post", and it is a menuitem with
-  no href - it writes to the clipboard. Read back through granted clipboard
-  permission, for three consecutive cards, it returns a SHORTENED link:
-  `https://lnkd.in/p/gb95KeRa`, `https://lnkd.in/p/gJm39pjw`,
-  `https://lnkd.in/p/gSCBypgw`. No activity id. Resolving one costs a navigation,
-  so a 25-row search would cost 25 further page loads and 25 more views against
-  the cap.
-* The document that renders the page does embed six activity urns, one per card.
-  They cannot be attached to a card with confidence: the per-card DOM tokens
-  (`div#expanded<token>FeedType_FLAGSHIP_SEARCH`) either appear in the raw
-  document with no urn within 4,000 characters either side, or - for the last
-  three cards - do not appear in it at all, because those cards are fetched
-  after load. Pairing them by ORDER would be an assumption dressed as a proof,
-  which is the one thing this phase is built to refuse.
+## The three clean runs
 
-So the required field cannot be produced honestly by any cheap route. Options,
-Manager's recommendation first:
+One command, both blocks - Phase 1 writes and cleans up after itself, Phase 2
+reads. There is deliberately no flag that runs half of it.
 
-1. **Keep `search-posts`, drop the urn requirement.** Return `kind=post_result`,
-   `rank`, `author`, `text`, `when`, and `url` = the card's short link from
-   "Copy link to post", with a new field `url_kind` = `"short"`. Add
-   `--resolve` (off by default), which follows each short link and fills
-   `permalink` with the real `urn:li:activity` URL, costing one view per row and
-   refusing above a low limit. P2-6 becomes: at least 3 rows, every row has a
-   non-empty `author` and a `url` on `lnkd.in`; and with `--resolve --limit 3`,
-   every `permalink` contains `urn:li:activity`. That keeps the verb useful,
-   keeps the feed-into-Phase-1 promise as an explicit opt-in, and never claims
-   an id it did not measure.
-2. Keep the requirement and always resolve. Honest, but a search becomes 25
-   extra page loads and 25 views; at a cap of 80 views a day, two searches
-   nearly exhaust the day.
-3. Drop `search-posts` from Phase 2 and revisit it when the surface settles.
+```
+py -3.11 cc_linkedin.py selftest \
+  --post https://www.linkedin.com/feed/update/urn:li:activity:7501672190191296512/ \
+  --page 107519091 --page-name "CenterConsulting, Inc." \
+  --other-profile <profile B, passed at run time, never committed>
+```
 
-### Ruling 2 - the Page has no page-level aggregate to read (row P2-8)
-
-The design's `stats` record wants `followers`, `impressions`, `engagements`,
-`reactions`, `comments`, `reposts` over a 30-day window, from "the Page's own
-analytics, as a Page admin". Measured on
-`https://www.linkedin.com/company/107519091/admin/analytics/updates/`:
-
-* Reachable as this identity - no redirect, no authwall. So the design's "not
-  reachable is a FAIL naming the identity" case does not arise.
-* The only headline four-number card on that page is titled **"Your profile view
-  highlights"** and it is Soren's OWN member analytics widget: 5 impressions,
-  0 reactions, 0 comments, 0 reposts, against 82.1% down. The Page's single post
-  had 48 impressions in the same window. Reading
-  `.member-analytics-addon-summary__list-item` - the obvious selector, four hits,
-  right shape, right four labels - would silently return the member's numbers as
-  the Page's. **This is the trap on this surface and it is worth writing down
-  even if the ruling goes another way.**
-* What the Page actually publishes there is a real `<table>` - "Content
-  engagement", headed Post title, Post type, Audience, Impressions, Views,
-  Clicks, CTR, Reactions, Comments, Reposts, Follows, Engagement rate - one row
-  per post, under a stated "Time range: Aug 26, 2026 - Sep 9, 2026". The default
-  window is 15 days, not 30; a different window means driving the time-range
-  control.
-* `followers` is available and unambiguous: the admin header reads
-  "CenterConsulting, Inc. ... 3 followers" on every analytics tab, and the
-  Followers tab states "3 Total followers".
-
-Options, Manager's recommendation first:
-
-1. **Return what the Page states, and say where each number came from.** Record:
-   `kind=page_stats`, `page`, `name`, `window_start`, `window_end`,
-   `window_days` (derived from the stated range, not assumed), `followers`,
-   `posts` (the table's rows, each with its own impressions, reactions,
-   comments, reposts and the raw strings), and `totals` computed by summing
-   those rows, each total carrying `source="content-engagement-table-sum"`.
-   P2-8 becomes: `followers` is an integer of at least 1, the page name matches,
-   the window is a real date range, and every row's `impressions` parses as an
-   integer. Nothing is invented and nothing is passed off as LinkedIn's own
-   aggregate.
-2. Narrow the verb to `followers` plus the per-post rows, and no totals at all.
-3. Drive the time-range control to 30 days first, then do option 1. One extra
-   click on an admin page; the Manager can build it either way.
-
----
-
-## What is settled and already measured (no ruling needed)
-
-These were design assumptions the live page disproved, but the fix is a fixture
-or a URL, not a change to what a verb promises. Recorded here so the Inspector
-can check them rather than take them on trust.
-
-1. **P2-5's search fixture does not work as written.** The design asserts that
-   `search-people "Soren Frederiksen"` returns Soren's own profile first.
-   Measured: the first ten results are ten other people of that name - the first
-   is a realtor in Winnipeg - and Soren's own profile does not appear on page
-   one at all. The query **"Soren Frederiksen mindzie"** returns his profile as
-   the first and only result, so that is the fixture. Both dumps are committed
-   (`search-people-2026-09-09.txt` shows the failure,
-   `search-people-self-2026-09-09.txt` shows the fixture that works).
-2. **A Page admin cannot open his own Page as a member without saying so.**
-   `/company/107519091/` and `/company/centerconsulting-inc/about/` both redirect
-   to `/admin/dashboard/`. `read-company` therefore navigates to
-   `/company/<slug>/about/?viewAsMember=true`, which measured no redirect and
-   serves the ordinary member page. The verb asserts the final URL is still the
-   member view, so a future redirect is a FAIL and not a silently different page.
-3. **A profile's degree badge is rendered twice, with different values.** On a
-   1st-degree profile the top card holds a `p` reading "- 1st" AND, inside a
-   `div[data-display-contents]`, a second `p` reading "- 2nd". Only one is
-   visible. `read-profile` reads the VISIBLE one and fails if two visible badges
-   disagree, rather than taking the first in document order.
-
-## Surfaces, and which rendering each one serves (measured 2026-09-09)
-
-| Surface | Rendering | Anchor the code uses |
+| Run | Started | Result |
 |---|---|---|
-| `/in/<slug>/` profile | new React (SDUI) only, `[data-urn]` 0 | `div[id$="Topcard"]`, `div[id$="About"]` |
-| `/company/<slug>/about/?viewAsMember=true` | classic org page | `.org-top-card-summary__title`, `dl`/`dt`/`dd` |
-| `/company/<id>/admin/...` | classic | `.member-analytics-addon-*` (the trap), `table` |
-| `/search/results/people/` | new React (SDUI) | `div[role=listitem]`, `p a[href*="/in/"]` |
-| `/search/results/content/` | new React (SDUI) only | `div[role=listitem]`, control-menu label |
-| `/notifications/` | classic | `article.nt-card`, `a.nt-card__headline` |
+| 1 | 2026-09-09 17:43 | `RESULT selftest passed=23 failed=0` |
+| 2 | 2026-09-09 17:52 | `RESULT selftest passed=23 failed=0` |
+| 3 | 2026-09-09 18:00 | `RESULT selftest passed=23 failed=0` |
 
-The signed-in PRESENCE check has to work on both renderings: on the classic
-pages `.global-nav__me` exists, on the SDUI profile and search pages it does not.
-What is present on every one of them is a button whose accessible name is "Me"
-or ends in " Me". That is what `assert_signed_in()` tests for.
+Every one of the nine acceptance rows passed in all three, and every Phase 1
+verb passed in all three as well. Afterwards, checked directly on the live page:
+no leftover selftest post on the Page, no native dialog, the browser lock
+released.
+
+The single line reading `FAIL` in each run's output is row P2-3, where a
+deliberately wrong `--expect` is SUPPOSED to make the verb refuse.
+
+Rows, as they printed on run 3:
+
+```
+P2-1  own profile: name='Soren Frederiksen' slug='sorenfrederiksen' headline present degree='self'
+P2-2  profile B: slug matched=True degree='1st' state='Message' name present=True
+P2-3  wrong --expect refused: exited non-zero=True, records printed=0
+P2-4  company: name='CenterConsulting, Inc.' followers=3
+P2-5  first row url='https://www.linkedin.com/in/sorenfrederiksen/'
+P2-6a rows=5, every row has an author and a lnkd.in share_url
+P2-6b resolved 3 of 3 rows to a post urn
+P2-6c a resolved permalink fed to read-post returned author='mindzie, inc. - ...'
+P2-7  rows=10, every row has text
+P2-8  followers=3 name matched=True window=30d (2026-08-11..2026-09-09) posts with integer impressions
+P2-9  views rose by 7 (expected 7), lock released=True, native dialogs=0
+```
+
+**Profile B** was a 1st-degree connection chosen at run time and is not named
+here, in the code, in the surveys or anywhere else in this public repository. It
+produced `degree='1st'` and `connection_state='Message'` - neither of which
+Soren's own profile can produce, which is the whole reason that row exists.
+
+## Every guard was watched failing
+
+A guard that has never been seen to fire is decoration. Each of these was broken
+on purpose, run, and restored; the tree was confirmed clean afterwards.
+
+| Guard | How it was broken | What it said |
+|---|---|---|
+| The Content engagement header check - the member-analytics trap | added a column that is not on the page to `REQUIRED_COLUMNS` | `FAIL the Content engagement table is not the table this was written against: it is missing the columns Sponsored spend. Its header reads Post title, Post type, ...` |
+| `assert_signed_in` | pointed `ME_BUTTON` at a control that does not exist | `FAIL not signed in on the company page centerconsulting-inc: the global navigation has no identity control. ... this is NOT an empty result.` |
+| The stats window check | mapped the 30-day preset to the 7-day one | `FAIL the time range reads 'Time range: Sep 3, 2026 - Sep 9, 2026' after choosing 'Last 7 days', which is 7 days, not 30.` |
+| The two-degree-badges check | fed it a card carrying a visible "1st" and a visible "2nd" | `FAIL the top card shows two different visible degree badges (1st, 2nd) ... refusing to guess which one is the truth` |
+| Zero rows is a failure | searched people for a string nobody is called | `FAIL no people found for 'zzqqxx not a real person zzqqxx'. Zero rows is a broken selector far more often than an empty result set ...` (exit 1) |
+| The missing fixture | ran the selftest without `--other-profile` | `FAIL --other-profile is required. Row P2-2 is the only row that proves read-profile works on somebody other than its owner ...` (exit 1) |
+
+## The best thing the survey found
+
+**The Page's own analytics screen carries the MEMBER's numbers, in the obvious
+place, in the right shape.**
+
+`/company/107519091/admin/analytics/updates/` has exactly one four-number
+headline card. It is titled "Your profile view highlights". Its selector,
+`.member-analytics-addon-summary__list-item`, has four hits and the four labels
+Impressions, Reactions, Comments, Reposts - which is precisely what a `stats`
+verb is looking for. On 2026-09-09 it read **5 impressions**, while the Page's
+own Content engagement table read **48** for the single post in the same window.
+
+Reading it would have produced a plausible, precise, wrong answer on every run
+forever, and nothing downstream could have caught it: the numbers are the right
+shape, they move over time, and they are somebody's real data. So `stats` reads
+every number from inside the Content engagement table, asserts that table's
+header labels BEFORE touching a cell, and `kit/selectors.py` carries the
+selector as a dated negative note naming both numbers, so nobody reaches for the
+obvious thing again.
+
+## Where the live page contradicted the design
+
+Both went to the Architect mid-build rather than being built around, and both
+were ruled on in `docs/rulings-phase-2.md`.
+
+1. **`search-posts` cannot read a permalink off a content-search card.** Not
+   present in the DOM on four consecutive loads; the card's own "Copy link to
+   post" yields a `lnkd.in` shortener; and the six activity urns embedded in the
+   document cannot be paired to the six cards by anything except order, which
+   would be an assumption dressed as a proof. The record now carries `share_url`
+   and `permalink` as separate fields with no `url` at all, and `--resolve`
+   follows the short link in the browser. **Measured while implementing it:** a
+   short link does not land on `/feed/update/` either - it lands on the readable
+   post page, `/posts/<slug>_<words>-<kind>-<id>-<hash>`, so the urn is rebuilt
+   from that path.
+2. **The Page publishes no page-level aggregate.** `stats` reports what the
+   Page states - followers, the window, one row per post - plus `sum_of_posts`,
+   named so that nobody reads it as LinkedIn's own total, since a Page's real
+   impressions include arrivals the table never lists.
+
+Three further design assumptions were disproved and decided by the Manager, and
+the Architect blessed all three as measured:
+
+* the P2-5 fixture: `search-people "Soren Frederiksen"` returns ten other people
+  of that name and not the owner at all, so the fixture is now
+  `"Soren Frederiksen mindzie"`, whose first and only row is his profile. Both
+  dumps are committed, the failing one included;
+* `read-company` goes to `/company/<slug>/about/?viewAsMember=true`, because a
+  Page admin asking for his own page is redirected to the admin dashboard, and
+  asserts the final URL still carries it;
+* `read-profile` takes the VISIBLE degree badge and fails when two visible ones
+  disagree.
+
+## What is NOT proven
+
+Named honestly, because an unproven claim that reads as proven is worse than no
+claim.
+
+1. **`stats` is proven on ONE Page with ONE post and three followers.** The
+   number parsing (`1,234`, `1.2K`) is exercised by unit-sized values only; a
+   Page with thousands of impressions and a paginated Content engagement table
+   has never been read. The table is read as it stands on the page - if it
+   paginates, later pages are not fetched and `sum_of_posts` would silently
+   cover only the first page. That is the most likely place for this verb to be
+   wrong at scale.
+2. **`search-posts` reads only the cards LinkedIn renders on the first pass** -
+   six of them, measured. `--limit` above that does not scroll to fetch more, so
+   a `--limit 25` today returns what is there, not 25. The limit is a ceiling,
+   never a promise.
+3. **`--days 7` and `--days 15` were exercised, `--days 0` was not**, and no
+   window other than a preset has been driven. The Custom calendar is untouched.
+4. **Only ONE profile B was ever used.** `degree` has been seen as `self` and
+   `1st`; `2nd`, `3rd` and `3rd+` have been seen on search rows but never on a
+   profile top card, and `connection_state` has been seen as `Message` only -
+   `Connect`, `Pending` and `Follow` are in the allowed set on the strength of
+   the survey, not of a run.
+5. **The company `followers` parser has only ever parsed "3 followers".** The
+   `K`/`M`/`B` path in `to_int` is written and unexercised on a real page.
+6. **Nothing here has been run against a signed-out or throttled browser.** The
+   signed-in check was proven by breaking the selector, which proves the check
+   fires - it does not prove LinkedIn's authwall looks the way the check
+   assumes.
+7. **The surveys are one day old.** Every selector carries 2026-09-09. The
+   profile and both search surfaces are the new server-driven rendering, whose
+   class names are hashed and change without notice; the element IDs the code
+   leans on are more stable than classes but are not a contract.
+
+## What I got wrong along the way
+
+* The first survey pass leaked ten third-party profile URLs into the dumps meant
+  for committing. The redactor covered element TEXT and not attributes, so
+  `href` and `aria-label` went through whole. Caught before anything was
+  committed; the redactor now covers attributes and header lines, and all eight
+  dumps were retaken.
+* The first full selftest scored 32 passed / 1 failed, and the one failure was
+  row P2-3 behaving correctly - the refusal was counted once as a failed step
+  and once as a passed check.
+* The stats time-range dropdown was located by "the first element carrying the
+  open class", which matched an empty container on one run and the right one on
+  the next. Found by running it twice rather than by reading it.
+* That same code waited for the range text to CHANGE, which would have failed on
+  a page already showing the right window - correct state reported as a failure.
+  It now waits for the page to state the window that was asked for.
+
+## Files
+
+* `tools/survey.py` and the eight dumps under `docs/surveys/` - the measurement
+  the selectors were written from, redacted for a public repository.
+* `kit/people.py`, `kit/search.py`, `kit/account.py` - the six verbs.
+* `kit/selectors.py` - every new selector with the date it was measured, and the
+  member-analytics trap as a dated negative note.
+* `kit/browser.py` - the view clock and `assert_signed_in`.
+* `kit/selftest.py` - the Phase 2 block and the nine rows.
+* `docs/rulings-phase-2.md` - the Architect's two mid-build rulings.
