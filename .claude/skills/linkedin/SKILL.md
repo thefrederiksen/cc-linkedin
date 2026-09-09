@@ -41,6 +41,37 @@ deleted through the composer's own dialog; there is no page for them.
 `--shot` brings the tab to the front for the screenshot. Leave it off for a
 quiet run; a failed run still writes `<shot>.fail.png` when it can.
 
+## Comments, replies, reactions, deletes (Phase 1, live since 2026-09-09)
+
+All take a POST PERMALINK (never a feed URL) and, for anything that writes,
+`--expect "a phrase from the post"` so a wrong URL refuses instead of acting.
+Reads print JSON, one record per line, then a RESULT line.
+
+```
+cc-linkedin read-post <permalink>
+cc-linkedin read-comments <permalink>
+cc-linkedin comment <permalink> --expect "phrase" --text "..."        (or --text-file f.txt)
+cc-linkedin reply <permalink> --to "words in exactly one comment" --expect "phrase" --text "..."
+cc-linkedin react <permalink> --expect "phrase" [--kind like|celebrate|support|love|insightful|funny]
+cc-linkedin unreact <permalink>
+cc-linkedin delete-comment <permalink> --match "words in exactly one of OUR comments"
+cc-linkedin delete-post <permalink> --expect "phrase"                  (our own post only)
+cc-linkedin selftest --post <one of Soren's posts> --page 107519091 --page-name "CenterConsulting, Inc."
+```
+
+Rules the tool enforces, so you do not have to: one run per browser at a time
+(a second run waits and says so); 45-90 s between outbound actions and daily
+caps, kept in `%LOCALAPPDATA%\cc-linkedin\pace.json` across sessions; a comment
+is proven by its row appearing under our name, a reaction by the button's state,
+a delete by the row being gone after a reload; `already-commented` /
+`already-reacted` refuse duplicates.
+
+Comments on OTHER people's posts are real outreach: the permalink-plus-phrase
+guard stops the wrong-post mistake, the pacing stops the burst. Run the
+selftest before changing the tool and whenever a verb fails in real use; it
+comments on Soren's own post and posts/deletes a throwaway on the Page, and
+ends with `RESULT selftest passed=N failed=0`.
+
 ## Pages this machine posts to
 
 | Page | `--page` | `--page-name` | profile / port |
