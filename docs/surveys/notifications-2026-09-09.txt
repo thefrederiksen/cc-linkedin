@@ -1,0 +1,609 @@
+# survey notifications
+# taken   2026-09-09 17:05:51
+# request https://www.linkedin.com/notifications/
+# final   https://www.linkedin.com/notifications/
+# rendering react ([data-urn] count=0)
+# signed-in probes {".global-nav__me": 1, "button.global-nav__primary-link-me-menu-trigger": 1, "img.global-nav__me-photo": 1, "[data-test-global-nav-me]": 0, "nav.global-nav": 0, ".global-nav__nav": 1, "#global-nav": 1, "header.global-nav": 1, "[data-view-name=\"navigation-me\"]": 0}
+# 'Me' controls    []
+# title   "Notifications | LinkedIn"
+# body    "<redacted len=299>"
+
+== ACCESSIBILITY (897 nodes in the tree) ==
+  region         "<redacted len=13>"
+  button         "Skip to search"
+  button         "Skip to main content"
+  button         "<redacted len=18>"
+  button         "<redacted len=15>"
+  link           "LinkedIn"
+  navigation     "<redacted len=18>"
+  heading        "0 notifications total"
+  StaticText     "Skip to search"
+  StaticText     "Skip to main content"
+  StaticText     "<redacted len=18>"
+  StaticText     "<redacted len=15>"
+  StaticText     "0 notifications total"
+  combobox       "Search"
+  link           "new feed updates notifications Home"
+  link           "<redacted len=10>"
+  link           "Jobs"
+  link           "Messaging"
+  link           "Notifications"
+  link           "<redacted len=9>"
+  link           "<redacted len=53>"
+  link           "<redacted len=26>"
+  link           "<redacted len=104>"
+  link           "<redacted len=7>"
+  heading        "<redacted len=25>"
+  link           "View settings"
+  button         "Show more results"
+  heading        "<redacted len=12>"
+  button         "<redacted len=20>"
+  button         "<redacted len=12>"
+  heading        "<redacted len=17>"
+  StaticText     "<redacted len=7>"
+  StaticText     "<redacted len=25>"
+  StaticText     "View settings"
+  radio          "All"
+  radio          "Jobs"
+  radio          "<redacted len=8>"
+  radio          "<redacted len=8>"
+  article        "<redacted len=20>"
+  article        "<redacted len=20>"
+  article        "<redacted len=12>"
+  article        "<redacted len=12>"
+  article        "<redacted len=12>"
+  article        "<redacted len=12>"
+  article        "<redacted len=12>"
+  article        "<redacted len=12>"
+  article        "<redacted len=12>"
+  article        "<redacted len=12>"
+  StaticText     "Show more results"
+  StaticText     "<redacted len=12>"
+  button         "<redacted len=12>"
+  StaticText     "new feed updates notifications"
+  StaticText     "Home"
+  StaticText     "<redacted len=10>"
+  StaticText     "Jobs"
+  StaticText     "Messaging"
+  StaticText     "Notifications"
+  StaticText     "Me"
+  StaticText     "<redacted len=9>"
+  StaticText     "Premium"
+  StaticText     "<redacted len=17>"
+  StaticText     "<redacted len=69>"
+  StaticText     "<redacted len=16>"
+  StaticText     "All"
+  StaticText     "Jobs"
+  StaticText     "<redacted len=8>"
+  StaticText     "<redacted len=8>"
+  link           "<redacted len=210>"
+  link           "<redacted len=946>"
+  link           "<redacted len=81>"
+  link           "<redacted len=335>"
+  link           "<redacted len=79>"
+  link           "<redacted len=400>"
+  link           "<redacted len=441>"
+  link           "<redacted len=1503>"
+  link           "<redacted len=666>"
+  link           "<redacted len=77>"
+  StaticText     "<redacted len=27>"
+  button         "<redacted len=80>"
+  button         "<redacted len=80>"
+  StaticText     "<redacted len=31>"
+  StaticText     "<redacted len=12>"
+  link           "<redacted len=30>"
+  StaticText     "<redacted len=174>"
+  StaticText     "<redacted len=3>"
+  button         "Settings menu"
+  link           "<redacted len=28>"
+  StaticText     "<redacted len=912>"
+  StaticText     "<redacted len=3>"
+  button         "Settings menu"
+  link           "<redacted len=31>"
+  StaticText     "<redacted len=25>"
+  StaticText     "<redacted len=24>"
+  StaticText     "4 reactions"
+  StaticText     "<redacted len=1>"
+  StaticText     "8 comments"
+  StaticText     "<redacted len=2>"
+  button         "Settings menu"
+  link           "<redacted len=31>"
+  StaticText     "<redacted len=319>"
+  StaticText     "<redacted len=2>"
+  button         "Settings menu"
+  link           "<redacted len=31>"
+  StaticText     "<redacted len=23>"
+  StaticText     "<redacted len=24>"
+  StaticText     "4 reactions"
+  StaticText     "<redacted len=1>"
+  StaticText     "8 comments"
+  StaticText     "<redacted len=2>"
+  button         "Settings menu"
+  link           "<redacted len=40>"
+  StaticText     "<redacted len=375>"
+  StaticText     "<redacted len=2>"
+  button         "Settings menu"
+  link           "<redacted len=20>"
+  StaticText     "<redacted len=12>"
+  StaticText     "<redacted len=359>"
+  StaticText     "<redacted len=2>"
+  button         "Settings menu"
+  link           "<redacted len=40>"
+  StaticText     "<redacted len=1478>"
+  StaticText     "<redacted len=2>"
+  button         "Settings menu"
+  link           "<redacted len=13>"
+  StaticText     "<redacted len=12>"
+  StaticText     "<redacted len=590>"
+  StaticText     "<redacted len=2>"
+  button         "Settings menu"
+  StaticText     "New from"
+  StaticText     "<redacted len=56>"
+  StaticText     "<redacted len=2>"
+  button         "Settings menu"
+  link           "About"
+  link           "<redacted len=13>"
+  link           "<redacted len=11>"
+  link           "<redacted len=10>"
+  link           "<redacted len=11>"
+  button         "<redacted len=20>"
+  button         "<redacted len=12>"
+  StaticText     "<redacted len=80>"
+  button         "<redacted len=28>"
+  button         "<redacted len=15>"
+  StaticText     "<redacted len=80>"
+  StaticText     "<redacted len=20>"
+  StaticText     "<redacted len=14>"
+  StaticText     "<redacted len=20>"
+  StaticText     "<redacted len=12>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=14>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=14>"
+  StaticText     "<redacted len=24>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=53>"
+  StaticText     "<redacted len=24>"
+  StaticText     "<redacted len=8>"
+  StaticText     "<redacted len=53>"
+  StaticText     "<redacted len=11>"
+  StaticText     "About"
+  StaticText     "<redacted len=13>"
+  StaticText     "<redacted len=11>"
+  button         "<redacted len=15>"
+  StaticText     "<redacted len=10>"
+  StaticText     "<redacted len=11>"
+  button         "<redacted len=17>"
+  StaticText     "<redacted len=20>"
+  StaticText     "More"
+  StaticText     "<redacted len=16>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=17>"
+  StaticText     "<redacted len=16>"
+  StaticText     "<redacted len=19>"
+  StaticText     "<redacted len=19>"
+
+== PROBES ==
+  [10] article.nt-card
+  [2] article.nt-card--unread
+  [10] a.nt-card__headline
+  [10] p.nt-card__time-ago
+  [9] a[data-view-name="notification-card-image"]
+
+== DOM OUTLINE of main (413 nodes, depth<=16) ==
+  main.QYvZdvzvpSFafeDZBdTXMxdjbJwOonVPPTawE
+    div.nt-content.relative
+        section.artdeco-card.nt-pill-list.mb3
+          div#notification-nt-pill.artdeco-pill-choice-group.ember-view.nt-pill-list__pill-choice-group  role=radiogroup
+            button#ember31.artdeco-pill.artdeco-pill--slate.artdeco-pill--3.artdeco-pill--choice.artdeco-pill--selected.ember-view  role=radio aria-label="All"  "All"
+            button#ember32.artdeco-pill.artdeco-pill--slate.artdeco-pill--3.artdeco-pill--choice.ember-view.nt-pill  role=radio aria-label="Jobs"  "Jobs"
+            button#ember33.artdeco-pill.artdeco-pill--slate.artdeco-pill--3.artdeco-pill--choice.ember-view.nt-pill  role=radio aria-label="<redacted len=8>"  "<redacted len=8>"
+            button#ember34.artdeco-pill.artdeco-pill--slate.artdeco-pill--3.artdeco-pill--choice.ember-view.nt-pill  role=radio aria-label="<redacted len=8>"  "<redacted len=8>"
+        section.artdeco-card
+          div.scaffold-finite-scroll.scaffold-finite-scroll--infinite
+            div.scaffold-finite-scroll__content  data-finite-scroll-hotkey-context=NOTIFICATIONS
+              div.nt-card-list.nt-card-list--paginated.relative.full-width
+                div  data-finite-scroll-hotkey-item=0
+                  article.nt-card.nt-card--unread.nt-card--with-hover-states  aria-label="<redacted len=20>" data-nt-card-index=0 data-view-name=notification-card-container
+                    div.nt-card__container.align-items-center
+                      div.nt-card__left-rail
+                        figure.nt-card__blue-dot-figure.mt5
+                          svg.nt-card__blue-dot
+                        a  aria-label="<redacted len=30>" href=/in/<slug> data-view-name=notification-card-image
+                          div.ivm-image-view-model
+                            div.ivm-view-attr__img-wrapper
+                              div.presence-entity.presence-entity--size-3
+                                img#ember125.presence-entity__image.ivm-view-attr__img--centered.EntityPhoto-circle-3.EntityPhoto-circle-3.evi-image.lazy-image
+                                div.presence-entity__indicator.presence-entity__indicator--size-3.presence-indicator.hidden.presence-indicator--size-3
+                                  span.visually-hidden  "<redacted len=17>"
+                      div.display-flex.flex-column.flex-grow-1.mr2
+                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/feed/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A7503496626544640000&highlightedUpdateType=SHARED_BY_YOUR_NET
+                          p.visually-hidden  "<redacted len=20>"
+                          span.nt-card__text--3-line  "<redacted len=120>"
+                            strong  "<redacted len=14>"
+                            span.white-space-pre
+                      div.display-flex.flex-column.text-align-right.align-self-flex-start
+                        p.nt-card__time-ago.t-12.t-black--light.t-normal  "<redacted len=3>"
+                          div#ember37.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-right.ember-view
+                            button#nt-card-settings-dropdown-trigger-ember36.artdeco-button.artdeco-button--muted.artdeco-button--tertiary.artdeco-button--circle.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-bottom  aria-label="Settings menu" data-nt-card-settings-dropdown-trigger=
+                              svg.nt-card-settings-dropdown__trigger-icon  role=none data-supported-dps=24x24 data-test-icon=overflow-web-ios-medium
+                            div#ember39.nt-card-settings-dropdown__content.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--has-arrow.artdeco-dropdown__content--arrow-right.artdeco-dropdown__content
+                              div.artdeco-dropdown__content-inner
+                                div#ember40.ember-view
+                                div#ember41.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                                div#ember42.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                                div#ember43.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                div  data-finite-scroll-hotkey-item=1
+                  article.nt-card.nt-card--unread.nt-card--with-hover-states  aria-label="<redacted len=20>" data-nt-card-index=1 data-view-name=notification-card-container
+                    div.nt-card__container.align-items-center
+                      div.nt-card__left-rail
+                        figure.nt-card__blue-dot-figure.mt5
+                          svg.nt-card__blue-dot
+                        a  aria-label="<redacted len=28>" href=/in/<slug> data-view-name=notification-card-image
+                          div.ivm-image-view-model
+                            div.ivm-view-attr__img-wrapper
+                              div.presence-entity.presence-entity--size-3
+                                img#ember126.presence-entity__image.ivm-view-attr__img--centered.EntityPhoto-circle-3.EntityPhoto-circle-3.evi-image.lazy-image
+                                div.presence-entity__indicator.presence-entity__indicator--size-3.presence-indicator.presence-indicator--is-online.presence-indicator--size-3
+                                  span.visually-hidden  "<redacted len=16>"
+                      div.display-flex.flex-column.flex-grow-1.mr2
+                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/feed/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A7503496460701716480&highlightedUpdateType=SHARED_BY_YOUR_NET
+                          p.visually-hidden  "<redacted len=20>"
+                          span.nt-card__text--3-line  "<redacted len=120>"
+                            strong  "<redacted len=12>"
+                            span.white-space-pre
+                      div.display-flex.flex-column.text-align-right.align-self-flex-start
+                        p.nt-card__time-ago.t-12.t-black--light.t-normal  "<redacted len=3>"
+                          div#ember46.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-right.ember-view
+                            button#nt-card-settings-dropdown-trigger-ember45.artdeco-button.artdeco-button--muted.artdeco-button--tertiary.artdeco-button--circle.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-bottom  aria-label="Settings menu" data-nt-card-settings-dropdown-trigger=
+                              svg.nt-card-settings-dropdown__trigger-icon  role=none data-supported-dps=24x24 data-test-icon=overflow-web-ios-medium
+                            div#ember48.nt-card-settings-dropdown__content.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--has-arrow.artdeco-dropdown__content--arrow-right.artdeco-dropdown__content
+                              div.artdeco-dropdown__content-inner
+                                div#ember49.ember-view
+                                div#ember50.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                                div#ember51.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                                div#ember52.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                div  data-finite-scroll-hotkey-item=2
+                  article.nt-card.nt-card--with-hover-states  aria-label="<redacted len=12>" data-nt-card-index=2 data-view-name=notification-card-container
+                    div.nt-card__container
+                      div.nt-card__left-rail
+                        a  aria-label="<redacted len=31>" href=/in/<slug> data-view-name=notification-card-image
+                          div.ivm-image-view-model
+                            div.ivm-view-attr__img-wrapper
+                              div.presence-entity.presence-entity--size-3
+                                img#ember127.presence-entity__image.ivm-view-attr__img--centered.EntityPhoto-circle-3.EntityPhoto-circle-3.evi-image.lazy-image
+                                div.presence-entity__indicator.presence-entity__indicator--size-3.presence-indicator.hidden.presence-indicator--size-3
+                                  span.visually-hidden  "<redacted len=17>"
+                      div.display-flex.flex-column.flex-grow-1.mr2
+                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/feed/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A7503542446472065025&highlightedUpdateType=COMMENTED_ON_UPDAT
+                          span.nt-card__text--3-line  "<redacted len=49>"
+                            strong  "<redacted len=15>"
+                            span.white-space-pre
+                            span.white-space-pre
+                            strong  "<redacted len=14>"
+                            span.white-space-pre
+                        button.artdeco-card.overflow-hidden.mt2  role=link
+                          div.nt-card__text--word-wrap.nt-card__text--2-line-large.text-align-start.m2.t-14.t-black  "<redacted len=120>"
+                            span.white-space-pre
+                            strong  "<redacted len=12>"
+                          hr.m0
+                          div.nt-card-content__body--secondary.display-flex
+                            div.full-width.display-flex.flex-column.justify-center.align-items-flex-start.p2
+                              div.nt-card-content__body-text.nt-card__text--word-wrap.nt-card__text--2-line-large.text-align-start.t-14.t-black--light  "<redacted len=120>"
+                                span.white-space-pre
+                                strong  "<redacted len=21>"
+                                span.white-space-pre
+                                span.white-space-pre
+                                strong  "<redacted len=13>"
+                                span.white-space-pre
+                                strong  "<redacted len=13>"
+                                span.white-space-pre
+                                strong  "<redacted len=13>"
+                                span.white-space-pre
+                                strong  "<redacted len=18>"
+                                span.white-space-pre
+                                strong  "<redacted len=15>"
+                                span.white-space-pre
+                                strong  "<redacted len=17>"
+                                span.white-space-pre
+                                strong  "<redacted len=15>"
+                                span.white-space-pre
+                                strong  "<redacted len=47>"
+                                span.white-space-pre
+                                strong  "<redacted len=14>"
+                                span.white-space-pre
+                                strong  "<redacted len=17>"
+                                span.white-space-pre
+                                strong  "<redacted len=17>"
+                                span.white-space-pre
+                                strong  "<redacted len=11>"
+                                span.white-space-pre
+                                strong  "<redacted len=16>"
+                                span.white-space-pre
+                                strong  "<redacted len=17>"
+                                span.white-space-pre
+                                strong  "<redacted len=17>"
+                                span.white-space-pre
+                                strong  "<redacted len=15>"
+                        section.nt-social-counts.t-12.t-black--light.t-normal.mt2.mt2
+                          span.nt-social-counts__count  "4 reactions"
+                          span.nt-social-counts__count  "8 comments"
+                      div.display-flex.flex-column.text-align-right.align-self-flex-start
+                        p.nt-card__time-ago.t-12.t-black--light.t-normal  "<redacted len=2>"
+                          div#ember55.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-right.ember-view
+                            button#nt-card-settings-dropdown-trigger-ember54.artdeco-button.artdeco-button--muted.artdeco-button--tertiary.artdeco-button--circle.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-bottom  aria-label="Settings menu" data-nt-card-settings-dropdown-trigger=
+                              svg.nt-card-settings-dropdown__trigger-icon  role=none data-supported-dps=24x24 data-test-icon=overflow-web-ios-medium
+                            div#ember57.nt-card-settings-dropdown__content.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--has-arrow.artdeco-dropdown__content--arrow-right.artdeco-dropdown__content
+                              div.artdeco-dropdown__content-inner
+                                div#ember58.ember-view
+                                div#ember59.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                                div#ember60.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                                div#ember61.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                div  data-finite-scroll-hotkey-item=3
+                  article.nt-card.nt-card--with-hover-states  aria-label="<redacted len=12>" data-nt-card-index=3 data-view-name=notification-card-container
+                    div.nt-card__container.align-items-center
+                      div.nt-card__left-rail
+                        a  aria-label="<redacted len=31>" href=/in/<slug> data-view-name=notification-card-image
+                          div.ivm-image-view-model
+                            div.ivm-view-attr__img-wrapper
+                              div.presence-entity.presence-entity--size-3
+                                img#ember128.presence-entity__image.ivm-view-attr__img--centered.EntityPhoto-circle-3.EntityPhoto-circle-3.evi-image.lazy-image
+                                div.presence-entity__indicator.presence-entity__indicator--size-3.presence-indicator.hidden.presence-indicator--size-3
+                                  span.visually-hidden  "<redacted len=17>"
+                      div.display-flex.flex-column.flex-grow-1.mr2
+                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/feed/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A7503531190457376768&highlightedUpdateType=SHARED_BY_YOUR_NET
+                          span.nt-card__text--3-line  "<redacted len=120>"
+                            strong  "<redacted len=15>"
+                            span.white-space-pre
+                      div.display-flex.flex-column.text-align-right.align-self-flex-start
+                        p.nt-card__time-ago.t-12.t-black--light.t-normal  "<redacted len=2>"
+                          div#ember64.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-right.ember-view
+                            button#nt-card-settings-dropdown-trigger-ember63.artdeco-button.artdeco-button--muted.artdeco-button--tertiary.artdeco-button--circle.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-bottom  aria-label="Settings menu" data-nt-card-settings-dropdown-trigger=
+                              svg.nt-card-settings-dropdown__trigger-icon  role=none data-supported-dps=24x24 data-test-icon=overflow-web-ios-medium
+                            div#ember66.nt-card-settings-dropdown__content.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--has-arrow.artdeco-dropdown__content--arrow-right.artdeco-dropdown__content
+                              div.artdeco-dropdown__content-inner
+                                div#ember67.ember-view
+                                div#ember68.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                                div#ember69.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                                div#ember70.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                div  data-finite-scroll-hotkey-item=4
+                  article.nt-card.nt-card--with-hover-states  aria-label="<redacted len=12>" data-nt-card-index=4 data-view-name=notification-card-container
+                    div.nt-card__container
+                      div.nt-card__left-rail
+                        a  aria-label="<redacted len=31>" href=/in/<slug> data-view-name=notification-card-image
+                          div.ivm-image-view-model
+                            div.ivm-view-attr__img-wrapper
+                              div.presence-entity.presence-entity--size-3
+                                img#ember129.presence-entity__image.ivm-view-attr__img--centered.EntityPhoto-circle-3.EntityPhoto-circle-3.evi-image.lazy-image
+                                div.presence-entity__indicator.presence-entity__indicator--size-3.presence-indicator.hidden.presence-indicator--size-3
+                                  span.visually-hidden  "<redacted len=17>"
+                      div.display-flex.flex-column.flex-grow-1.mr2
+                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/feed/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A7503424878948241408&highlightedUpdateType=REACTED_TO_UPDATE_
+                          span.nt-card__text--3-line  "<redacted len=47>"
+                            strong  "<redacted len=15>"
+                            span.white-space-pre
+                            span.white-space-pre
+                            strong  "<redacted len=14>"
+                            span.white-space-pre
+                        button.artdeco-card.overflow-hidden.mt2  role=link
+                          div.display-flex
+                            div.full-width.display-flex.flex-column.justify-center.align-items-flex-start.p2
+                              div.nt-card-content__body-text.nt-card__text--word-wrap.nt-card__text--2-line-large.text-align-start.t-14.t-black  "<redacted len=120>"
+                                span.white-space-pre
+                                strong  "<redacted len=21>"
+                                span.white-space-pre
+                                span.white-space-pre
+                                strong  "<redacted len=13>"
+                                span.white-space-pre
+                                strong  "<redacted len=13>"
+                                span.white-space-pre
+                                strong  "<redacted len=13>"
+                                span.white-space-pre
+                                strong  "<redacted len=18>"
+                                span.white-space-pre
+                                strong  "<redacted len=15>"
+                                span.white-space-pre
+                                strong  "<redacted len=17>"
+                                span.white-space-pre
+                                strong  "<redacted len=15>"
+                                span.white-space-pre
+                                strong  "<redacted len=47>"
+                                span.white-space-pre
+                                strong  "<redacted len=14>"
+                                span.white-space-pre
+                                strong  "<redacted len=17>"
+                                span.white-space-pre
+                                strong  "<redacted len=17>"
+                                span.white-space-pre
+                                strong  "<redacted len=11>"
+                                span.white-space-pre
+                                strong  "<redacted len=16>"
+                                span.white-space-pre
+                                strong  "<redacted len=17>"
+                                span.white-space-pre
+                                strong  "<redacted len=17>"
+                                span.white-space-pre
+                                strong  "<redacted len=15>"
+                        section.nt-social-counts.t-12.t-black--light.t-normal.mt2.mt2
+                          span.nt-social-counts__count  "4 reactions"
+                          span.nt-social-counts__count  "8 comments"
+                      div.display-flex.flex-column.text-align-right.align-self-flex-start
+                        p.nt-card__time-ago.t-12.t-black--light.t-normal  "<redacted len=2>"
+                          div#ember73.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-right.ember-view
+                            button#nt-card-settings-dropdown-trigger-ember72.artdeco-button.artdeco-button--muted.artdeco-button--tertiary.artdeco-button--circle.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-bottom  aria-label="Settings menu" data-nt-card-settings-dropdown-trigger=
+                              svg.nt-card-settings-dropdown__trigger-icon  role=none data-supported-dps=24x24 data-test-icon=overflow-web-ios-medium
+                            div#ember75.nt-card-settings-dropdown__content.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--has-arrow.artdeco-dropdown__content--arrow-right.artdeco-dropdown__content
+                              div.artdeco-dropdown__content-inner
+                                div#ember76.ember-view
+                                div#ember77.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                                div#ember78.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                                div#ember79.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                div  data-finite-scroll-hotkey-item=5
+                  article.nt-card.nt-card--with-hover-states  aria-label="<redacted len=12>" data-nt-card-index=5 data-view-name=notification-card-container
+                    div.nt-card__container.align-items-center
+                      div.nt-card__left-rail
+                        a  aria-label="<redacted len=40>" href=/in/<slug> data-view-name=notification-card-image
+                          div.ivm-image-view-model
+                            div.ivm-view-attr__img-wrapper
+                              div.presence-entity.presence-entity--size-3
+                                img#ember130.presence-entity__image.ivm-view-attr__img--centered.EntityPhoto-circle-3.EntityPhoto-circle-3.evi-image.lazy-image
+                                div.presence-entity__indicator.presence-entity__indicator--size-3.presence-indicator.presence-indicator--is-reachable.presence-indicator--size-3
+                                  span.visually-hidden  "<redacted len=19>"
+                      div.display-flex.flex-column.flex-grow-1.mr2
+                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/feed/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A7503505124632207360&highlightedUpdateType=SHARED_BY_YOUR_NET
+                          span.nt-card__text--3-line  "<redacted len=120>"
+                            strong  "<redacted len=24>"
+                            span.white-space-pre
+                      div.display-flex.flex-column.text-align-right.align-self-flex-start
+                        p.nt-card__time-ago.t-12.t-black--light.t-normal  "<redacted len=2>"
+                          div#ember82.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-right.ember-view
+                            button#nt-card-settings-dropdown-trigger-ember81.artdeco-button.artdeco-button--muted.artdeco-button--tertiary.artdeco-button--circle.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-bottom  aria-label="Settings menu" data-nt-card-settings-dropdown-trigger=
+                              svg.nt-card-settings-dropdown__trigger-icon  role=none data-supported-dps=24x24 data-test-icon=overflow-web-ios-medium
+                            div#ember84.nt-card-settings-dropdown__content.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--has-arrow.artdeco-dropdown__content--arrow-right.artdeco-dropdown__content
+                              div.artdeco-dropdown__content-inner
+                                div#ember85.ember-view
+                                div#ember86.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                                div#ember87.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                                div#ember88.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                div  data-finite-scroll-hotkey-item=6
+                  article.nt-card.nt-card--with-hover-states  aria-label="<redacted len=12>" data-nt-card-index=6 data-view-name=notification-card-container
+                    div.nt-card__container.align-items-center
+                      div.nt-card__left-rail
+                        a  aria-label="<redacted len=20>" href=/company/37553728 data-view-name=notification-card-image
+                          div.ivm-image-view-model
+                            div.ivm-view-attr__img-wrapper
+                              img#ember89.ivm-view-attr__img--centered.EntityPhoto-square-3.evi-image.lazy-image.ember-view
+                      div.display-flex.flex-column.flex-grow-1.mr2
+                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/video/event/urn:li:ugcPost:7503224046847729665
+                          span.nt-card__text--3-line
+                            span  "<redacted len=119>"
+                              strong  "<redacted len=15>"
+                              span.white-space-pre
+                              span.white-space-pre
+                              strong  "<redacted len=53>"
+                      div.display-flex.flex-column.text-align-right.align-self-flex-start
+                        p.nt-card__time-ago.t-12.t-black--light.t-normal  "<redacted len=2>"
+                          div#ember91.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-right.ember-view
+                            button#nt-card-settings-dropdown-trigger-ember90.artdeco-button.artdeco-button--muted.artdeco-button--tertiary.artdeco-button--circle.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-bottom  aria-label="Settings menu" data-nt-card-settings-dropdown-trigger=
+                              svg.nt-card-settings-dropdown__trigger-icon  role=none data-supported-dps=24x24 data-test-icon=overflow-web-ios-medium
+                            div#ember93.nt-card-settings-dropdown__content.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--has-arrow.artdeco-dropdown__content--arrow-right.artdeco-dropdown__content
+                              div.artdeco-dropdown__content-inner
+                                div#ember94.ember-view
+                                div#ember95.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                                div#ember96.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                                div#ember97.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                div  data-finite-scroll-hotkey-item=7
+                  article.nt-card.nt-card--with-hover-states  aria-label="<redacted len=12>" data-nt-card-index=7 data-view-name=notification-card-container
+                    div.nt-card__container.align-items-center
+                      div.nt-card__left-rail
+                        a  aria-label="<redacted len=40>" href=/in/<slug> data-view-name=notification-card-image
+                          div.ivm-image-view-model
+                            div.ivm-view-attr__img-wrapper
+                              div.presence-entity.presence-entity--size-3
+                                img#ember131.presence-entity__image.ivm-view-attr__img--centered.EntityPhoto-circle-3.EntityPhoto-circle-3.evi-image.lazy-image
+                                div.presence-entity__indicator.presence-entity__indicator--size-3.presence-indicator.presence-indicator--is-reachable.presence-indicator--size-3
+                                  span.visually-hidden  "<redacted len=19>"
+                      div.display-flex.flex-column.flex-grow-1.mr2
+                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/feed/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A7503499468818821121&highlightedUpdateType=SHARED_BY_YOUR_NET
+                          span.nt-card__text--3-line  "<redacted len=120>"
+                            strong  "<redacted len=24>"
+                            span.white-space-pre
+                      div.display-flex.flex-column.text-align-right.align-self-flex-start
+                        p.nt-card__time-ago.t-12.t-black--light.t-normal  "<redacted len=2>"
+                          div#ember100.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-right.ember-view
+                            button#nt-card-settings-dropdown-trigger-ember99.artdeco-button.artdeco-button--muted.artdeco-button--tertiary.artdeco-button--circle.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-bottom  aria-label="Settings menu" data-nt-card-settings-dropdown-trigger=
+                              svg.nt-card-settings-dropdown__trigger-icon  role=none data-supported-dps=24x24 data-test-icon=overflow-web-ios-medium
+                            div#ember102.nt-card-settings-dropdown__content.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--has-arrow.artdeco-dropdown__content--arrow-right.artdeco-dropdown__content
+                              div.artdeco-dropdown__content-inner
+                                div#ember103.ember-view
+                                div#ember104.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                                div#ember105.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                                div#ember106.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                div  data-finite-scroll-hotkey-item=8
+                  article.nt-card.nt-card--with-hover-states  aria-label="<redacted len=12>" data-nt-card-index=8 data-view-name=notification-card-container
+                    div.nt-card__container.align-items-center
+                      div.nt-card__left-rail
+                        a  aria-label="<redacted len=13>" href=/company/1038 data-view-name=notification-card-image
+                          div.ivm-image-view-model
+                            div.ivm-view-attr__img-wrapper
+                              img#ember107.ivm-view-attr__img--centered.EntityPhoto-square-3.evi-image.lazy-image.ember-view
+                      div.display-flex.flex-column.flex-grow-1.mr2
+                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/video/event/urn:li:ugcPost:7503470263934652416
+                          span.nt-card__text--3-line
+                            span  "<redacted len=119>"
+                              strong  "<redacted len=8>"
+                              span.white-space-pre
+                              span.white-space-pre
+                              strong  "<redacted len=53>"
+                                span.white-space-pre
+                              span.white-space-pre
+                      div.display-flex.flex-column.text-align-right.align-self-flex-start
+                        p.nt-card__time-ago.t-12.t-black--light.t-normal  "<redacted len=2>"
+                          div#ember109.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-right.ember-view
+                            button#nt-card-settings-dropdown-trigger-ember108.artdeco-button.artdeco-button--muted.artdeco-button--tertiary.artdeco-button--circle.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-bottom  aria-label="Settings menu" data-nt-card-settings-dropdown-trigger=
+                              svg.nt-card-settings-dropdown__trigger-icon  role=none data-supported-dps=24x24 data-test-icon=overflow-web-ios-medium
+                            div#ember111.nt-card-settings-dropdown__content.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--has-arrow.artdeco-dropdown__content--arrow-right.artdeco-dropdown__content
+                              div.artdeco-dropdown__content-inner
+                                div#ember112.ember-view
+                                div#ember113.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                                div#ember114.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                                div#ember115.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                div  data-finite-scroll-hotkey-item=9
+                  article.nt-card.nt-card--with-hover-states  aria-label="<redacted len=12>" data-nt-card-index=9 data-view-name=notification-card-container
+                    div.nt-card__container.align-items-center
+                      div.nt-card__left-rail
+                        div.ivm-image-view-model
+                          div.ivm-view-attr__img-wrapper
+                            img#ember116.ivm-view-attr__img--centered.EntityPhoto-square-3.evi-image.lazy-image.ember-view
+                      div.display-flex.flex-column.flex-grow-1.mr2
+                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/pulse/chatgpt%2Dsolved%2D1%2Dmillion%2Dmath%2Dproblem%2Dgenai%2Dworks%2D1sirf
+                          span.nt-card__text--3-line  "<redacted len=64>"
+                            span.white-space-pre
+                            strong  "<redacted len=11>"
+                            span.white-space-pre
+                            span.white-space-pre
+                      div.display-flex.flex-column.text-align-right.align-self-flex-start
+                        p.nt-card__time-ago.t-12.t-black--light.t-normal  "<redacted len=2>"
+                          div#ember118.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-right.ember-view
+                            button#nt-card-settings-dropdown-trigger-ember117.artdeco-button.artdeco-button--muted.artdeco-button--tertiary.artdeco-button--circle.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-bottom  aria-label="Settings menu" data-nt-card-settings-dropdown-trigger=
+                              svg.nt-card-settings-dropdown__trigger-icon  role=none data-supported-dps=24x24 data-test-icon=overflow-web-ios-medium
+                            div#ember120.nt-card-settings-dropdown__content.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--has-arrow.artdeco-dropdown__content--arrow-right.artdeco-dropdown__content
+                              div.artdeco-dropdown__content-inner
+                                div#ember121.ember-view
+                                div#ember122.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+                                div#ember123.nt-card-settings-dropdown-item.pv2.ph4.full-width.artdeco-dropdown__item.artdeco-dropdown__item--is-dropdown
+                                  button.nt-card-settings-dropdown-item__button
+              div.display-flex.p5
+                button#ember124.artdeco-button.artdeco-button--muted.artdeco-button--1.artdeco-button--full.artdeco-button--secondary.ember-view
+                  span.artdeco-button__text  "Show more results"
+
