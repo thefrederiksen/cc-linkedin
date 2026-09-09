@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 *.png
 *.mismatch.txt
+
+# Transient: the running session id, rewritten constantly. Never a repo artifact.
+.claude/sounds/.current_session
