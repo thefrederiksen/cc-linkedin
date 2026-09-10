@@ -1,0 +1,11 @@
+# The wheel's contents are fixed by py-modules and packages in pyproject.toml,
+# so docs can never reach it. This file governs the SOURCE DISTRIBUTION only.
+#
+# docs/ carries the mission record and docs/surveys/ carries captured LinkedIn
+# pages. Neither belongs in something a stranger downloads.
+include README.md
+include requirements.txt
+prune docs
+prune tests
+prune tools
+exclude cc-linkedin.cmd

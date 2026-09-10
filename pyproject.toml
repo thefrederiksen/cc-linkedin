@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cc-linkedin"
+version = "1.0.0"
+description = "Post to a LinkedIn Page through your own signed-in browser."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["playwright>=1.58"]
+
+[project.scripts]
+cc-linkedin = "cc_linkedin:main"
+
+[project.urls]
+Source = "https://github.com/thefrederiksen/cc-linkedin"
+
+# The shipped surface is exactly two things, listed rather than discovered.
+#
+# cc_linkedin STAYS A TOP-LEVEL MODULE AT THE REPOSITORY ROOT and must stay
+# directly runnable as `py -3.11 <path>/cc_linkedin.py`. The owner's morning
+# video job reaches it that way, through a shim OUTSIDE this repository at
+# %LOCALAPPDATA%/cc-director/bin/cc-linkedin.cmd, which runs the FILE and not
+# the console script. Turning it into a stub that needs an install, or moving
+# it under a package directory, breaks that job silently - it would post
+# nothing and say nothing. Do not.
+#
+# Discovery is not used: left to itself setuptools would find docs/, tests/
+# and tools/ and try to ship them.
+[tool.setuptools]
+py-modules = ["cc_linkedin"]
+packages = ["cc_linkedin_kit"]
+include-package-data = false
