@@ -1,14 +1,27 @@
 ---
 name: linkedin
-description: Post to a LinkedIn Page through the signed-in browser with cc-linkedin - text, video, images, now or scheduled. One command, stage first, read the RESULT line. Triggers on "/linkedin", "post to linkedin", "linkedin post", "schedule a linkedin post", "post the video to linkedin", "linkedin page post".
+description: Drive LinkedIn through the signed-in browser with cc-linkedin 1.0 - post to a Page (text, video, images, now or scheduled), comment, reply, react, delete, read profiles and companies, search people and posts, read notifications and Page stats, and withdraw an invitation we sent. Eighteen commands, no API. Stage first, read the RESULT line. Triggers on "/linkedin", "post to linkedin", "linkedin post", "schedule a linkedin post", "post the video to linkedin", "linkedin page post", "comment on linkedin", "read a linkedin profile", "search linkedin", "linkedin notifications", "page stats", "withdraw a linkedin invitation".
 ---
 
 # LinkedIn posting
 
 Use the tool. Do not hand-roll browser calls, do not use browser-harness for
-posting, do not reach for the LinkedIn API. The tool is
-`D:\ReposFred\cc-linkedin\cc_linkedin.py`, on PATH as `cc-linkedin`, and it
-encodes a day of measured failure modes (see its docstring and the README).
+posting, do not reach for the LinkedIn API. It encodes a day of measured failure
+modes (see its docstring and the README).
+
+**Version 1.0.0. Eighteen commands, listed in full below - and the list of what
+does NOT exist is just as important, because the shape of the tool invites you
+to assume verbs that are not there.**
+
+Two ways to run it, both supported and both the same code:
+
+```
+cc-linkedin <command> ...                                the installed console script
+py -3.11 D:\ReposFred\cc-linkedin\cc_linkedin.py <command> ...      the file, no install needed
+```
+
+The file form is how Soren's morning video job reaches it, through a shim
+outside the repository. Never move or stub that file.
 
 ## The one flow
 
@@ -93,10 +106,17 @@ it - do not go and do the same thing by hand and assume the tool was wrong.
 
 **Reads have their own budget: 80 a day, 3-8 seconds apart.** A profile read
 leaves the ordinary "viewed your profile" trace, and high-volume profile viewing
-is one of the top triggers for an account warning. Soren's own surfaces - his
-profile, his Pages, `notifications` and `stats` - cost nothing against that 80,
-but they are still counted, on a separate uncapped `view_self` line in
-`pace.json`, so a runaway loop is visible. Over the cap the verb stops and says
+is one of the top triggers for an account warning. Some surfaces cost nothing against that
+80 and are counted instead on a separate uncapped `view_self` line in
+`pace.json`, so a runaway loop is still visible.
+
+**The test for which is NOT "is this surface Soren's". It is "can loading it
+change something another person can see."** A read receipt is visible to
+somebody else. So: his profile, his Pages, `notifications`, `stats`, the
+invitation manager and `/messaging/compose/` are uncapped - but his own
+`/messaging/` inbox is CAPPED, because the list is the route believed to select
+a conversation into the reading pane, and that marks it read. Ownership was
+never what cost anything. Over the cap the verb stops and says
 "tomorrow". The cap is never raised to get a run finished
 (`docs/ruling-view-cap-2026-09-09.md`).
 
@@ -131,6 +151,49 @@ is the sum of those rows, NOT LinkedIn's own aggregate - do not report it to
 anyone as "the Page's impressions". `--days` defaults to 30 and drives the
 window control; LinkedIn's own default is 15, so a screenshot taken by hand may
 not be comparable.
+
+## Invitations we sent (withdraw)
+
+The ONLY invitation verb in 1.0. It withdraws; it cannot send.
+
+```
+cc-linkedin withdraw <profile URL or slug> [--older-than-months N] [--dump out.json]
+cc-linkedin withdraw <profile URL or slug> --expect-name "Their Name" --submit
+```
+
+Staged by default: without `--submit` it finds the row in the invitation
+manager's Sent tab, names the person twice, reports the age the page displays,
+and presses nothing. Stage first, every time.
+
+**A withdrawal spends something that cannot be got back.** LinkedIn restricts
+inviting the same person again afterwards. The RESULT line carries whatever the
+live surface said about that, INCLUDING saying that it said nothing - which is
+what was measured on 2026-09-10. Do not tell Soren the person can be re-invited.
+
+`--expect-name` is required with `--submit`. `--older-than-months N` refuses
+unless the age the page DISPLAYS proves at least N whole months; LinkedIn rounds
+down, so "3 months ago" proves three, and an age the tool cannot parse refuses
+rather than guesses.
+
+The withdraw control is an anchor whose `href` is the feed, so a click the page
+does not swallow navigates away and withdraws nothing, SILENTLY. The verb
+asserts afterwards that it is still on the invitation manager and that the list
+is exactly one shorter with the page's own count agreeing - so trust the RESULT
+line, not the fact that the click happened.
+
+## Commands that DO NOT EXIST - do not attempt them
+
+Running one prints an argparse error. Do not improvise them with
+browser-harness either: they were left out because they are unproven against
+the live site, and two of them send to real people.
+
+| Not present | Where it stands |
+|---|---|
+| `connect`, `message`, `read-inbox`, `read-thread`, `invitations`, `follow`, `unfollow`, `invite-to-follow` | designed and surveyed, not built - issue #9 |
+| `post --profile` (posting as Soren rather than as the Page), `edit-post`, `repost` | designed, never surveyed - issue #10 |
+
+If Soren asks for one of these, say it does not exist and point at the issue.
+Do not build a one-off workaround for it.
 
 ## Pages this machine posts to
 
