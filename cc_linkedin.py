@@ -774,6 +774,38 @@ def main():
     sp.add_argument("--port", type=int, default=9224)
     sp.set_defaults(fn=A.stats)
 
+    # -- Phase 3: the invitations we sent ------------------------------------
+    from kit import connections as N
+
+    sp = sub.add_parser(
+        "withdraw", help="withdraw one invitation we sent",
+        description="Withdraw ONE outstanding invitation, from the invitation manager's "
+                    "Sent tab. Staged by default: without --submit it finds the row, names "
+                    "the person twice, reports the age the page displays, and presses "
+                    "NOTHING. "
+                    "IT SPENDS SOMETHING THAT CANNOT BE GOT BACK: LinkedIn restricts "
+                    "inviting the same person again after a withdrawal, and the RESULT line "
+                    "carries what the live surface said about that - including saying that "
+                    "it said nothing, which is what was measured on 2026-09-10. "
+                    "The control is an ANCHOR whose href is the feed, so a click the page "
+                    "does not swallow navigates away and withdraws nothing, silently; this "
+                    "verb asserts afterwards that it is still on the invitation manager and "
+                    "that the list is exactly one shorter with the page's own count "
+                    "agreeing.",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    sp.add_argument("url", help="the person's profile URL, or just the /in/ slug")
+    sp.add_argument("--expect-name", help="the person's name as the withdraw control states "
+                                          "it. REQUIRED with --submit (design rule 0.3).")
+    sp.add_argument("--older-than-months", type=int,
+                    help="refuse unless the age the page DISPLAYS proves at least this many "
+                         "whole months. LinkedIn rounds down, so '3 months ago' proves three "
+                         "and an age this cannot parse refuses rather than guesses.")
+    sp.add_argument("--submit", action="store_true",
+                    help="actually withdraw it. Default stages and presses nothing.")
+    sp.add_argument("--dump", help="write everything the run measured to this JSON file")
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=N.withdraw)
+
     from kit import selftest as T
     sp = sub.add_parser("selftest",
                         help="run every verb on things we own, leaving nothing behind")

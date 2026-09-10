@@ -548,7 +548,15 @@ class Pace(object):
     relies on instead of checking.
     """
 
-    CAPS = {"comment": 60, "react": 100, "connect": 20, "message": 30, "invite": 5}
+    # withdraw, 2026-09-10. A WITHDRAWAL IS OUTBOUND, NOT A READ. It changes
+    # something on another person's side - their pending invitation stops
+    # existing - and twenty of them in a burst is exactly what an automated
+    # account looks like. So it takes the 45-90 second gap like every other
+    # outbound action, and its own daily cap. Twenty is the same number connect
+    # carries, which is the point: an account cannot withdraw its way past the
+    # rate it is allowed to invite at.
+    CAPS = {"comment": 60, "react": 100, "connect": 20, "message": 30, "invite": 5,
+            "withdraw": 20}
     GAP = (45, 90)         # seconds between outbound actions
     VIEW_CAP = 80          # OTHER people's profiles/companies + search pages, per day
     VIEW_SELF_CAP = None   # our own profile and our own Pages: counted, NOT capped
