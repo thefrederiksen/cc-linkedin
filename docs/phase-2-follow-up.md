@@ -1,5 +1,10 @@
 # Phase 2 follow-up: four known items, carried deliberately
 
+> **STATUS: DONE, 2026-09-10, on branch `phase-2-follow-up`.** All four
+> rulings below are built or, for F4, confirmed. What was done, what was
+> measured, and what is NOT proven: `docs/phase-2-follow-up-report.md`.
+> This file is left as it was written - it is the mandate, not the account.
+
 Phase 2 lands with these open. They are recorded here rather than fixed first
 because the three clean runs certify the code at `a88a32f` exactly, and changing
 that code would mean the runs certify a build we did not ship. None of them

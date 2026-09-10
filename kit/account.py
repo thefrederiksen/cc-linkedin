@@ -14,8 +14,11 @@ NOTIFICATIONS - the classic rendering, and the cleanest surface in Phase 2.
     href is where the notification points - which for a post carries the
     activity urn, url-encoded, as highlightedUpdateUrn.
   * The age is p.nt-card__time-ago.
-  * It costs NO view: this is our own notifications page, not somebody's
-    profile, and opening it tells nobody anything.
+  * It costs nothing against the SAFETY CAP: this is our own notifications
+    page, not somebody's profile, and opening it tells nobody anything. It is
+    still COUNTED, on the uncapped `view_self` line - F2, 2026-09-10. It counted
+    nothing at all until then, which left one of this toolkit's own navigations
+    invisible in pace.json and unreconcilable against a run's registry.
   * PUBLIC REPO. This output names third parties. It goes to stdout for the
     caller and is never pasted into a committed file.
 
@@ -51,7 +54,7 @@ import re
 import time
 
 from . import selectors as S
-from .browser import Browser, Pace, log, die
+from .browser import Browser, Pace, is_own_page, log, die
 from .people import to_int
 
 NOTIFICATIONS_URL = "https://www.linkedin.com/notifications/"
@@ -94,9 +97,18 @@ def notifications(a):
     limit = int(a.limit or 25)
     if limit < 1:
         die("--limit must be at least 1")
+    pace = Pace()
     with Browser(a.port) as br:
-        # No view is counted: this is our own notifications page, not a profile.
+        # F2, 2026-09-10. This used to count NOTHING - not even view_self - on
+        # the grounds that our own notifications page costs the account nothing.
+        # That is true and it is not the question: the view_self track exists so
+        # that pace.json shows everything this toolkit opened, and a surface that
+        # appears nowhere cannot be reconciled against a run's own registry. The
+        # URL is a constant and it is ours, so this is the one call site where
+        # the uncapped counter needs no test to reach it.
+        pace.before_self_view("our own notifications page")
         final = br.read(NOTIFICATIONS_URL, "the notifications page", settle=8)
+        pace.after_view()
         if "/notifications" not in final:
             die("asked for the notifications page and landed on %s" % final)
 
@@ -350,9 +362,22 @@ def _set_window(br, days):
 
 def stats(a):
     days = int(a.days if a.days is not None else 30)
+    pace = Pace()
     with Browser(a.port) as br:
-        # No view is counted: this is our own Page's admin screen.
+        # F2, 2026-09-10, and the branch matters here in a way it does not in
+        # notifications. --page is an ARGUMENT: whatever it names, this is about
+        # to open that Page's admin URL in the signed-in browser. So view_self
+        # is taken only where the Page is positively one of the owner's, exactly
+        # as read_company does it, and anything else is charged to the safety
+        # number. A Page we do not administer fails the landing assertions a few
+        # lines below - but the page has been opened by then, and the counter has
+        # to have seen it.
+        if is_own_page(a.page):
+            pace.before_self_view("the analytics for Page %s (one the owner administers)" % a.page)
+        else:
+            pace.before_view("the analytics for Page %s" % a.page)
         final = br.read(ANALYTICS_URL % a.page, "the analytics for Page %s" % a.page, settle=10)
+        pace.after_view()
         if "/admin/analytics" not in final:
             die("could not open the analytics for Page %s as this identity; landed on %s. "
                 "That is a failed read, not a Page with no numbers." % (a.page, final))

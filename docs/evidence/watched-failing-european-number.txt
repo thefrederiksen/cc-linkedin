@@ -1,0 +1,41 @@
+F4 - 1,2K still fails, and the check that says so now reads the reason.
+
+F4 HAD NOTHING TO BUILD. The ruling is that `1,2K` keeps failing until somebody
+MEASURES what LinkedIn renders in a European locale, and no such measurement was
+made in this pass either - nothing here ran in another locale. What follows is
+the confirmation, and one repair to the check itself.
+
+1. IT STILL REFUSES, 2026-09-10, on the code as it stands:
+
+    $ py -3.11 -c "from kit import people as P; P.to_int('1,2K', 'the connections count')"
+    FAIL the connections count reads '1,2K', which is not a number this will
+    guess at. A comma is a thousands separator only before exactly three digits,
+    a decimal point is only allowed with a K, M or B after it, and a plus is
+    only allowed at the end.
+
+   `1,2M`, `1,2` and `1,23` refuse with the same message. The reason in the code
+   is at kit/people.py, above NUMBER: the measurement was not made, so the form
+   fails, "because accepting it means guessing between 1200 and 12 with no
+   evidence and the wrong guess is silent".
+
+2. THE CHECK DID NOT CHECK WHAT ITS NAME SAID. `test_a_failure_names_what_it_read`
+   asserted only that `to_int` exits. The message could have said anything at
+   all - including nothing about what it read - and the test would have passed
+   under that name. It reads the message now.
+
+   Watched failing, by weakening the message in kit/people.py to
+   `die("that is not a number this will guess at.")` and running the suite:
+
+    FAIL: NumbersThatMustFail.test_a_failure_names_what_it_read
+    AssertionError: '1,2K' not found in 'FAIL that is not a number this will
+    guess at.\n' : the message must quote what it actually read
+    Ran 12 tests
+    FAILED (failures=1)
+
+   Restored, and green again:
+
+    Ran 12 tests
+    OK
+
+That is the whole of F4. The European form is still unmeasured and still fails,
+and the test that guards it can now go red for the right reason.

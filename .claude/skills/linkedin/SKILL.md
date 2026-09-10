@@ -93,9 +93,32 @@ it - do not go and do the same thing by hand and assume the tool was wrong.
 
 **Reads have their own budget: 80 a day, 3-8 seconds apart.** A profile read
 leaves the ordinary "viewed your profile" trace, and high-volume profile viewing
-is one of the top triggers for an account warning. `notifications` and `stats`
-cost nothing - they are Soren's own screens. Over the cap the verb stops and
-says "tomorrow".
+is one of the top triggers for an account warning. Soren's own surfaces - his
+profile, his Pages, `notifications` and `stats` - cost nothing against that 80,
+but they are still counted, on a separate uncapped `view_self` line in
+`pace.json`, so a runaway loop is visible. Over the cap the verb stops and says
+"tomorrow". The cap is never raised to get a run finished
+(`docs/ruling-view-cap-2026-09-09.md`).
+
+**A profile you open by hand is invisible to that counter, and it still costs
+the account.** The 80 covers views taken through this toolkit and nothing else.
+If you go and read a profile by hand-driving a browser - browser-harness,
+Playwright by hand, clicking in Chrome - LinkedIn sees an ordinary profile view
+and `pace.json` sees nothing. It has happened twice, to two different agents,
+both of whom were being careful. So: use `read-profile` for a profile, and
+`py -3.11 tools/survey.py <label> <url>` when you need the raw DOM. Both
+register the view. If you do open one by hand anyway, say so out loud - the
+number in `pace.json` is now short by that many.
+
+**`read-profile` tells you whether you can invite this person, and whether you
+already have.** `can_connect` is true only where an invite control was
+positively seen, false where the page offers none, and null where LinkedIn has
+disabled one - which is not a no. `can_connect_reason` says which, in words;
+`connect_via` and `connect_url` say where the invitation lives. And
+`invitation_pending` is true when the card carries LinkedIn's own Pending
+control, meaning an invitation of ours is already outstanding and another cannot
+be sent. False there means the run read the card and saw no such control - not
+that nothing is outstanding.
 
 **`search-posts` does not give you a permalink by default.** A content-search
 card carries none - this was measured, not assumed. You get `share_url` (a

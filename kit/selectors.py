@@ -145,6 +145,21 @@ PROFILE_ROW_TOLERANCE = 6
 # right-hand rail's suggestion cards are full of it).
 INVITE_HREF = "custom-invite"
 INVITE_ARIA = re.compile(r"^Invite .+ to connect$", re.I)
+# AN INVITATION ALREADY SENT - F3, MEASURED 2026-09-10 on the profile the
+# Architect invited on 2026-09-09. The control sits in the same action row, an
+# <a> between Message and More:
+#     text        "Pending"
+#     aria-label  "Pending, click to withdraw invitation sent to <the person>"
+#     href        the profile's own URL. There is NO withdraw endpoint on the
+#                 card, so this says an invitation exists and says nothing about
+#                 how to take it back - which Phase 3 needs to know before it
+#                 goes looking for one here.
+#     disabled    false, filled false (Message is the filled control on that row)
+# Matched on the LABEL and not on the word "Pending", for the same reason
+# INVITE_ARIA is not matched on the word "Connect": a bare word is not an
+# identification. The cost of that choice is stated where it is made, in
+# people._pending.
+INVITE_PENDING_ARIA = re.compile(r"^Pending, click to withdraw invitation sent to .+", re.I)
 # The More button on somebody else's top card: text "More" on the wide layout,
 # aria-label "More" on the narrow one. The owner's OWN top card has neither -
 # its row reads Open to / Add section / Add custom button / Resources - which is

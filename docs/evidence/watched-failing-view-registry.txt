@@ -1,0 +1,55 @@
+F1 - the view counter has an uncounted path.
+
+The tests in tests/test_view_registry.py, watched failing on the code that
+shipped as a7e4ae5 (worktree at db8a246), BEFORE any of the fix was written.
+2026-09-10, 01:54.
+
+    py -3.11 -m unittest tests.test_view_registry
+
+The long assertIn dumps - the whole of Pace.__doc__, the whole README, the whole
+skill - are trimmed to their first line here. They are the artefact being
+asserted on, not the finding.
+
+  ERROR: WhichCounterASurfaceIsOn.test_the_owners_own_profile_is_a_self_view
+  AttributeError: module 'kit.browser' has no attribute 'surface_kind'
+  ERROR: WhichCounterASurfaceIsOn.test_somebody_elses_profile_is_a_capped_view
+  AttributeError: module 'kit.browser' has no attribute 'surface_kind'
+  ERROR: WhichCounterASurfaceIsOn.test_the_owners_own_page_is_a_self_view_by_id_and_by_slug
+  AttributeError: module 'kit.browser' has no attribute 'surface_kind'
+  ERROR: WhichCounterASurfaceIsOn.test_the_owners_own_page_admin_screen_is_a_self_view
+  AttributeError: module 'kit.browser' has no attribute 'surface_kind'
+  ERROR: WhichCounterASurfaceIsOn.test_another_companys_page_is_a_capped_view
+  AttributeError: module 'kit.browser' has no attribute 'surface_kind'
+  ERROR: WhichCounterASurfaceIsOn.test_our_own_notifications_are_a_self_view
+  AttributeError: module 'kit.browser' has no attribute 'surface_kind'
+  ERROR: WhichCounterASurfaceIsOn.test_a_search_page_is_a_capped_view
+  AttributeError: module 'kit.browser' has no attribute 'surface_kind'
+  ERROR: WhichCounterASurfaceIsOn.test_anything_unrecognised_is_capped_not_exempt
+  AttributeError: module 'kit.browser' has no attribute 'surface_kind'
+  ERROR: WhichCounterASurfaceIsOn.test_a_profile_named_like_the_owner_but_not_the_owner_is_capped
+  AttributeError: module 'kit.browser' has no attribute 'surface_kind'
+  ERROR: TheSurveyToolRegistersItsView.test_a_survey_says_in_the_registry_what_it_opened
+  IndexError: list index out of range          (nothing was registered at all)
+  ERROR: TheSurveyToolRegistersItsView.test_a_survey_over_the_cap_refuses_before_opening_anything
+  Navigated: ...                               (at the cap, it opened the page anyway)
+
+  FAIL: TheSurveyToolRegistersItsView.test_a_survey_of_somebody_elses_profile_is_counted_before_it_opens
+  AssertionError: 0 != 1 : the view must be registered BEFORE the page is opened
+  FAIL: TheSurveyToolRegistersItsView.test_a_survey_of_our_own_profile_is_counted_on_the_self_counter
+  AssertionError: Lists differ: [] != ['view_self']
+  FAIL: TheCounterStatesItsRealScope.test_the_pace_docstring_states_the_scope_it_can_deliver
+  AssertionError: 'views taken through this toolkit' not found in 'Daily caps and
+      gaps, kept in a file so they hold across sessions and agents. ...'
+  FAIL: TheCounterStatesItsRealScope.test_the_pace_docstring_names_the_path_it_cannot_see
+  AssertionError: 'hand-driving a browser' not found in 'Daily caps and gaps, ...'
+  FAIL: TheCounterStatesItsRealScope.test_the_readme_warns_that_a_hand_driven_view_is_invisible
+  AssertionError: 'hand-driving a browser' not found in '# cc-linkedin ...'
+  FAIL: TheCounterStatesItsRealScope.test_the_skill_warns_that_a_hand_driven_view_is_invisible
+  AssertionError: 'hand-driving a browser' not found in '--- name: linkedin ...'
+
+  Ran 17 tests in 1.066s
+  FAILED (failures=6, errors=11)
+
+The two that matter most are the pair at the top of the second block: the survey
+tool opened somebody else's profile and the pacing file recorded nothing, and it
+did so EVEN AT THE CAP. That is what happened for real on 2026-09-09, twice.

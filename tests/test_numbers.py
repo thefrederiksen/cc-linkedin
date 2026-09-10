@@ -20,9 +20,11 @@ label this toolkit asserts on ("Me", "More", "About this member", "Content
 engagement") says the rendering it reads is the English one, where this form
 should not occur at all; if it ever does, a person now finds out.
 """
+import io
 import os
 import sys
 import unittest
+from contextlib import redirect_stdout
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -113,12 +115,26 @@ class NumbersThatMustFail(unittest.TestCase):
         self.bad(None)
 
     def test_a_failure_names_what_it_read(self):
-        try:
+        """F4, 2026-09-10. This used to prove only that `1,2K` exits, while its
+        name promised the message names what it read - a check that certified
+        less than it claimed, which is the defect this repository keeps finding
+        in its own instruments. It now reads the message.
+
+        R6.1's European measurement is STILL NOT MADE. Nothing here has run in
+        another locale, so `1,2K` still fails by design rather than resolving to
+        1200 or 12, and that refusal is what is asserted: accepting it would mean
+        guessing between two answers a factor of ten apart, silently, in a field
+        a caller writes into a CRM. This test is the thing that would go red if
+        somebody resolved it by reasoning instead of by measuring."""
+        out = io.StringIO()
+        with self.assertRaises(SystemExit), redirect_stdout(out):
             P.to_int("1,2K", "the connections count")
-        except SystemExit:
-            pass
-        else:
-            self.fail("1,2K was accepted")
+        said = out.getvalue()
+        self.assertIn("1,2K", said, "the message must quote what it actually read")
+        self.assertIn("the connections count", said,
+                      "and name the field, so the reader knows where to look")
+        self.assertIn("thousands separator only before exactly three digits", said,
+                      "and give the rule it broke, not just that it broke one")
 
 
 if __name__ == "__main__":

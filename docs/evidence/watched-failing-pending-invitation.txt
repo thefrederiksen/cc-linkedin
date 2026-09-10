@@ -1,0 +1,64 @@
+F3 - a pending invitation was reported as "no invite control".
+
+The tests in tests/test_pending_invitation.py, watched failing on the code that
+shipped as a7e4ae5, BEFORE any of the fix was written. 2026-09-10, 02:20.
+
+    py -3.11 -m unittest tests.test_pending_invitation
+
+Read the second group first. `AttributeError: 'NoneType' object has no attribute
+'page'` is the old behaviour caught in the act: handed a top card that plainly
+carries a Pending control, `_connect` reaches past it for the browser, opens the
+More menu, waits for it to settle, finds no invitation in it and reports the
+absence - having had the answer in its hand before it started.
+
+  ERROR: ThePendingControlIsIdentifiedNotGuessed.test_the_pending_control_is_found_by_its_label
+  AttributeError: module 'kit.people' has no attribute '_pending'
+  ERROR: ThePendingControlIsIdentifiedNotGuessed.test_a_card_with_no_pending_control_has_none
+  AttributeError: module 'kit.people' has no attribute '_pending'
+  ERROR: ThePendingControlIsIdentifiedNotGuessed.test_the_bare_word_pending_is_not_a_pending_invitation
+  AttributeError: module 'kit.people' has no attribute '_pending'
+  ERROR: ThePendingControlIsIdentifiedNotGuessed.test_an_empty_control_list_has_no_pending_control
+  AttributeError: module 'kit.people' has no attribute '_pending'
+
+  ERROR: APendingInvitationIsReportedAsOne.test_can_connect_is_false_not_null
+  AttributeError: 'NoneType' object has no attribute 'page'
+  ERROR: APendingInvitationIsReportedAsOne.test_the_reason_names_the_pending_state
+  AttributeError: 'NoneType' object has no attribute 'page'
+  ERROR: APendingInvitationIsReportedAsOne.test_it_hands_out_no_invitation_url
+  AttributeError: 'NoneType' object has no attribute 'page'
+  ERROR: APendingInvitationIsReportedAsOne.test_invitation_pending_is_true
+  AttributeError: 'NoneType' object has no attribute 'page'
+  ERROR: APendingInvitationIsReportedAsOne.test_the_pending_path_never_opens_the_more_menu
+  AttributeError: 'NoneType' object has no attribute 'page'
+  ERROR: APendingInvitationIsReportedAsOne.test_a_profile_we_can_invite_is_not_pending
+  ValueError: not enough values to unpack (expected 5, got 4)
+  ERROR: APendingInvitationIsReportedAsOne.test_our_own_profile_is_not_pending
+  ValueError: not enough values to unpack (expected 5, got 4)
+  ERROR: APendingInvitationIsReportedAsOne.test_pending_wins_over_an_invite_control_on_the_same_card
+  ValueError: not enough values to unpack (expected 5, got 4)
+
+  ERROR: ThePendingLabelIsTheMeasuredOne.test_the_selector_matches_what_the_live_page_carried
+  AttributeError: module 'kit.selectors' has no attribute 'INVITE_PENDING_ARIA'
+  ERROR: ThePendingLabelIsTheMeasuredOne.test_the_selector_does_not_match_a_bare_pending
+  AttributeError: module 'kit.selectors' has no attribute 'INVITE_PENDING_ARIA'
+  ERROR: ThePendingLabelIsTheMeasuredOne.test_the_selector_does_not_match_an_invite_label
+  AttributeError: module 'kit.selectors' has no attribute 'INVITE_PENDING_ARIA'
+
+  Ran 15 tests
+  FAILED (errors=15)
+
+THE MEASUREMENT BEHIND THE FIXTURE IN THESE TESTS. Taken 2026-09-10 02:12 with
+tools/survey.py against the profile the Architect sent a real invitation to on
+2026-09-09, for one capped view (the counter went 42 -> 43, and the survey tool
+registered it - which is F1, working, on its first live outing). The top card's
+visible action row, in order, left to right:
+
+    A  text "Message"  aria ""                                              filled=true
+    A  text "Pending"  aria "Pending, click to withdraw invitation sent to <name>"
+                       href <the profile's own URL>  disabled=false  filled=false
+    B  text "More"     aria ""                                              filled=false
+
+Four elements in the top card mention "Pending" at all: that anchor's label, the
+SPAN carrying its visible text, and their two wrappers. There is no withdraw
+endpoint anywhere on the card - the href is the profile's own URL - so nothing
+here tells Phase 3 how to withdraw, only that there is something to withdraw.

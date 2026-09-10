@@ -25,7 +25,7 @@ cc-linkedin react <permalink> --expect "phrase" --kind like|celebrate|support|lo
 cc-linkedin unreact <permalink>
 cc-linkedin delete-comment <permalink> --match "words in one of our comments"
 cc-linkedin delete-post <permalink> --expect "phrase"
-cc-linkedin selftest --post <our post> --page ID --page-name NAME \n    --other-profile <a /in/ URL> --other-expect "name=...; headline=...; location=...; \n        company=...; degree=...; primary=...; can_connect=...; connections=..." \n    --menu-profile <a /in/ URL whose invitation is behind More and whose top card states \n        no employer> --menu-expect "...; company=none; ..."
+cc-linkedin selftest --post <our post> --page ID --page-name NAME \n    --other-profile <a /in/ URL> --other-expect "name=...; headline=...; location=...; \n        company=...; degree=...; primary=...; can_connect=...; connections=..." \n    --menu-profile <a /in/ URL whose invitation is behind More and whose top card states \n        no employer> --menu-expect "...; company=none; ..." \n    --pending-profile <a /in/ URL we have already invited and who has not answered>
 ```
 
 Every writing verb refuses unless `--expect` is found in the post, waits its
@@ -57,9 +57,29 @@ identical from here and the broken selector is far more likely.
 Reads are paced on their OWN clock - 3 to 8 seconds apart, 80 a day - so a
 profile read never makes the next comment wait 90 seconds. One view is a profile
 or a company page opened, or one page of search results however many cards it
-holds. `notifications` and `stats` cost nothing: they are our own screens.
+holds. Our own surfaces - Soren's profile, a Page he administers, notifications
+- are counted on a second counter, `view_self`, which is reported and NOT capped:
+opening your own profile notifies nobody and looks like nobody's scraper, but a
+runaway loop should still show up in `pace.json`.
 
-Two things worth knowing before you use them:
+**The counter counts views taken through this toolkit, and nothing else.** It is
+a floor under the day's real total, not the total. A profile you open by
+hand-driving a browser - browser-harness, Playwright by hand, or clicking in
+Chrome yourself - spends exactly the same real-world budget against the account
+and appears nowhere in `pace.json`. That happened twice on 2026-09-09, to two
+different people, neither of whom noticed. If you are surveying a page, run it
+through `tools/survey.py`, which registers its view like every read verb here;
+if you open one any other way, the number in `pace.json` is short by that many.
+
+`read-profile` answers the connection question in four fields, never one:
+`can_connect` (true only where an invite control was positively seen, null where
+the page disabled one), `can_connect_reason` in words, `connect_via` and
+`connect_url`, plus `invitation_pending` - true where the card carries
+LinkedIn's own Pending control, which means an invitation of ours is outstanding
+and another cannot be sent. `invitation_pending: false` means this run read the
+card and saw no such control; it is not a promise that nothing is outstanding.
+
+Three things worth knowing before you use them:
 
 * `search-posts` gives you `share_url` (a `lnkd.in` link) and `permalink` (the
   real `urn:li:activity` URL, or null). There is no field called `url`, because

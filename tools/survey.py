@@ -42,6 +42,14 @@ TWO DUMPS, ON PURPOSE. This repository is PUBLIC.
 Nothing here clicks, types, or submits. The only interaction is expanding a
 "see more" control when --expand is given, because a collapsed About section
 cannot be measured.
+
+A SURVEY IS STILL A VIEW - F1, 2026-09-10. It opens a real page in the real
+signed-in browser, and from LinkedIn's side it is indistinguishable from
+`read-profile`. So it registers on the same counters and obeys the same daily
+cap: somebody else's surface on `view` (cap 80), one of the owner's own on
+`view_self` (counted, uncapped). Over the cap it refuses before opening
+anything. It did none of this until F1, and two profile views went unrecorded
+through here on 2026-09-09 while the counter sat at eighty.
 """
 import argparse
 import json
@@ -52,7 +60,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from kit.browser import Browser, log
+from kit.browser import Browser, Pace, log, surface_kind
 
 # Words that are LinkedIn's own furniture rather than anybody's data. A name or
 # a run of text is printed as-is only when EVERY word in it is one of these.
@@ -279,7 +287,28 @@ def survey(br, label, url, dump, probes, depth, settle, expand, scope=None, js_e
     dump.both("# survey %s" % label)
     dump.both("# taken   %s" % time.strftime("%Y-%m-%d %H:%M:%S"))
     both_redacted(dump, "# request %s" % url)
+
+    # F1, 2026-09-10. A SURVEY IS A VIEW. This tool opens a real profile in the
+    # signed-in browser, against the owner's account, and LinkedIn cannot tell it
+    # from a read verb - so neither may the counter. It registered nothing until
+    # today, and two profile views were taken through it on 2026-09-09 while
+    # pace.json sat at the cap. There is no exemption for "just looking".
+    #
+    # The branch is written out here rather than hidden in a helper, and it is the
+    # third copy of the same four lines (read_profile, read_company, this). That
+    # is deliberate: `before_self_view` is the uncapped path, so reaching it is a
+    # positive act by name at a call site somebody can read, never something a
+    # wrapper does on a caller's behalf.
+    pace = Pace()
+    kind = surface_kind(url)
+    what = "survey %s of %s" % (label, url)
+    if kind == "view_self":
+        pace.before_self_view(what + " (a surface the owner owns)")
+    else:
+        pace.before_view(what)
+
     br.goto(url, settle=settle)
+    pace.after_view()
     if expand:
         for name in (r"^see more$", r"^…see more$", r"^Show all", r"^more$"):
             try:
@@ -409,7 +438,10 @@ def main():
             final = survey(br, a.label, a.url, dump, a.probe, a.depth, a.settle, a.expand, a.scope, a.js)
     finally:
         dump.close()
-    print("RESULT survey label=%s final=%s safe=%s full=%s" % (a.label, final, a.out, a.full_out))
+    # The counter this survey was charged to is on the RESULT line, so a run that
+    # took a view says so where anybody reading the output can see it.
+    print("RESULT survey label=%s final=%s counted=%s safe=%s full=%s"
+          % (a.label, final, surface_kind(a.url), a.out, a.full_out))
 
 
 if __name__ == "__main__":
