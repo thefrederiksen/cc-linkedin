@@ -313,5 +313,96 @@ class ProfileBMustBeTheShapeTheDesignAsksFor(unittest.TestCase):
                              "%r must not satisfy profile B's required shape" % degree)
 
 
+class ABlockedRowIsNotAPassedOne(unittest.TestCase):
+    """Design section 5, and it is the largest fail-open instrument this suite
+    could grow.
+
+    Six Phase 3 acceptance rows cannot run without somebody who consents to
+    receiving a real invitation, a real message and a deliberately broken one.
+    The tempting shapes are both wrong: skipping them silently makes a green run
+    mean less than it says, and folding them into `failed` makes a run that is
+    working look broken. So they are BLOCKED - declared like every other row,
+    reported by name, counted on their own, and enough on their own to make the
+    process exit non-zero.
+
+    What these tests hold is the accounting, because the accounting is the whole
+    mechanism: a blocked row that reached the `passed` counter would be an
+    acceptance row nobody had run, reading as one that had.
+    """
+
+    def test_every_blocked_row_is_declared_so_the_inventory_owes_it_a_report(self):
+        names = [n for n, _ in T.PHASE3_BLOCKED]
+        self.assertTrue(names)
+        rows = T.Rows()
+        rows.declare(T.PHASE3_ROWS)
+        rows.declare(tuple(names))
+        for n in names:
+            self.assertIn(n, rows.declared)
+        # ... and a run that never reported them is caught by name
+        ok, detail = rows.reconcile()
+        self.assertFalse(ok)
+        for n in names:
+            self.assertIn(n, detail)
+
+    def test_every_blocked_row_carries_a_reason_in_words(self):
+        for name, why in T.PHASE3_BLOCKED:
+            self.assertTrue(why and len(why) > 20,
+                            "%s is blocked with no reason a person could act on" % name)
+
+    def test_no_row_is_both_runnable_and_blocked(self):
+        blocked = {n for n, _ in T.PHASE3_BLOCKED}
+        self.assertEqual(blocked & set(T.PHASE3_ROWS), set(),
+                         "a row that is both would be reported twice and the inventory "
+                         "would fail for the wrong reason")
+
+    def test_the_runnable_rows_are_the_ones_that_reach_nobody(self):
+        """The split is the point: every row this suite RUNS is staged or a
+        read, and every row that would reach a person is blocked. If a --submit
+        row ever moves into PHASE3_ROWS, this is what says so."""
+        self.assertIn("P3-2", {n for n, _ in T.PHASE3_BLOCKED})   # connect --submit
+        self.assertIn("P3-6", {n for n, _ in T.PHASE3_BLOCKED})   # message --submit
+        self.assertIn("P3-8", {n for n, _ in T.PHASE3_BLOCKED})   # the broken guard
+        self.assertNotIn("P3-2", T.PHASE3_ROWS)
+        self.assertNotIn("P3-6", T.PHASE3_ROWS)
+        self.assertNotIn("P3-8", T.PHASE3_ROWS)
+
+    def test_the_phase3_names_are_distinct(self):
+        both = list(T.PHASE3_ROWS) + [n for n, _ in T.PHASE3_BLOCKED]
+        self.assertEqual(len(set(both)), len(both))
+
+
+class TheRollingCapRowActuallyExercisesTheCap(unittest.TestCase):
+    """P3-14 runs against a throwaway pacing file, so it can be exercised here
+    exactly as the live run exercises it - which is the point of writing it that
+    way rather than reading the machine's own numbers."""
+
+    def test_the_row_passes_on_the_code_as_it_stands(self):
+        checks = T._cap_checks()
+        self.assertTrue(checks)
+        for label, ok, detail in checks:
+            self.assertTrue(ok, "%s: %s" % (label, detail))
+
+    def test_the_row_does_not_touch_the_machines_own_pacing_file(self):
+        import kit.browser as _B
+        before = _B.STATE_DIR
+        T._cap_checks()
+        self.assertEqual(_B.STATE_DIR, before,
+                         "P3-14 left the state directory pointing somewhere else, which "
+                         "would send every later row's pacing to a temporary folder")
+
+    def test_it_would_fail_if_the_retention_stopped_covering_the_window(self):
+        """The coupling between the two numbers, watched failing. A rolling
+        check over a file that keeps one day is decoration."""
+        import kit.browser as _B
+        keep = _B.Pace.RETAIN_DAYS
+        _B.Pace.RETAIN_DAYS = 1
+        try:
+            checks = T._cap_checks()
+        finally:
+            _B.Pace.RETAIN_DAYS = keep
+        self.assertFalse(all(ok for _, ok, _ in checks),
+                         "the retention was cut to one day and every check still passed")
+
+
 if __name__ == "__main__":
     unittest.main()
