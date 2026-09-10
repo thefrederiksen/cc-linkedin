@@ -342,3 +342,242 @@ DIALOG_OPEN = 'dialog[open], [data-testid="dialog"]'
 # what the page said, never what the design remembered.
 REINVITE_RESTRICTION = re.compile(
     r"won.?t be able to resend to this person for ([^.]+)", re.I)
+
+
+# ============================================================================
+# PHASE 3, the remaining seven verbs. Measured 2026-09-10 on the live pages;
+# the dumps are docs/surveys/custom-invite-2026-09-10.txt,
+# custom-invite-add-a-note-2026-09-10.txt,
+# messaging-compose-send-options-2026-09-10.txt, messaging-list-2026-09-10.txt,
+# messaging-thread-read-2026-09-10.txt, invitations-received-2026-09-10.txt,
+# company-follow-not-followed-2026-09-10.txt, company-follow-second-2026-09-10.txt
+# and page-invite-connections-2026-09-10.txt. What they mean is in
+# docs/phase-3-survey.md and docs/phase-3-survey-2.md.
+#
+# WHICH RENDERING EACH SURFACE SERVES, and it is split down the middle:
+#   /preload/custom-invite/            new server-driven
+#   /messaging/... (list, thread, composer)   OLD Ember: msg-* classes,
+#                                      data-test-* attributes, #emberNN ids.
+#                                      The [data-urn] test reports "react" on
+#                                      these and is WRONG - the page carries no
+#                                      data-urn at all. Nothing here uses it.
+#   /mynetwork/invitation-manager/     new server-driven
+#   /company/<key>/ (member view)      OLD Ember: org-*, artdeco-*
+#   /company/<id>/admin/?invite=true   OLD Ember
+# ============================================================================
+
+# TWO DIALOG IMPLEMENTATIONS ON TWO PHASE 3 SURFACES, AND A SELECTOR FOR EITHER
+# ONE IS BLIND ON THE OTHER - measured 2026-09-10.
+#
+#   the withdraw confirmation   <dialog open data-testid="dialog">   NATIVE.
+#       A native <dialog> carries an IMPLICIT role, so it has no role attribute
+#       and '[role="dialog"]' MATCHES NOTHING. A probe that looked for exactly
+#       that reported "no confirmation appeared" three times while the
+#       confirmation sat open on screen intercepting every pointer event.
+#   the custom-invite modal     <div role="dialog" aria-labelledby="send-invite-modal">
+#       An ordinary div with an EXPLICIT role. 'dialog[open]' matches nothing
+#       here.
+#
+# So anything in this toolkit that asks "is a dialog on screen" asks for BOTH
+# forms, and the answer "none" is treated as a broken instrument on any surface
+# where one has ever been measured. DIALOG_OPEN above is the withdraw surface's
+# own narrower selector; this is the one to reach for on a surface whose modal
+# has not been measured.
+DIALOG_ANY = ('dialog[open], dialog, [data-testid="dialog"], [role="dialog"], '
+              '[role="alertdialog"], [aria-modal="true"]')
+
+# -- connect: the custom-invite page ----------------------------- 2026-09-10
+# The destination of the invite control read_profile already resolves. It is a
+# PLAIN GET and it sends nothing: measured by counting the Sent tab's own
+# People pill before and after (39, 39, and 39 again after Add a note).
+CUSTOM_INVITE_URL = "https://www.linkedin.com/preload/custom-invite/?vanityName=%s"
+ON_CUSTOM_INVITE = "/preload/custom-invite"
+# The modal, identified by what labels it rather than by the word "dialog".
+INVITE_MODAL = '[role="dialog"][aria-labelledby="send-invite-modal"]'
+INVITE_MODAL_LABELLEDBY = "send-invite-modal"
+# The controls, by ACCESSIBLE NAME, each measured verbatim. Note that the
+# landing dialog has NO Send: its two actions are "Add a note", which reveals
+# the note box, and "Send without a note", which sends immediately with no
+# further confirmation at all.
+INVITE_ADD_NOTE = "Add a note"
+INVITE_SEND_WITHOUT_NOTE = "Send without a note"
+INVITE_CANCEL_NOTE = "Cancel adding a note"
+# The note dialog's Send. Its VISIBLE text is "Send"; its accessible name is
+# "Send invitation". It is disabled while the note box is empty, which is a
+# usable pre-flight - a run that finds it enabled before typing is not looking
+# at an empty note dialog.
+INVITE_SEND = "Send invitation"
+INVITE_DISMISS = "Dismiss"
+NOTE_BOX = "textarea#custom-message"
+# THE LIMIT IS READ OFF THE PAGE, NEVER REMEMBERED. Design 4.1 said 200; the
+# page says 300, in two places at once - a sentence and a live counter. The
+# textarea carries NO maxlength attribute, so the browser does not enforce it
+# and the tool must.
+NOTE_LIMIT_SENTENCE = re.compile(r"limit personal note to (\d[\d,]*) characters", re.I)
+NOTE_COUNTER = re.compile(r"\b(\d[\d,]*)\s*/\s*(\d[\d,]*)\b")
+
+# -- messaging --------------------------------------------------- 2026-09-10
+# THE LIST IS REACHED THROUGH THE BARE COMPOSE ROUTE AND NOT THROUGH /messaging/.
+# Loading /messaging/ is believed to select a conversation into the reading pane,
+# which MARKS IT READ and cannot be undone invisibly; that belief is untested and
+# deliberately stays untested, because the only experiment is somebody's real
+# conversation. Measured 2026-09-10: a bare /messaging/compose/ renders the whole
+# list with NO thread open (li.msg-s-message-list__event 0) and no quick-reply
+# row, and it needs no profileUrn.
+MESSAGING_INBOX = "https://www.linkedin.com/messaging/compose/"
+ON_MESSAGING = "/messaging/"
+CONVO_LIST = "ul.msg-conversations-container__conversations-list"
+CONVO_CARD = ".msg-conversation-card"
+# The per-row unread FLAG is a class token on an inner container. The per-row
+# unread COUNT is a separate element, div[aria-label="N unread message(s)"].
+# .msg-conversation-listitem__unread-count DOES NOT EXIST - it was probed and
+# came back zero on a list with four unread rows.
+CONVO_UNREAD_CLASS = "msg-conversation-card__convo-item-container--unread"
+CONVO_NAMES = ".msg-conversation-card__participant-names"
+# Present on 8 of 10 rows, measured. A row parser that REQUIRES all three fields
+# drops a fifth of the inbox and reports the rest as a complete read.
+CONVO_SNIPPET = ".msg-conversation-card__message-snippet"
+CONVO_TIME = "time.msg-conversation-card__time-stamp"
+CONVO_UNREAD_COUNT = 'div[aria-label*="unread"]'
+# The filter pills. read-inbox --unread drives the page's own filter rather than
+# filtering rows itself, because the page knows what unread means and this tool
+# is reading a class token.
+INBOX_FILTER_PILL = "[data-test-messaging-inbox-filters__filter-pill]"
+INBOX_UNREAD_PILL = '[data-test-messaging-inbox-filters__filter-pill="UNREAD"]'
+
+# The composer. Same element wherever it is reached from - a profile's Message
+# href and /messaging/ are the same page.
+COMPOSER = 'div[role="textbox"].msg-form__contenteditable'
+# type=submit INSIDE A FORM. That is why rule 0.2 exists: a form with a submit
+# button sends on Enter, and Browser.type_text presses one Enter per newline.
+COMPOSER_SEND = "button.msg-form__send-button"
+# An EMPTY composer holds ONE character, not zero - measured. A guard that reads
+# "empty" as length zero is wrong before anybody has typed.
+COMPOSER_EMPTY_LEN = 1
+
+# THE BUBBLE COUNT, and it is this selector and no other. Rule 0.2's guard
+# counts messages before typing and asserts the count is unchanged before
+# submitting. `.msg-s-message-list-content > li` ALSO contains a top-of-list
+# marker, a hidden loader, a typing indicator, a quick-reply row and a
+# bottom-of-list marker: it reported 9 where the answer was 4, and a guard that
+# reads 9 before and 9 after cannot see a fragment that went.
+THREAD_EVENT = "li.msg-s-message-list__event"
+THREAD_BODY = ".msg-s-event-listitem__body"
+THREAD_SENDER = ".msg-s-message-group__name"
+THREAD_TIME = "time.msg-s-message-group__timestamp"
+# THE THREAD HEADER, which is where rule 0.3's second naming is read from.
+# Measured 2026-09-10 in docs/surveys/messaging-thread-read-2026-09-10.txt:
+#   div#thread-detail-jump-target.msg-title-bar
+#     div.shared-title-bar__title.msg-title-bar__title-bar-title
+#       a.msg-thread__link-to-profile   href=/in/<slug>
+# It carries BOTH the recipient's displayed name and their profile slug, so the
+# person the composer is pointed at can be checked against --expect-name AND
+# against the URL the caller passed - two namings off one control.
+THREAD_TITLE_BAR = "div.msg-title-bar, #thread-detail-jump-target"
+THREAD_HEADER_LINK = "a.msg-thread__link-to-profile"
+
+# ONE CLICK ON ONE OF THESE SENDS A CANNED MESSAGE TO THAT PERSON. No composer,
+# no confirmation, no draft stage. They sit at the end of an ordinary thread's
+# message list and their accessible names begin with a common word - amendment
+# A6. NOTHING in this toolkit may click a control by a name match that could
+# resolve to one of these, and nothing inside a thread is clicked except the
+# composer and its own Send, each identified positively before it is touched.
+QUICK_REPLIES = "li.msg-s-message-list__quick-replies-container"
+QUICK_REPLY_ARIA = re.compile(r"^Reply to conversation with ", re.I)
+# The thread's own address, which only exists once a thread is open. A3: the
+# LIST's rows carry no href and no id, so read-inbox cannot return one.
+THREAD_URL = re.compile(r"/messaging/thread/([^/?#]+)", re.I)
+
+# -- invitations received ---------------------------------------- 2026-09-10
+INVITATIONS_RECEIVED = "https://www.linkedin.com/mynetwork/invitation-manager/received/"
+# THE TWO CONTROLS ON THIS PAGE THAT CHANGE ANOTHER PERSON'S WORLD. They are
+# named here so that a selector can be checked AGAINST them and refused, not so
+# that anything can press them: accepting and declining are out of scope for
+# Phase 3 (design section 6) and `invitations` is read-only in fact.
+RECEIVED_ACCEPT_ARIA = re.compile(r"^Accept (.+?)(?:’|')s invitation$", re.I)
+RECEIVED_IGNORE_ARIA = re.compile(r"^Ignore an invitation to connect from (.+)$", re.I)
+# A4: the count the page publishes is a PER-FILTER PILL - "Focused (2)",
+# "Verified (2)" on Received, "People (40)" on Sent. There is no "N pending
+# invitations" sentence and no "No pending invitations" either; both were
+# searched for and are absent. So a parse is checked against the pill of the
+# SAME filter whose rows were parsed, and a pill that cannot be read means the
+# zero-rows exception does not apply and zero rows is a FAIL.
+RECEIVED_COUNT_PILL = re.compile(r"\b(Focused|Verified|Other|People)\s*\((\d[\d,]*)\)", re.I)
+# WHICH FILTER'S ROWS ARE ON SCREEN, and it cannot be read off the Focused pill.
+# Measured 2026-09-10: `Focused (1)` is a plain BUTTON with no aria-checked at
+# all, and `Verified (1)` is a RADIO carrying aria-checked="false". So there is
+# no attribute that says "Focused is on" - what there is, is a positive way to
+# say it is NOT: no filter radio is checked.
+#   no radio checked   -> the rows are the landing set, compare with Focused (N)
+#   one radio checked  -> the rows are that filter's, compare with ITS pill
+#   two or more        -> a page state this was not written against; refuse
+RECEIVED_FILTER_RADIO = '[role="radio"]'
+RECEIVED_DEFAULT_FILTER = "Focused"
+# A received row carries the person, their headline, and the two controls. It
+# carries NO note and NO time element - measured on the one row this account had
+# on 2026-09-10, whose <time> count was zero. Design 4.6 asks for both. See
+# kit/connections.invitations for what that means and what it does NOT prove.
+RECEIVED_ROW_TIME = "time"
+
+# -- follow / unfollow, the classic org page --------------------- 2026-09-10
+# The cleanest control measured in this phase. THREE independent signals agree
+# on the state and aria-pressed is the one to read:
+#   not following  aria-pressed="false"  aria-label="Follow"     text "Follow"
+#   following      aria-pressed="true"   aria-label="Following"  text "Following"
+#                  and the class token `is-following`
+# Follow controls for OTHER organisations appear further down the same page on
+# recommendation cards, with the same classes MINUS the org-top-card- part, so
+# the top card is scoped exactly as it is on a profile.
+COMPANY_TOP_CARD = ".org-top-card"
+FOLLOW_BUTTON = "button.org-company-follow-button[aria-pressed]"
+FOLLOW_TOP_CARD_CLASS = "org-top-card-primary-actions"
+FOLLOW_STATE_FOLLOWING = "is-following"
+FOLLOW_NAME_FOLLOWING = re.compile(r"^Following$", re.I)
+FOLLOW_NAME_FOLLOW = re.compile(r"^Follow$", re.I)
+# One company URL redirected to /posts/?feedView=all and the other stayed put,
+# measured on the same night. A verb that asserts on the URL it asked for fails
+# on the first one, so what is asserted is the company KEY being in the final
+# URL rather than the whole URL matching.
+COMPANY_KEY_IN_URL = "/company/%s"
+
+# -- invite to follow: the Page's own dialog --------------------- 2026-09-10
+# Clicking "Invite connections" appends ?invite=true to the admin URL, so the
+# dialog is reachable BY URL and nothing has to hunt for the trigger.
+PAGE_INVITE_URL = "https://www.linkedin.com/company/%s/admin/?invite=true"
+# THE DIALOG IS NOT IDENTIFIED BY ITS ACCESSIBLE NAME, AND THAT IS A CORRECTION
+# TO A MEASUREMENT TAKEN SEVEN HOURS EARLIER. The first survey recorded
+# `[role=dialog] aria-label="Invite to follow"`. On the second pass, same
+# account, same Page, the SAME dialog carried `aria-label=null` and the words
+# "Invite to follow" were only its heading text. A selector written against the
+# first reading finds NOTHING on the second - the failure that looks exactly
+# like "the dialog did not open".
+#
+# So it is found by role and then CONFIRMED by two things the dialog states
+# about itself: the heading, and the credits line. Design section 1 asks for two
+# passes on every surface precisely because of this, and this is the first time
+# in Phase 3 that two passes of the same surface disagreed.
+PAGE_INVITE_DIALOG = '[role="dialog"], [aria-modal="true"]'
+PAGE_INVITE_DIALOG_NAME = "Invite to follow"
+# ?invite=true on /admin/ REDIRECTS to /admin/dashboard/?invite=true - measured
+# 2026-09-10. A verb asserting on the URL it asked for fails here, so what is
+# asserted is the Page key AND invite=true surviving the redirect.
+PAGE_INVITE_QUERY = "invite=true"
+# Each candidate row carries a control whose accessible name NAMES THE PERSON:
+# "Select <Full Name>". That is the positive identification a pick needs - the
+# checkbox beside it is a bare input.ember-checkbox with no label at all, and
+# twenty of them are on screen at once before anybody has searched.
+PAGE_INVITE_SELECT_ARIA = re.compile(r"^Select (.+)$", re.I)
+PAGE_INVITE_CHECKBOX = "input.ember-checkbox"
+# Invite and Unselect all are BOTH disabled until something is selected, which
+# is a usable pre-flight: a run that finds Invite enabled before it picked
+# anybody is not looking at a fresh dialog.
+PAGE_INVITE_UNSELECT_ALL = "Unselect all"
+# "50/50 credits available - Credit refill: October 1, 2026". The FIRST number
+# is what is left; the design did not know the line also carries a refill date.
+# The before-and-after proof reads the first number, because the credit is the
+# thing that is actually spent - a row that says "Invited" is not.
+PAGE_INVITE_CREDITS = re.compile(r"(\d[\d,]*)\s*/\s*(\d[\d,]*)\s+credits?\s+available", re.I)
+PAGE_INVITE_REFILL = re.compile(r"Credit refill:\s*([^\n]+)", re.I)
+PAGE_INVITE_SEARCH = 'input[role="combobox"]'
+PAGE_INVITE_OPTION = '[role="option"]'
+PAGE_INVITE_SUBMIT = re.compile(r"^Invite$", re.I)
