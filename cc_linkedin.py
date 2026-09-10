@@ -769,9 +769,25 @@ def main():
     sp.add_argument("--page-name", help="exact Page name")
     sp.add_argument("--profile", default="https://www.linkedin.com/in/sorenfrederiksen/",
                     help="the owner's own profile (row P2-1)")
+    sp.add_argument("--profile-expect", default=T.SOREN_EXPECT,
+                    help="what the owner's own profile says, field by field, for row P2-1: "
+                         + T.EXPECT_SYNTAX)
     sp.add_argument("--other-profile",
-                    help="a 1st- or 2nd-degree profile URL for row P2-2. REQUIRED and never "
-                         "committed: this repository is public. Without it the run fails.")
+                    help="a 1st- or 2nd-degree profile URL for rows P2-2 and P2-2b. REQUIRED "
+                         "and never committed: this repository is public. Without it the run "
+                         "fails.")
+    sp.add_argument("--other-expect",
+                    help="what THAT profile says, read off the screen by a person, for row "
+                         "P2-2. REQUIRED and never committed. " + T.EXPECT_SYNTAX)
+    sp.add_argument("--menu-profile",
+                    help="row P2-10, and the shape both defects of 2026-09-09 appeared on: a "
+                         "profile whose invitation is a MENU ITEM behind More rather than a "
+                         "control on the top card, AND whose top card states no current employer. "
+                         "REQUIRED and never committed. Without it the More-menu path never runs "
+                         "and the empty-employer guard is never exercised.")
+    sp.add_argument("--menu-expect",
+                    help="what THAT profile says, for row P2-10. REQUIRED, never committed, and "
+                         "its company must be none. " + T.EXPECT_SYNTAX)
     sp.add_argument("--company", default="centerconsulting-inc", help="company slug (row P2-4)")
     sp.add_argument("--query-people", default="Soren Frederiksen mindzie",
                     help="people search whose first row is the owner (row P2-5)")

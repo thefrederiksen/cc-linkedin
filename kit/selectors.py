@@ -101,11 +101,81 @@ PROFILE_SEE_MORE = re.compile(u"^\s*(?:\u2026\s*)?(?:see\s+)?more\s*$", re.I)
 # disagree are a FAIL, never a first-in-document-order guess.
 DEGREE_TEXT = re.compile(u"^[\u00b7\u2022\s]*(1st|2nd|3rd\+?|You)\s*$", re.I)
 DEGREES = ("self", "1st", "2nd", "3rd", "3rd+")
-# The primary action, read from what the button SAYS. On the owner's own profile
-# none of these is present, which is why `degree` is "self" there and
-# `connection_state` is null.
-CONNECTION_STATES = ("Connect", "Pending", "Message", "Follow", "Following")
+
+# THE FIELD THAT WAS REMOVED, AND WHY -------------------------- 2026-09-09
+# There used to be a CONNECTION_STATES tuple here - ("Connect", "Pending",
+# "Message", "Follow", "Following") - and read-profile reported the first of
+# those words it could find among the top card's controls, as
+# `connection_state`. DO NOT PUT IT BACK. Measured on
+# a 3rd-degree profile on 2026-09-09: the action row reads
+# "Message Follow More", there is no Connect control on the top card at all,
+# and the invitation lives in the More menu. The old field answered "what does
+# a button here say" while every caller reads it as "can I connect with this
+# person" - so it answered Message, and a caller deciding whether to send an
+# invitation concluded wrongly. It is replaced by two fields read from the two
+# different controls they actually come from: `primary_button` (the filled
+# control, below) and `can_connect` (the invite control, wherever it lives).
+
+# THE PRIMARY CONTROL IS IDENTIFIED BY ITS FILL, NOT BY ITS POSITION AND NOT BY
+# ITS WORDS. Measured 2026-09-09 on five profiles: every top card paints
+# exactly one action in LinkedIn blue and outlines the rest, and the filled one
+# is NOT always the leftmost - on one of them the row reads
+# "Message Follow More" left to right and the filled control is Message. The
+# colour sits on an inner <span>, never on the <a>/<button> itself, so the whole
+# subtree is searched. Class names on this surface are hashed and meaningless;
+# this colour is not. If LinkedIn restyles, read-profile FAILS naming this
+# constant and the fix is this one line.
+PROFILE_PRIMARY_FILL = "rgb(10, 102, 194)"
+# The action row is then every visible control sitting on the same line as that
+# one, within this many pixels of its top edge.
+PROFILE_ROW_TOLERANCE = 6
+
+# THE INVITE CONTROL, WHEREVER IT LIVES. Measured 2026-09-09, three shapes on
+# five profiles, and the tool must not care which shape it got:
+#   * two of them - on the top card: an <a>
+#     reading "Connect", aria-label "Invite <name> to connect", href
+#     /preload/custom-invite/?vanityName=<slug>
+#   * two more - NOT on the top card at
+#     all; a More-menu item reading "Connect", same custom-invite href, and no
+#     aria-label
+#   * one already connected - no invite control anywhere, and
+#     the More menu offers "Remove connection" instead
+# The href is the reliable marker and the aria-label is the second; the word
+# "Connect" alone is not, because it appears all over a profile page (the
+# right-hand rail's suggestion cards are full of it).
+INVITE_HREF = "custom-invite"
+INVITE_ARIA = re.compile(r"^Invite .+ to connect$", re.I)
+# The More button on somebody else's top card: text "More" on the wide layout,
+# aria-label "More" on the narrow one. The owner's OWN top card has neither -
+# its row reads Open to / Add section / Add custom button / Resources - which is
+# one more reason read-profile never opens a menu on its own profile.
+# Matched on the ACCESSIBLE NAME, not on a CSS text selector: the word sits in
+# a nested <span>, so button:text-is("More") returns 0 on a button a person
+# plainly reads as "More" (measured 2026-09-09 on a 3rd-degree profile).
+PROFILE_MORE_NAME = re.compile(r"^More$")
+PROFILE_MENU_ITEM = '[role="menuitem"]'
+# PROOF THE MENU ACTUALLY OPENED. A menu read that comes back empty is
+# indistinguishable from a menu with no invite in it, and the second reading is
+# the one that quietly reports can_connect=false forever. So the menu is
+# believed only when this item is in it - measured present in every one of the
+# four other-profile menus read on 2026-09-09, connected and unconnected alike.
+PROFILE_MENU_PROOF = "About this member"
+
+# Counts are read from the WHOLE top card's text, not from one paragraph.
+# Measured 2026-09-09: the connections count is ONE paragraph ("500+
+# connections" on the owner's own profile and on one other) on some profiles
+# and TWO adjacent paragraphs ("500+", then "connections") on three others.
+# A per-paragraph matcher sees the second shape as
+# a bare "500+" with no word attached - which is exactly how "500+" came to be
+# reported as an employer - so the card's text is normalised first and matched
+# as a whole. "N other mutual connections" cannot match it: the number is not
+# adjacent to the word.
 COUNT_LINE = re.compile(r"^\s*([\d][\d,\.]*\+?|\d+(?:\.\d+)?[KMB])\s+(connections?|followers?)\s*$", re.I)
+CONNECTIONS_IN_CARD = re.compile(r"([\d][\d,\.]*\+?|\d+(?:\.\d+)?[KMB])\s+connections?\b", re.I)
+# Anything that is only a number, with or without a K/M/B or a trailing plus.
+# A value that matches this is a COUNT, and a count must never be reported as a
+# company, a headline or a location.
+BARE_COUNT = re.compile(r"^\s*(?:[\d][\d,\.]*|\d+(?:\.\d+)?\s*[KMB])\+?\s*$", re.I)
 
 # -- company, the classic org page ------------------------------- 2026-09-09
 # A Page ADMIN is redirected from /company/<id>/ and /company/<slug>/about/ to

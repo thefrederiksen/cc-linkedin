@@ -3,6 +3,12 @@
 
     cc-linkedin selftest --post <a permalink of ours> --page ID --page-name NAME
                          --other-profile <a 1st- or 2nd-degree /in/ URL>
+                         --other-expect  "name=...; headline=...; location=...; company=...;
+                                          degree=...; primary=...; can_connect=...;
+                                          connections=..."
+                         --menu-profile  <a profile whose invitation is behind More and
+                                          whose top card states no employer>
+                         --menu-expect   "...; company=none; ..."
 
 TWO BLOCKS, and the run does BOTH. Phase 1 writes: on a post of ours it
 comments, replies, reacts, unreacts and deletes everything it made, and on the
@@ -15,13 +21,32 @@ A verb quietly skipped is how a suite goes green over code that never ran, and
 this file exists precisely to stop that - so there is deliberately no flag here
 that runs "just the fast half".
 
-THE ONE FIXTURE WITH NO DEFAULT IS --other-profile, and that is on purpose. This
-repository is PUBLIC, so a second person's profile URL is never committed - not
-in the code, not in the docs, not in an evidence file. It is passed at run time
-and the evidence calls that person "profile B". Row P2-2 is the only row that
-proves read-profile works on anybody other than its owner: on Soren's own
-profile there is no Connect button, no degree badge and no Message button, so
-without profile B half the record is never exercised at all.
+THE FIXTURES WITH NO DEFAULT ARE THE ONES ABOUT OTHER PEOPLE, and that is on
+purpose. This repository is PUBLIC, so a second person's profile URL and details
+are never committed - not in the code, not in the docs, not in an evidence file.
+They are passed at run time and the evidence calls those people "profile B" and
+"the menu profile".
+
+There are two such profiles, each with its own expectation, rather than the one
+this suite had, because of what went wrong on 2026-09-09. Two
+defects in read-profile survived three clean runs of this suite: it reported a
+connections count as somebody's employer, and it reported a connection state
+that could not be acted on. Neither run was faked. The rows simply did not look:
+of the eleven fields read-profile returns, P2-2 asserted four, and the one it
+asserted about the connection asked only whether the value was a member of a set
+that contained every value the verb could produce. So now:
+
+  * --other-expect makes a person state what the page says, and the row compares
+    the record to that statement, field by field. Correspondence, not membership.
+  * --menu-profile forces the run through the More menu, where an invitation
+    lives on some profiles and not others, and onto a top card that states no
+    employer, which is the field that used to fill itself with a count. Both
+    defects are visible on that one shape and on no other, so without it neither
+    fix can be watched failing - a path that never executes is not covered by a
+    green suite, however green.
+
+On Soren's own profile there is no invite control, no degree badge and no
+Message button, so without profile B half the record is never exercised at all.
 """
 import argparse
 import io
@@ -34,18 +59,193 @@ import time
 from contextlib import redirect_stdout
 
 from . import comments as C
+from . import selectors as S
 from .browser import Pace, log
 
 DEGREES_NOT_SELF = ("1st", "2nd", "3rd", "3rd+", "you")
-STATES = ("Connect", "Pending", "Message", "Follow", "Following")
 SOREN = "https://www.linkedin.com/in/sorenfrederiksen/"
 
+# WHAT THE READER MUST SAY THE PAGE SAYS -------------------------- 2026-09-09
+#
+# Rows P2-1 and P2-2 compare read-profile's record against a description of the
+# profile that a person read off the screen. That is the whole point of them,
+# and it is what the rows they replace did not do.
+#
+# The rows they replace asserted `connection_state in {Connect, Pending,
+# Message, Follow}` and `degree in {...} and not self`, and nothing else on that
+# profile. Both are checks for MEMBERSHIP OF A SET. "Message" is in the set, so
+# the row passed on a profile where the answer was wrong; every value the verb
+# could possibly produce was in the set, so the row could only ever fail if the
+# verb crashed. A check that cannot distinguish a right answer from a wrong one
+# is not a check, and two defects rode through three clean runs behind these
+# two.
+#
+# So the expectation is stated as data, one key per field, and every key is
+# REQUIRED - a missing key fails the run and an unknown key fails it too,
+# because a mistyped key would otherwise silently assert nothing at all.
+EXPECT_KEYS = ("name", "headline", "location", "company", "degree", "primary",
+               "can_connect", "connections")
+EXPECT_SYNTAX = ("key=value pairs separated by semicolons, every key required: "
+                 + "; ".join("%s=..." % k for k in EXPECT_KEYS)
+                 + ". 'headline' is a substring that must appear in the headline; the rest are "
+                   "exact. 'company' and 'connections' take the word none when the top card "
+                   "states neither; 'can_connect' is yes, no, or none (none only on our own "
+                   "profile).")
+SOREN_EXPECT = ("name=Soren Frederiksen; headline=mindzie; "
+                "location=Toronto, Ontario, Canada; company=mindzie; degree=self; "
+                "primary=Open to; can_connect=none; connections=500")
+
+
+def _expect(spec, flag):
+    """Parse one --*-expect string. A missing key, an unknown key or an
+    unreadable value FAILS the run - never a key quietly skipped."""
+    got = {}
+    for part in (spec or "").split(";"):
+        part = part.strip()
+        if not part:
+            continue
+        if "=" not in part:
+            print("FAIL %s: %r is not key=value. %s" % (flag, part[:40], EXPECT_SYNTAX), flush=True)
+            sys.exit(1)
+        k, v = part.split("=", 1)
+        got[k.strip().lower()] = v.strip()
+    missing = [k for k in EXPECT_KEYS if k not in got]
+    unknown = [k for k in got if k not in EXPECT_KEYS]
+    if missing or unknown:
+        print("FAIL %s: missing %s%s. %s"
+              % (flag, ", ".join(missing) or "nothing",
+                 (" and does not know " + ", ".join(unknown)) if unknown else "",
+                 EXPECT_SYNTAX), flush=True)
+        sys.exit(1)
+    if got["can_connect"].lower() not in ("yes", "no", "none"):
+        print("FAIL %s: can_connect reads %r; it is yes, no, or none."
+              % (flag, got["can_connect"]), flush=True)
+        sys.exit(1)
+    if got["connections"].lower() != "none":
+        try:
+            int(got["connections"].replace(",", "").rstrip("+"))
+        except ValueError:
+            print("FAIL %s: connections reads %r; it is a whole number, or the word none."
+                  % (flag, got["connections"]), flush=True)
+            sys.exit(1)
+    return got
+
+
+def _count_shaped(v):
+    """True when this string is a count and nothing else. A value that answers
+    true here has no business in a name, a headline, a location or an employer -
+    that is precisely how the connections count "500+" came to be reported as
+    somebody's company."""
+    return bool(v) and bool(S.BARE_COUNT.match(v) or S.COUNT_LINE.match(v))
+
+
+def _profile_says(r, exp):
+    """Field by field, does the record say what the reader says the page says?"""
+    cur = r.get("current") or {}
+    want_company = None if exp["company"].lower() == "none" else exp["company"]
+    want_cc = {"yes": True, "no": False, "none": None}[exp["can_connect"].lower()]
+    want_conn = (None if exp["connections"].lower() == "none"
+                 else int(exp["connections"].replace(",", "").rstrip("+")))
+    head = r.get("headline") or ""
+    return [
+        ("name", r.get("name") == exp["name"], "%r wanted %r" % (r.get("name"), exp["name"])),
+        ("headline", exp["headline"].lower() in head.lower(),
+         "%r must contain %r" % (head[:60], exp["headline"])),
+        ("location", r.get("location") == exp["location"],
+         "%r wanted %r" % (r.get("location"), exp["location"])),
+        ("current.company", cur.get("company") == want_company,
+         "%r wanted %r" % (cur.get("company"), want_company)),
+        ("degree", r.get("degree") == exp["degree"],
+         "%r wanted %r" % (r.get("degree"), exp["degree"])),
+        ("primary_button", r.get("primary_button") == exp["primary"],
+         "%r wanted %r" % (r.get("primary_button"), exp["primary"])),
+        ("can_connect", r.get("can_connect") is want_cc,
+         "%r wanted %r" % (r.get("can_connect"), want_cc)),
+        ("connections", r.get("connections") == want_conn,
+         "%r wanted %r" % (r.get("connections"), want_conn)),
+    ]
+
+
+def _profile_holds(r, slug):
+    """The invariants that need nobody to have read the page: every remaining
+    field is present and the right shape, no count has landed in a field meant
+    for words, and the three fields that describe the connection agree with each
+    other."""
+    cur = r.get("current") or {}
+    url = r.get("url") or ""
+    acts = r.get("actions")
+    cc, via, curl = r.get("can_connect"), r.get("connect_via"), r.get("connect_url")
+    out = [
+        ("kind", r.get("kind") == "profile", repr(r.get("kind"))),
+        ("slug", (r.get("slug") or "").lower() == slug.lower(),
+         "%r wanted %r" % (r.get("slug"), slug)),
+        ("url", slug.lower() in url.lower() and "?" not in url, repr(url)),
+        ("rendering", r.get("rendering") == "react", repr(r.get("rendering"))),
+        ("about", r.get("about") is None or (isinstance(r.get("about"), str)
+                                             and r["about"].strip() != ""),
+         "%r" % ((r.get("about") or "")[:40],)),
+        ("actions", isinstance(acts, list) and len(acts) >= 1
+         and all(isinstance(x, str) and x for x in acts), repr(acts)),
+        ("primary_button is one of actions", r.get("primary_button") in (acts or []),
+         "%r not in %r" % (r.get("primary_button"), acts)),
+        ("degree", r.get("degree") in S.DEGREES,
+         "%r not one of %r" % (r.get("degree"), S.DEGREES)),
+        ("degree_reason", (r.get("degree") is None) == bool(r.get("degree_reason")),
+         "degree=%r reason=%r" % (r.get("degree"), r.get("degree_reason"))),
+        ("current.title", cur.get("title") is None and bool(cur.get("title_source")),
+         "title=%r source=%r" % (cur.get("title"), (cur.get("title_source") or "")[:30])),
+        ("an empty company says why", cur.get("company") is not None
+         or bool(cur.get("company_reason")),
+         "company=%r reason=%r" % (cur.get("company"), (cur.get("company_reason") or "")[:40])),
+        ("can_connect_reason", bool(r.get("can_connect_reason")),
+         repr((r.get("can_connect_reason") or "")[:40])),
+        ("connections", (r.get("connections") is None and bool(r.get("connections_reason")))
+         or (isinstance(r.get("connections"), int)
+             and "connection" in (r.get("connections_raw") or "")),
+         "%r / %r / %r" % (r.get("connections"), r.get("connections_raw"),
+                           (r.get("connections_reason") or "")[:30])),
+        ("followers", (r.get("followers") is None and bool(r.get("followers_reason")))
+         or (isinstance(r.get("followers"), int)
+             and "follower" in (r.get("followers_raw") or "")),
+         "%r / %r / %r" % (r.get("followers"), r.get("followers_raw"),
+                           (r.get("followers_reason") or "")[:30])),
+    ]
+    # THE DEFECT OF 2026-09-09, AS AN ASSERTION. "500+" was reported as an
+    # employer. No field that holds words may hold a count, and the three fields
+    # that hold different words may not hold the same words.
+    for f, v in (("name", r.get("name")), ("headline", r.get("headline")),
+                 ("location", r.get("location")), ("current.company", cur.get("company"))):
+        out.append(("%s is not a count" % f, not _count_shaped(v), repr(v)))
+    out.append(("current.company is not the connections count",
+                not cur.get("company") or cur["company"] != r.get("connections_raw"),
+                "%r vs %r" % (cur.get("company"), r.get("connections_raw"))))
+    for a, b in (("headline", "location"), ("current.company", "location")):
+        va = r.get(a) if a != "current.company" else cur.get("company")
+        vb = r.get(b)
+        out.append(("%s is not %s" % (a, b), not (va and vb and va == vb), "%r" % (va,)))
+    # The three connection fields are one answer, not three independent ones.
+    if cc is True:
+        out.append(("can_connect=true carries where and how",
+                    via in ("topcard", "more-menu") and S.INVITE_HREF in (curl or ""),
+                    "via=%r url=%r" % (via, curl)))
+        out.append(("the invite is for THIS person",
+                    slug.lower() in (curl or "").lower(), repr(curl)))
+    elif cc is False:
+        out.append(("can_connect=false carries no invite", via is None and curl is None,
+                    "via=%r url=%r" % (via, curl)))
+    else:
+        out.append(("can_connect=null only on our own profile",
+                    r.get("degree") == "self" and via is None and curl is None,
+                    "degree=%r via=%r" % (r.get("degree"), via)))
+    return out
+
 # What one full Phase 2 block must cost on the view clock. read-profile costs
-# one each (the refusal too - it navigates before it refuses), read-company one,
-# each search one, and the two searches that share a query still open two pages.
-# notifications and stats cost NOTHING: they are our own screens, not anybody's
-# profile. Resolving a short link is a navigation to a post, not a profile view.
-EXPECTED_VIEWS = 7
+# one each - the owner's, profile B, the menu profile, and the refusal, which
+# navigates before it refuses - read-company one, and each search one; the two
+# searches that share a query still open two pages. notifications and stats cost
+# NOTHING: they are our own screens, not anybody's profile. Resolving a short
+# link is a navigation to a post, not a profile view.
+EXPECTED_VIEWS = 8
 
 
 def _run(name, fn, **kw):
@@ -75,6 +275,16 @@ def _run(name, fn, **kw):
     return ok, out
 
 
+def every(subs):
+    """All of these sub-checks passed. Each failure is printed with the value
+    that failed it, because a row that says only "FAILED" sends the next reader
+    back to the browser to find out what it saw."""
+    bad = [s for s in subs if not s[1]]
+    for name, _, detail in bad:
+        print("        - %s: %s" % (name, detail), flush=True)
+    return not bad
+
+
 def _records(out):
     """The JSON records a verb printed, one per line."""
     recs = []
@@ -102,12 +312,31 @@ def sweep_page(a):
 
 
 def run(a):
-    if not a.other_profile:
-        print("FAIL --other-profile is required. Row P2-2 is the only row that proves read-profile "
-              "works on somebody other than its owner - Soren's own profile has no degree badge, no "
-              "Connect button and no Message button - and this repository is public, so no second "
-              "person's URL is committed as a default. Pass a 1st- or 2nd-degree profile URL.",
-              flush=True)
+    if not (a.other_profile and a.other_expect and a.menu_profile and a.menu_expect):
+        print("FAIL the Phase 2 profile fixtures are required, and none of them is committed: "
+              "this repository is public, so no third party's URL or details go in it.\n"
+              "  --other-profile  a 1st- or 2nd-degree profile URL (rows P2-2, P2-2b)\n"
+              "  --other-expect   what a person reads off that profile\n"
+              "  --menu-profile   THE SHAPE BOTH DEFECTS OF 2026-09-09 APPEARED ON: a profile\n"
+              "                   whose invitation is a MENU ITEM behind More rather than a\n"
+              "                   control on the top card, AND whose top card states no current\n"
+              "                   employer (no company pill). Row P2-10.\n"
+              "  --menu-expect    what a person reads off THAT profile; its company must be none\n"
+              "  the expect syntax: " + EXPECT_SYNTAX + "\n"
+              "Soren's own profile has no degree badge, no invite control and no Message button, "
+              "so without profile B most of what read-profile returns is never exercised. The "
+              "menu profile is specified that tightly because it is the only shape on which both "
+              "defects are visible: on it, the code as it stood on 2026-09-09 reported the "
+              "connections count as the employer and reported 'Message' as the connection state "
+              "of somebody it could in fact invite. A row that never runs against that shape "
+              "cannot go red when either fix is taken out.", flush=True)
+        sys.exit(1)
+    menu_exp = _expect(a.menu_expect, "--menu-expect")
+    if menu_exp["company"].lower() != "none":
+        print("FAIL --menu-expect says company=%r. The menu profile must be one whose top card "
+              "states NO current employer, so that the field which used to be filled with a "
+              "connections count is the field under test. Pick a profile with no company pill "
+              "and say company=none." % menu_exp["company"], flush=True)
         sys.exit(1)
 
     stamp = time.strftime("%H:%M:%S")
@@ -207,32 +436,64 @@ def run(a):
     pace = Pace()
     views_before = pace.count("view")
 
-    # -- P2-1: the owner's own profile ---------------------------------------
+    # -- P2-1: the owner's own profile, every field it returns ----------------
     ok, out = attempt("read-profile", P.read_profile, url=a.profile)
     recs = _records(out)
     r = recs[0] if recs else {}
-    check("P2-1", ok and bool(recs)
-          and "Soren Frederiksen" in (r.get("name") or "")
-          and r.get("slug") == "sorenfrederiksen"
-          and bool(r.get("headline"))
-          and r.get("degree") == "self",
-          "own profile: name=%r slug=%r headline=%s degree=%r"
-          % (r.get("name"), r.get("slug"), bool(r.get("headline")), r.get("degree")))
+    if not (ok and recs):
+        check("P2-1", False, "read-profile did not return a record for the owner's own profile")
+    else:
+        subs = _profile_says(r, _expect(a.profile_expect, "--profile-expect")) \
+             + _profile_holds(r, "sorenfrederiksen") \
+             + [("about is the real one", len(r.get("about") or "") > 100,
+                 "%d characters" % len(r.get("about") or ""))]
+        check("P2-1", every(subs), "own profile, %d fields checked" % len(subs))
 
-    # -- P2-2: profile B, the only row that exercises the other half ----------
+    # -- P2-2: profile B - every field, against what a reader saw on the page --
     want_b = (re.search(r"/in/([^/?#]+)", a.other_profile) or [None, a.other_profile.strip("/")])[1]
     ok, out = attempt("read-profile B", P.read_profile, url=a.other_profile)
     recs = _records(out)
     r = recs[0] if recs else {}
-    check("P2-2", ok and bool(recs)
-          and bool(r.get("name"))
-          and (r.get("degree") or "").lower() in DEGREES_NOT_SELF
-          and r.get("degree") != "self"
-          and r.get("connection_state") in STATES
-          and (r.get("slug") or "").lower() == want_b.lower(),
-          "profile B: slug matched=%s degree=%r state=%r name present=%s"
-          % ((r.get("slug") or "").lower() == want_b.lower(), r.get("degree"),
-             r.get("connection_state"), bool(r.get("name"))))
+    if not (ok and recs):
+        check("P2-2", False, "read-profile did not return a record for profile B")
+        check("P2-2b", False, "no record to check the invariants of")
+    else:
+        says = _profile_says(r, _expect(a.other_expect, "--other-expect"))
+        check("P2-2", every(says), "profile B against the page, %d fields" % len(says))
+        holds = _profile_holds(r, want_b) + [
+            ("degree is not self", r.get("degree") != "self", repr(r.get("degree"))),
+            ("degree is somebody else's", (r.get("degree") or "").lower() in DEGREES_NOT_SELF,
+             repr(r.get("degree")))]
+        check("P2-2b", every(holds), "profile B invariants, %d of them" % len(holds))
+
+    # -- P2-10: the invitation that lives BEHIND THE MORE MENU ----------------
+    # The other half of the connection read, and the half the defect was in. On
+    # some profiles Connect is a control on the top card and on others it is a
+    # menu item behind More, and no field on the card says which. A run that
+    # only ever sees the first kind never executes the menu path at all.
+    want_m = (re.search(r"/in/([^/?#]+)", a.menu_profile) or [None, a.menu_profile.strip("/")])[1]
+    ok, out = attempt("read-profile M", P.read_profile, url=a.menu_profile)
+    recs = _records(out)
+    r = recs[0] if recs else {}
+    subs = [("a record came back", bool(ok and recs), "ok=%s records=%d" % (ok, len(recs)))]
+    if ok and recs:
+        cur = r.get("current") or {}
+        subs += [
+            ("can_connect", r.get("can_connect") is True, repr(r.get("can_connect"))),
+            ("connect_via", r.get("connect_via") == "more-menu", repr(r.get("connect_via"))),
+            ("the invite came from the menu, for this person",
+             S.INVITE_HREF in (r.get("connect_url") or "")
+             and want_m.lower() in (r.get("connect_url") or "").lower(),
+             repr(r.get("connect_url"))),
+            # The employer field on a top card that states no employer. Left to
+            # position, this is the field that filled itself with the
+            # connections count.
+            ("no employer is stated, and the record says so rather than filling it",
+             cur.get("company") is None and bool(cur.get("company_reason")),
+             "company=%r reason=%r" % (cur.get("company"),
+                                       (cur.get("company_reason") or "")[:50])),
+        ] + _profile_says(r, menu_exp) + _profile_holds(r, want_m)
+    check("P2-10", every(subs), "menu profile, %d checks" % len(subs))
 
     # -- P2-3: a deliberately wrong --expect must REFUSE ----------------------
     ok, out = attempt("read-profile X", P.read_profile, url=a.profile,

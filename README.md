@@ -25,7 +25,7 @@ cc-linkedin react <permalink> --expect "phrase" --kind like|celebrate|support|lo
 cc-linkedin unreact <permalink>
 cc-linkedin delete-comment <permalink> --match "words in one of our comments"
 cc-linkedin delete-post <permalink> --expect "phrase"
-cc-linkedin selftest --post <our post> --page ID --page-name NAME --other-profile <a /in/ URL>
+cc-linkedin selftest --post <our post> --page ID --page-name NAME \n    --other-profile <a /in/ URL> --other-expect "name=...; headline=...; location=...; \n        company=...; degree=...; primary=...; can_connect=...; connections=..." \n    --menu-profile <a /in/ URL whose invitation is behind More and whose top card states \n        no employer> --menu-expect "...; company=none; ..."
 ```
 
 Every writing verb refuses unless `--expect` is found in the post, waits its
