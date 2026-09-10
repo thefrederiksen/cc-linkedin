@@ -148,6 +148,38 @@ Thus, for the measured shape described in the source—the member widget is a
 assertion cannot pass and then fetch an engagement number from that widget. The
 specific 5-versus-48 mix-up is not present. This part is sound.
 
+`followers` is the deliberate numeric exception: it is not an engagement-table
+metric and is read from the Page header. Its scope is weaker than the comment
+claims, because it can climb eight ancestors from the `h1` and search every leaf
+below each ancestor:
+
+```javascript
+// kit/account.py:141-158
+const h1 = document.querySelector('h1');
+let followers = '';
+if (h1) {
+  let node = h1;
+  for (let up = 0; up < 8 && node && !followers; up++) {
+    node = node.parentElement;
+    ...
+    for (const e of node.querySelectorAll('*')) {
+      if (e.children.length === 0 && /^\s*[\d,]+\s+followers?\s*$/i.test(e.innerText || '')) {
+        followers = e.innerText.trim();
+        break;
+      }
+    }
+  }
+}
+```
+
+SUSPECTED breaking case: an A/B layout removes the Page's nearby follower leaf,
+while an outer ancestor reached within eight steps contains another card's
+`"12,345 followers"`. The first such descendant becomes the Page follower
+count. This cannot import the member widget's *impressions*—the text must say
+followers—but it can import a follower count from the wrong card. The broad
+ancestor behavior is PROVED; whether the live hierarchy reaches such a card is
+not.
+
 The assertion proves only schema presence, however. It does not prove that a
 data row or a number is present:
 
@@ -445,7 +477,7 @@ def to_int(raw, what):
     return int(round(n))
 ```
 
-Direct evaluation of that code gives:
+Applying those transformations gives:
 
 | Input | Result | Disposition |
 |---|---:|---|
