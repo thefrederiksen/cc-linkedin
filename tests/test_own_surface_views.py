@@ -34,8 +34,8 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from kit import account as A
-from kit import browser as B
+from cc_linkedin_kit import account as A
+from cc_linkedin_kit import browser as B
 
 
 class Navigated(Exception):

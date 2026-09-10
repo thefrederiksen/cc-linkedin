@@ -2,7 +2,7 @@
 """F1: every view this toolkit takes is on the counter, and the counter says
 exactly what it covers.
 
-THE DEFECT. `tools/survey.py` drives `kit.browser.Browser` - the same lock, the
+THE DEFECT. `tools/survey.py` drives `cc_linkedin_kit.browser.Browser` - the same lock, the
 same background tab, the same real profile opened against the owner's account -
 and registered nothing. Two profile views were taken that way on 2026-09-09
 while `pace.json` sat at eighty, and both the Manager who took them and the
@@ -36,7 +36,7 @@ import unittest
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
-from kit import browser as B
+from cc_linkedin_kit import browser as B
 
 SKILL = os.path.join(ROOT, ".claude", "skills", "linkedin", "SKILL.md")
 README = os.path.join(ROOT, "README.md")
@@ -65,7 +65,7 @@ class StubPage(object):
 
 
 class StubBrowser(object):
-    """Enough of kit.browser.Browser for survey() to reach its first navigation
+    """Enough of cc_linkedin_kit.browser.Browser for survey() to reach its first navigation
     and no further."""
 
     def __init__(self, seen):

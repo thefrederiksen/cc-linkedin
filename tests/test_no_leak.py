@@ -406,7 +406,7 @@ class TheSourceTreeCarriesNoShortLinks(unittest.TestCase):
 
     def _tracked_text(self):
         out = []
-        for pattern in ("kit/*.py", "tools/*.py", "tests/*.py", "*.py"):
+        for pattern in ("cc_linkedin_kit/*.py", "tools/*.py", "tests/*.py", "*.py"):
             out += glob.glob(os.path.join(ROOT, pattern))
         return sorted(set(out))
 

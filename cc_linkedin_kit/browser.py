@@ -389,27 +389,35 @@ _URL_COMPANY = re.compile(
 _URL_NOTIFICATIONS = re.compile(
     r"//(?:[a-z0-9-]+\.)*linkedin\.com/notifications(?:[/?#]|$)", re.I)
 
-# -- A2, 2026-09-10: docs/phase-3-amendments.md ------------------------------
+# -- A2, 2026-09-10, CORRECTED before 1.0 ----------------------------------
 #
-# The messaging LIST and the invitation manager are the owner's own inbox and his
-# own invitations. They notify nobody and no volume of reading them resembles
-# scraping, which is the one thing the safety number exists against. So they are
-# view_self.
+# THE TEST IS NOT "IS THIS SURFACE MINE". It is "CAN LOADING IT CHANGE SOMETHING
+# ANOTHER PERSON CAN SEE." A read receipt is visible to somebody else.
 #
-# A THREAD IS NOT, AND THAT IS THE HALF THAT COSTS SOMETHING. Opening a thread
-# marks it read and can show the other participant a read receipt - the one
-# messaging read with an outward, irreversible side effect. It stays capped so a
-# runaway loop meets a wall instead of quietly marking a hundred conversations
-# read. Anything else under /messaging/ - compose, and whatever LinkedIn adds
-# next - is capped too, by not being matched.
+# A2 as shipped asked the ownership question and got two surfaces the wrong way
+# round: it uncapped /messaging/ because the inbox is the owner's, and left
+# /messaging/compose/ capped by not matching it. But the LIST is the route
+# believed to select a conversation into the reading pane, which marks it read,
+# and COMPOSE is measured to open no conversation at all. Ownership was never
+# the thing that cost anything - every surface named here is the owner's, and
+# they still do not all cost the same.
 #
-# THESE TWO MATCH THE URL'S PATH, NOT THE WHOLE URL STRING, which is a stricter
-# test than the three patterns above use and the difference is deliberate rather
-# than accidental. A pattern searched against the whole string can be satisfied
-# by our own path sitting in somebody else's query parameter; matching the parsed
-# path cannot. The older three are left as they are - narrowing them is not what
-# A2 ruled on - but a new own-surface should be written this way.
-_PATH_MESSAGING_LIST = re.compile(r"^/messaging/?$", re.I)
+# So /messaging/compose/ is uncapped, /messaging/ is capped until somebody has
+# MEASURED that loading the bare list opens no conversation, and the invitation
+# manager stays uncapped because reading the list of invitations already sent
+# shows nobody anything.
+#
+# COMPOSE IS MATCHED EXACTLY, NOT AS A PREFIX. A prefix would swallow every
+# route under it, threads included, which is the failure this whole correction
+# is about.
+#
+# THESE MATCH THE URL'S PATH, NOT THE WHOLE URL STRING, which is stricter than
+# the three patterns above and deliberate: a pattern searched against the whole
+# string can be satisfied by our own path sitting in somebody else's query
+# parameter; matching the parsed path cannot. The older three are left as they
+# are - narrowing them is not what this ruling covers - but a new own-surface
+# should be written this way.
+_PATH_MESSAGING_COMPOSE = re.compile(r"^/messaging/compose/?$", re.I)
 _PATH_INVITATION_MANAGER = re.compile(r"^/mynetwork/invitation-manager(?:/.*)?$", re.I)
 _HOST_LINKEDIN = re.compile(r"^(?:[a-z0-9-]+\.)*linkedin\.com$", re.I)
 
@@ -438,16 +446,21 @@ def surface_kind(url):
     tool - so that "is this ours" is decided in ONE place by the same lists
     read_profile and read_company use, instead of a second opinion that drifts.
 
-    "view_self" needs a positive identification: a linkedin.com URL on one of the
-    three paths below whose identifier is on the owner's own list, his own
-    notifications page, or - A2, 2026-09-10 - his own messaging LIST or his own
-    invitation manager. A messaging THREAD is deliberately NOT one of them; see
-    the note above _PATH_MESSAGING_LIST for why that is the half that matters.
-    EVERYTHING ELSE IS "view", including a URL this does not
-    recognise, a URL that is not LinkedIn's, an empty string and None. The
-    unrecognised direction has to be the capped one - the failure mode of a
-    classifier that guesses generously is a day of stranger-views that the safety
-    number never saw.
+    THE QUESTION IT ASKS IS NOT "IS THIS SURFACE MINE". It is "CAN LOADING IT
+    CHANGE SOMETHING ANOTHER PERSON CAN SEE." A read receipt is visible to
+    somebody else, so a surface that can raise one is capped however plainly it
+    belongs to the owner. Asking the ownership question instead is what put
+    /messaging/ and /messaging/compose/ the wrong way round in A2; the cases are
+    listed above _PATH_MESSAGING_COMPOSE, but this sentence is the rule and the
+    cases are only where it has been applied so far.
+
+    "view_self" therefore needs a positive identification AND nothing outward:
+    a linkedin.com URL whose identifier is on the owner's own lists, his
+    notifications, his compose route, or his invitation manager. EVERYTHING ELSE
+    IS "view", including a URL this does not recognise, a URL that is not
+    LinkedIn's, an empty string and None. The unrecognised direction has to be
+    the capped one - the failure mode of a classifier that guesses generously is
+    a day of stranger-views that the safety number never saw.
 
     IT IS AN ENUMERATION, and an enumeration always loses to the form it has not
     met (R17, which is why the redactor stopped enumerating). Here that loss is
@@ -468,7 +481,7 @@ def surface_kind(url):
         return "view_self"
     path = _linkedin_path(u)
     if path is not None:
-        if _PATH_MESSAGING_LIST.match(path):
+        if _PATH_MESSAGING_COMPOSE.match(path):
             return "view_self"
         if _PATH_INVITATION_MANAGER.match(path):
             return "view_self"

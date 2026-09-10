@@ -14,7 +14,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from kit import identity as I
+from cc_linkedin_kit import identity as I
 
 # The post the URL is about, in both hand-built cases below.
 #

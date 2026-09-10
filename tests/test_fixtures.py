@@ -32,8 +32,8 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from kit import browser as B
-from kit import fixtures as F
+from cc_linkedin_kit import browser as B
+from cc_linkedin_kit import fixtures as F
 
 
 class FixtureCase(unittest.TestCase):
@@ -44,7 +44,7 @@ class FixtureCase(unittest.TestCase):
         # What the MACHINE'S real fixtures file looks like right now, so tearDown
         # can prove this test did not touch it. Not hypothetical: the first run
         # of this suite wrote three fabricated fixtures into the real state
-        # directory, because kit/fixtures.py bound STATE_DIR at import time and
+        # directory, because cc_linkedin_kit/fixtures.py bound STATE_DIR at import time and
         # the redirection below could not reach it. A test that can write to the
         # machine's own state is a test that will, eventually, delete something.
         self._real = os.path.join(self._state, "selftest-fixtures.json")

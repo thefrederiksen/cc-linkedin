@@ -36,8 +36,8 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from kit import people as P
-from kit import selectors as S
+from cc_linkedin_kit import people as P
+from cc_linkedin_kit import selectors as S
 
 # Exactly as measured, with the person's name replaced.
 PENDING = {"text": "Pending",

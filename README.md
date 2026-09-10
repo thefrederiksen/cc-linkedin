@@ -5,6 +5,59 @@ up to twenty images, post now or schedule. No LinkedIn API, no app review, no
 token: it clicks the same buttons you click, in a Chrome that is already
 running and already logged in.
 
+## Install
+
+Python 3.11 or newer, on Windows.
+
+```
+pip install .                      from a clone
+pip install -e .                   working on it
+```
+
+That puts a `cc-linkedin` command on your PATH. Playwright comes with it; you do
+NOT need `playwright install`, because it drives the Chrome you already have.
+
+`cc_linkedin.py` at the root of this repository stays directly runnable, and
+that is a supported way to use the tool, not a leftover:
+
+```
+py -3.11 path\to\cc_linkedin.py post ...
+```
+
+Both forms run the same code. The file form matters because scheduled jobs call
+it by path, with no install and no virtual environment in the picture.
+
+## The 18 commands
+
+Grouped by what they touch. Every writing verb takes `--expect` or an equivalent
+guard and refuses rather than guesses; every reading verb prints JSON and treats
+an empty result as a failure rather than an answer.
+
+| | |
+|---|---|
+| **Posting** | `post`, `scheduled`, `unschedule` |
+| **Comments and reactions** | `read-post`, `read-comments`, `comment`, `reply`, `delete-comment`, `react`, `unreact`, `delete-post` |
+| **Reading and search** | `read-profile`, `read-company`, `search-people`, `search-posts`, `notifications`, `stats` |
+| **Invitations** | `withdraw` |
+
+A nineteenth, `selftest`, runs the others against things we own; it is for
+developing the tool, not for using it. `cc-linkedin --help` lists them all and
+`cc-linkedin <command> --help` explains one.
+
+## What is NOT in 1.0
+
+These commands **do not exist**. They are not hidden, not experimental and not
+behind a flag - running one prints an argparse error and stops. They are listed
+here because the shape of the tool invites you to assume otherwise.
+
+| Not present in 1.0 | Where it stands |
+|---|---|
+| `connect`, `message`, `read-inbox`, `read-thread`, `invitations`, `follow`, `unfollow`, `invite-to-follow` | designed, and surveyed against the live site, but not built - [issue #9](https://github.com/thefrederiksen/cc-linkedin/issues/9) |
+| `post --profile` (posting as the person rather than as the Page), `edit-post`, `repost` | designed, never surveyed - [issue #10](https://github.com/thefrederiksen/cc-linkedin/issues/10) |
+
+`withdraw` is the only invitation verb in 1.0, and it withdraws only - there is
+no way to send an invitation with this tool.
+
 ```
 cc-linkedin post --page 107519091 --page-name "CenterConsulting, Inc." ^
     --media D:\clips\one.mp4 --text D:\clips\one.txt --shot D:\clips\one.png            (stage only)
@@ -25,7 +78,11 @@ cc-linkedin react <permalink> --expect "phrase" --kind like|celebrate|support|lo
 cc-linkedin unreact <permalink>
 cc-linkedin delete-comment <permalink> --match "words in one of our comments"
 cc-linkedin delete-post <permalink> --expect "phrase"
-cc-linkedin selftest --post <our post> --page ID --page-name NAME \n    --other-profile <a /in/ URL> --other-expect "name=...; headline=...; location=...; \n        company=...; degree=...; primary=...; can_connect=...; connections=..." \n    --menu-profile <a /in/ URL whose invitation is behind More and whose top card states \n        no employer> --menu-expect "...; company=none; ..." \n    --pending-profile <a /in/ URL we have already invited and who has not answered>
+cc-linkedin selftest --post <our post> --page ID --page-name NAME \
+    --other-profile <a /in/ URL> --other-expect "name=...; headline=...; location=..." \
+    --menu-profile <a /in/ URL whose invitation sits behind More> \
+    --menu-expect "...; company=none; ..." \
+    --pending-profile <a /in/ URL we have already invited who has not answered>
 ```
 
 Every writing verb refuses unless `--expect` is found in the post, waits its
@@ -57,10 +114,18 @@ identical from here and the broken selector is far more likely.
 Reads are paced on their OWN clock - 3 to 8 seconds apart, 80 a day - so a
 profile read never makes the next comment wait 90 seconds. One view is a profile
 or a company page opened, or one page of search results however many cards it
-holds. Our own surfaces - Soren's profile, a Page he administers, notifications
-- are counted on a second counter, `view_self`, which is reported and NOT capped:
-opening your own profile notifies nobody and looks like nobody's scraper, but a
-runaway loop should still show up in `pace.json`.
+holds. Some surfaces are counted on a second counter, `view_self`, which is reported
+and NOT capped.
+
+**The test for that is not "is this surface mine". It is "can loading it change
+something another person can see."** A read receipt is visible to somebody else,
+so a surface that can raise one stays capped however plainly it belongs to you.
+Uncapped: your own profile, a Page you administer, notifications, the invitation
+manager, and `/messaging/compose/`, which opens no conversation. Capped:
+everything else - including your own `/messaging/` inbox, because the list is
+the route believed to select a conversation into the reading pane, and that
+marks it read. An unrecognised surface is capped, always: a classifier that
+guesses generously buys a day of stranger-views the safety number never saw.
 
 **The counter counts views taken through this toolkit, and nothing else.** It is
 a floor under the day's real total, not the total. A profile you open by
@@ -83,7 +148,7 @@ Three things worth knowing before you use them:
 
 * `search-posts` gives you `share_url` (a `lnkd.in` link) and `permalink` (the
   real `urn:li:activity` URL, or null). There is no field called `url`, because
-  a content-search card genuinely carries no permalink - see `kit/search.py` for
+  a content-search card genuinely carries no permalink - see `cc_linkedin_kit/search.py` for
   what was measured. `--resolve` follows each short link in the browser to fill
   `permalink`, capped at 10 rows, and that is what feeds a result straight into
   the comment and reaction verbs above.
@@ -92,6 +157,29 @@ Three things worth knowing before you use them:
   table, not LinkedIn's own aggregate. `--days` drives the window control and
   then checks the range the page states, because LinkedIn's own default is
   fifteen days, not thirty.
+
+## Invitations we sent
+
+```
+cc-linkedin withdraw <profile URL or slug> [--older-than-months N] [--dump out.json]
+cc-linkedin withdraw <profile URL or slug> --expect-name "Their Name" --submit
+```
+
+Withdraws ONE outstanding invitation, from the invitation manager's Sent tab.
+Staged by default: without `--submit` it finds the row, names the person twice,
+reports the age the page displays, and presses nothing.
+
+**It spends something you cannot get back.** LinkedIn restricts inviting the
+same person again after a withdrawal, and the RESULT line carries what the live
+surface said about that - including saying that it said nothing, which is what
+was measured on 2026-09-10. `--expect-name` is required with `--submit`, and
+`--older-than-months` refuses unless the age the page DISPLAYS proves at least
+that many whole months; an age it cannot parse refuses rather than guesses.
+
+The control is an anchor whose `href` is the feed, so a click the page does not
+swallow navigates away and withdraws nothing, silently. The verb therefore
+asserts afterwards that it is still on the invitation manager and that the list
+is exactly one shorter, with the page's own count agreeing.
 
 ## How it works
 
@@ -129,8 +217,8 @@ list; the tool refuses to post it twice.
 ## Requirements
 
 * Windows (the native-dialog watchdog uses Win32; everything else is portable).
-* Python 3.11 and `pip install playwright` (no `playwright install` needed, it
-  drives your existing Chrome).
+* Python 3.11 or newer. Playwright arrives with the install above; you do not
+  need `playwright install`, because it drives your existing Chrome.
 * A Chrome started with `--remote-debugging-port=9224 --user-data-dir=<its own dir>`
   and signed in to LinkedIn as an admin of the Page. Chrome 136+ refuses remote
   debugging on its default profile directory, so use a dedicated one.
