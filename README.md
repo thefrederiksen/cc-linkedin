@@ -253,3 +253,7 @@ detail.
 
 `.claude/skills/linkedin/SKILL.md` tells an agent how to use this. Point your
 global `linkedin` skill at it.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

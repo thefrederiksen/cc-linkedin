@@ -9,7 +9,7 @@ Use the tool. Do not hand-roll browser calls, do not use browser-harness for
 posting, do not reach for the LinkedIn API. It encodes a day of measured failure
 modes (see its docstring and the README).
 
-**Version 1.0.0. Eighteen commands, listed in full below - and the list of what
+**Version 1.0.1. Eighteen commands, listed in full below - and the list of what
 does NOT exist is just as important, because the shape of the tool invites you
 to assume verbs that are not there.**
 
