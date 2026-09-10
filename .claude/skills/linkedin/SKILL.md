@@ -214,3 +214,16 @@ tool does not post there.
   tool; do not work around it in a wrapper.
 * A native "Open" dialog on screen means a click fell through to something that
   opens a file chooser. The tool cancels it and fails the run; report it.
+
+## There is a stub on this machine. Keep it a stub.
+
+`~/.claude/skills/linkedin/SKILL.md` is a global POINTER at this file. It holds
+no method and must never be given any: a short form there goes stale the moment
+this file moves, and an agent that reads it and stops acts on a retired version
+believing it is current. That happened on 2026-09-10 - the stub still described
+the browser-harness composing approach this skill had already superseded, and
+the session drove the messaging inbox by hand for a verb the DO NOT EXIST table above lists
+as not existing.
+
+If you change what this skill says, the stub needs no edit. That is the point of
+it holding nothing.
