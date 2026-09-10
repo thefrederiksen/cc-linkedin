@@ -237,3 +237,103 @@ The design specifies a 1st- or 2nd-degree profile for the row that proves
 `read-profile` works on somebody other than its owner. The row currently accepts
 `3rd` and `3rd+` as well. Enforce what the design says, or amend the design
 deliberately - not by accepting whatever turns up.
+
+---
+
+## Rulings on the claims-and-safety pass
+
+## R13. The leak is fixed tonight, and the repository is treated as what it is
+
+**Finding (HIGH, PROVED):** `docs/phase-2-fixes.md` states that no third party's
+name, profile URL or headline appears in the code or the docs. That statement is
+false in the same file that makes it: profile D's distinctive job-search
+headline and connection count are written out in prose, outside the redactor
+that the claim was reasoning about. Three exact `lnkd.in` short links are
+handwritten into the `kit/search.py` docstring, and following one recovers the
+post and its author. The survey dumps additionally carry organization slugs and
+numeric ids, a job id, article paths, event urns and a precise postal-code map
+URL.
+
+The redactor only ever knew three things - `/in/` slugs, `ACoA` member ids, and
+a fixed list of query parameters. Everything else was never covered, so
+"redacted" was true of the three forms it knew and false of the artefact as a
+whole.
+
+**Ruling:**
+
+1. **Redact all of it, tonight.** Third-party identifiers come out of
+   `docs/phase-2-fixes.md`, out of the `kit/search.py` docstring, and out of the
+   survey dumps. A measured fact can be stated without its subject: "a
+   third-party profile whose top card states no employer" carries the whole
+   engineering point, and the headline carries none of it.
+2. **Teach the redactor what it did not know**: company paths and numeric ids,
+   post/activity/ugcPost/share urns, event and job ids, article slugs, short
+   links including ones nested inside a `url=` parameter, and map or address
+   URLs. The dumps cannot be regenerated tonight - that needs a live page and
+   the view cap is spent - so redact the committed ones in place with a script,
+   and commit the script.
+3. **The owner's own identifiers stay**, except the postal-code map URL, which
+   is his home-adjacent location data and does not belong in a public
+   repository. The Page id and his own profile are already public and already in
+   the docs by intent.
+4. **`--out` stops being described as "the safe public dump"** until the
+   redactor covers the forms above. A name that overstates what a thing does is
+   how the next person stops checking.
+
+**What this ruling CANNOT do, stated plainly:** the branch is already pushed to
+a public repository, so redacting now removes the data from the tip, not from
+history. See R14.
+
+## R14. How Phase 2 lands, given the leak is already pushed - FOR THE OWNER
+
+Redaction fixes the tree. It does not fix the eight commits already on
+`origin/phase-2-reading`, which anyone can read.
+
+**The Architect's recommendation, NOT executed tonight:** land Phase 2 as a
+SQUASH merge, so `main` carries one commit containing only the redacted tree and
+never the intermediate ones, then delete the branch (already automatic on this
+repository). The leaked commits then become unreachable.
+
+**Why it was not done tonight:** a history rewrite and a force-push are
+destructive and outward-facing on the owner's PUBLIC repository, and he is
+asleep. Redaction is safe and strictly improves things, so it happens now; the
+irreversible half waits for him. Squash-merging is a choice about how his
+repository's history reads and it is his to make.
+
+**Honest limit:** unreachable objects can still be fetched by anyone who knows
+the commit hash until GitHub garbage-collects them, and that is not something
+this repository can guarantee from here. If the exposure matters, the complete
+remedy involves GitHub support, and the three `lnkd.in` links are the items most
+worth caring about because they resolve to real people's posts.
+
+## R15. `pace.json` must not claim a guarantee it cannot keep
+
+**Finding:** `Pace` says its file makes caps hold "across sessions and agents".
+It cannot: `before()` loads and checks, the action happens, and `after()`
+separately reloads and increments, with no lock and no atomic update. Two
+writers at 59 both pass a cap of 60, both act, and both save 60 - so 61 actions
+happened and the file says 60. Different fields overwrite each other the same
+way, so the spacing timestamps can be lost too. The browser lock is keyed by CDP
+port and only incidentally serialises some of this.
+
+**Ruling:** make the read-modify-write atomic and mutually excluded - a lock
+file beside `pace.json`, taken for the whole check-act-account sequence where
+the action is ours to bracket, and an atomic write as in R3. Where a true
+reservation is not practical, **the docstring must stop promising one**. An
+overstated guarantee in the one file that exists to keep the owner's account
+safe is worse than an honest limitation, because it is the sentence someone will
+rely on instead of checking.
+
+## R16. A read-only verb may not overwrite the machine's state
+
+**Finding:** `search-posts` clears and replaces the SYSTEM CLIPBOARD to read
+each card's short link, and grants clipboard permission to the default browser
+context without resetting it. A command documented as read-only silently
+destroys whatever the owner had copied, and leaves a permission behind.
+
+**Ruling:** save and restore the clipboard around the read, and revoke the
+permission grant afterwards - or stop using the clipboard at all, which is
+better, because R1 now requires reading the post's identity off the landed page
+rather than from a copied link. If the clipboard route survives at all, its
+side effect is documented in the verb's help text. "Read-only" is a promise
+about the user's world, not only about LinkedIn.
