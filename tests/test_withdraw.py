@@ -44,41 +44,94 @@ def row(slug, name, age="Sent 3 months ago"):
             "href": "https://www.linkedin.com/", "profile": "/in/%s/" % slug, "age": age}
 
 
+# What the live confirmation says, measured 2026-09-10. The wording matters:
+# the page says "UP TO 3 weeks" and the design remembered "about three weeks".
+CONFIRMATION_TEXT = ("Withdraw invitation\n\nIf you withdraw now, you won’t be able to "
+                     "resend to this person for up to 3 weeks.\n\nCancel\nWithdraw")
+
+
 class StubPage(object):
-    """Just enough page for the verb: a URL, and a locator that counts one."""
+    """Just enough page for the verb: a URL, a locator, and a confirmation
+    dialog that appears only once the withdraw control has been activated -
+    which is what the live page does."""
 
     def __init__(self, url):
         self.url = url
-        self.pressed = []
+        self.browser = None
+        self.activated_once = False
+        # The dialog the stub serves after activation. A test sets this to []
+        # to model a page that stopped confirming, or edits the buttons to model
+        # one this verb cannot identify.
+        self.dialog = {"role": "dialog", "modal": None, "text": CONFIRMATION_TEXT,
+                       "buttons": ["Dismiss", "Cancel", None]}
+        self.confirm_buttons = 1
+        self.marker = False
+
+    def activated(self):
+        """The page's own record that its withdraw control was activated - by a
+        click now, not a keystroke. Measured 2026-09-10: focus + Enter on this
+        anchor did nothing at all, three times."""
+        self.activated_once = True
+        if self.browser is not None:
+            self.browser.press(None, "clicked")
+
+    def dialogs(self):
+        if not self.activated_once or self.dialog is None:
+            return []
+        d = dict(self.dialog)
+        if self.browser is not None and self.browser.label:
+            d["buttons"] = [b if b is not None else self.browser.label for b in d["buttons"]]
+        return [d]
 
     def locator(self, sel):
+        if "dialog" in sel:
+            return StubLocator(self, self.confirm_buttons, dialog=True)
         return StubLocator(self, 1)
 
     def get_by_role(self, role, name=None):
         return StubLocator(self, 1)
 
     def evaluate(self, js, *a):
+        if "__ccWithdrawMarker = 1" in js:
+            self.marker = True
+            return None
+        if "__ccWithdrawMarker === 1" in js:
+            return self.marker
+        if js in (N.DIALOG_JS, N.APPEARED_JS):
+            return self.dialogs()
         return []
 
 
 class StubLocator(object):
 
-    def __init__(self, page, n):
-        self.page, self.n = page, n
+    def __init__(self, page, n, dialog=False):
+        self.page, self.n, self.dialog = page, n, dialog
         self.first = self
+
+    def locator(self, sel):
+        """The confirm button, looked for INSIDE the open dialog."""
+        return StubLocator(self.page, self.page.confirm_buttons if self.page.dialogs() else 0)
 
     def count(self):
         return self.n
+
+    def bounding_box(self):
+        return {"x": 10, "y": 20, "width": 80, "height": 24}
+
+    def click(self, timeout=None):
+        self.page.activated()
 
 
 class StubBrowser(object):
     """Serves a scripted sequence of Sent lists. Each `load` takes the next."""
 
-    def __init__(self, lists, url_after_press=None, pill=None):
+    def __init__(self, lists, url_after_press=None, pill=None, label=None):
         self.lists = list(lists)
         self.url_after_press = url_after_press
         self.pill = pill
+        self.label = label
         self.page = StubPage("https://www.linkedin.com/mynetwork/invitation-manager/sent/")
+        self.page.browser = self
         self.presses = []
 
     def __call__(self, port):
@@ -125,7 +178,8 @@ class WithdrawCase(unittest.TestCase):
         del B._VIEWS[:]
         shutil.rmtree(self.dir, ignore_errors=True)
 
-    def run_withdraw(self, lists, pills=None, url_after_press=None, **kw):
+    def run_withdraw(self, lists, pills=None, url_after_press=None,
+                     no_dialog=False, confirm_buttons=None, **kw):
         """Drive the verb over a scripted sequence of Sent lists. Returns the
         SystemExit code, or None when it completed."""
         seq = list(lists)
@@ -144,7 +198,15 @@ class WithdrawCase(unittest.TestCase):
             return self
 
         N.SentList.load = fake_load
-        br = StubBrowser(seq, url_after_press=url_after_press)
+        target = None
+        for r in (seq[0] if seq else []):
+            if isinstance(r, dict) and r.get("profile", "").strip("/").endswith("target"):
+                target = r["label"]
+        br = StubBrowser(seq, url_after_press=url_after_press, label=target)
+        if no_dialog:
+            br.page.dialog = None
+        if confirm_buttons is not None:
+            br.page.confirm_buttons = confirm_buttons
         N.Browser = br
         self.browser = br
         args = dict(url="https://www.linkedin.com/in/target/", expect_name=None,
@@ -188,7 +250,63 @@ class TheAnchorTrap(WithdrawCase):
              [row("other", "Someone Else")]],
             submit=True, expect_name="A Person")
         self.assertIsNone(code)
-        self.assertEqual(len(self.browser.presses), 1)
+        # TWO activations, and both are the same single withdrawal: the row's
+        # control, then the confirmation's. Before the confirmation was measured
+        # this verb pressed once and believed it was finished.
+        self.assertEqual(len(self.browser.presses), 2)
+
+
+# ------------------------------------------------- the confirmation
+
+class TheConfirmation(WithdrawCase):
+    """MEASURED 2026-09-10, and the reason it took four attempts to withdraw one
+    invitation. It is a NATIVE <dialog>, which carries an IMPLICIT role and so
+    has no role attribute: '[role="dialog"]' does not match it. The probe was
+    blind, and because its pass condition was an ABSENCE it reported "no
+    confirmation appeared" three times while the confirmation was open on screen
+    intercepting every pointer event.
+
+    So a missing confirmation is now a FAILURE, not a shortcut. An absence that
+    used to be a presence is a broken instrument until something proves
+    otherwise."""
+
+    def test_no_confirmation_is_a_failure_and_not_a_shortcut(self):
+        code = self.run_withdraw(
+            [[row("target", "A Person"), row("other", "Someone Else")],
+             [row("other", "Someone Else")]],
+            no_dialog=True, submit=True, expect_name="A Person")
+        self.assertEqual(code, 1)
+        self.assertIn("no confirmation dialog appeared", self.said)
+
+    def test_a_confirm_control_it_cannot_identify_is_never_pressed(self):
+        """The confirm button's visible text is "Withdraw", and so is the
+        dialog's heading. It is identified by the SENTENCE naming this person,
+        and when that is not there the verb stops rather than press one of the
+        three things on screen that say the word."""
+        code = self.run_withdraw(
+            [[row("target", "A Person")]],
+            confirm_buttons=0, submit=True, expect_name="A Person")
+        self.assertEqual(code, 1)
+        self.assertIn("cannot identify which control confirms it", self.said)
+        self.assertEqual(len(self.browser.presses), 1,
+                         "the row was activated; the confirmation must not have been")
+
+    def test_two_matching_confirm_controls_is_ambiguity(self):
+        code = self.run_withdraw(
+            [[row("target", "A Person")]],
+            confirm_buttons=2, submit=True, expect_name="A Person")
+        self.assertEqual(code, 1)
+
+    def test_what_the_dialog_said_reaches_the_result_line(self):
+        code = self.run_withdraw(
+            [[row("target", "A Person"), row("other", "Someone Else")],
+             [row("other", "Someone Else")]],
+            submit=True, expect_name="A Person")
+        self.assertIsNone(code)
+        self.assertIn("RESULT withdrawn", self.said)
+        self.assertIn("up to 3 weeks", self.said,
+                      "a caller who withdraws without knowing the restriction has spent "
+                      "something they cannot get back")
 
 
 # ------------------------------------------------- the proof is a number

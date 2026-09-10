@@ -5,15 +5,32 @@ MEASURED ON THE LIVE PAGE 2026-09-10. The dump is
 docs/surveys/invitations-sent-rows-2026-09-10.txt and what it means is in
 docs/phase-3-withdraw-report.md.
 
-THREE THINGS ABOUT THIS SURFACE, EACH OF WHICH HAS ITS OWN WRONG ANSWER.
+FOUR THINGS ABOUT THIS SURFACE, EACH OF WHICH HAS ITS OWN WRONG ANSWER.
 
-1. THE WITHDRAW CONTROL IS AN ANCHOR WHOSE href IS THE FEED (amendment A5).
-   Not a button. `href="https://www.linkedin.com/"`. If the page's own handler
-   does not swallow the activation, the browser NAVIGATES TO THE FEED and the
-   invitation is not withdrawn - and nothing anywhere says so. That is the
-   defect class this whole week has been about: a success inferred from the
-   absence of an error. So this verb asserts, afterwards, that it is still on
-   the invitation manager, and it says exactly that when it is not.
+1. THE WITHDRAW CONTROL IS AN ANCHOR WITH A LIVE href (amendment A5), AND THE
+   href HAS TWO FORMS, WHICH A5 DID NOT KNOW. Measured across all forty rows on
+   2026-09-10: the first TEN - the server-rendered page - carry
+   `href="https://www.linkedin.com/"`, the feed, exactly as the survey said. The
+   THIRTY that arrive by lazy-load carry
+   `href=".../mynetwork/invitation-manager/sent/"` - THIS PAGE.
+
+   So A5's assertion, "afterwards the browser is still on the invitation
+   manager", catches the trap on the first ten rows and CANNOT catch it on the
+   other thirty: a fall-through navigation there reloads the Sent tab and leaves
+   the address bar exactly where it was. The assertion is kept because it is
+   right about the ten, and it is not enough for the thirty. What covers both is
+   the count proof in point 3, plus a marker on `window` that a navigation
+   destroys - which is how "the page swallowed it" is told from "the browser
+   followed the link" when both end on the same URL.
+
+4. THE CONFIRMATION IS A NATIVE <dialog>, AND IT IS WHY THIS TOOK FOUR ATTEMPTS.
+   A native `<dialog>` has an IMPLICIT role, so it carries no role attribute and
+   `[role="dialog"]` does not match it. The first probe looked for exactly that,
+   found nothing, and reported "no confirmation appeared" three times while the
+   confirmation was open on screen intercepting every pointer event. The pass
+   condition was an ABSENCE and the absence was the instrument being blind. A
+   missing confirmation is now a FAILURE rather than a shortcut, for that reason
+   and no other.
 
 2. THE LIST LAZY-LOADS TEN AT A TIME AND THE WINDOW IS NOT THE SCROLLER.
    `window.scrollTo(0, document.body.scrollHeight)` and twelve mouse-wheel
@@ -84,11 +101,12 @@ ROWS_JS = r"""
 DIALOG_JS = r"""
 () => {
   const out = [];
-  for (const d of document.querySelectorAll('[role="dialog"], [role="alertdialog"]')) {
+  const sel = 'dialog[open], [data-testid*="dialog"], [role="dialog"], [role="alertdialog"]';
+  for (const d of document.querySelectorAll(sel)) {
     const box = d.getBoundingClientRect();
     if (box.width < 40 || box.height < 40) continue;
     out.push({
-      role: d.getAttribute('role'),
+      role: d.getAttribute('role') || d.tagName.toLowerCase(),
       label: d.getAttribute('aria-label') || '',
       text: (d.innerText || '').trim().slice(0, 1200),
       buttons: [...d.querySelectorAll('button, a[role="button"]')]
@@ -116,6 +134,39 @@ CONSEQUENCE_JS = r"""
     re.lastIndex = 0;
   }
   return [...new Set(hits)].slice(0, 40);
+}
+"""
+
+
+# Everything a person would have to answer or would be told, WIDER than a
+# role=dialog. The first attempt looked only for [role=dialog] and found none,
+# which proves nothing on a surface whose modals had never been measured.
+APPEARED_JS = r"""
+() => {
+  const out = [];
+  // A NATIVE <dialog> HAS NO role ATTRIBUTE - it has an IMPLICIT role - so
+  // '[role="dialog"]' matches nothing on this surface. That is what made the
+  // first three attempts report "no confirmation appeared" while the
+  // confirmation was open on screen intercepting every pointer event.
+  const sel = 'dialog[open], dialog, [data-testid*="dialog"], ' +
+              '[role="dialog"], [role="alertdialog"], [aria-modal="true"], ' +
+              '[role="alert"], [role="status"], [data-testid*="modal"], ' +
+              '[data-testid*="toast"], [class*="modal"], [class*="toast"], [class*="artdeco-modal"]';
+  for (const d of document.querySelectorAll(sel)) {
+    const b = d.getBoundingClientRect();
+    if (b.width < 20 || b.height < 12) continue;
+    const t = (d.innerText || '').trim();
+    if (!t) continue;
+    out.push({
+      role: d.getAttribute('role') || d.tagName,
+      modal: d.getAttribute('aria-modal') || null,
+      text: t.slice(0, 800),
+      buttons: [...d.querySelectorAll('button, a[role="button"], a')]
+        .map(b2 => ((b2.getAttribute('aria-label') || b2.innerText || '').trim()).slice(0, 120))
+        .filter(Boolean).slice(0, 12),
+    });
+  }
+  return out.slice(0, 12);
 }
 """
 
@@ -265,6 +316,16 @@ def withdraw(a):
     pace = Pace()
     dump = {"slug_asked_for": slug, "when": time.strftime("%Y-%m-%d %H:%M:%S")}
 
+    try:
+        _withdraw(a, slug, want_months, pace, dump)
+    finally:
+        if a.dump:
+            with open(a.dump, "w", encoding="utf-8") as f:
+                json.dump(dump, f, indent=1, ensure_ascii=False)
+            log("wrote %s" % a.dump)
+
+
+def _withdraw(a, slug, want_months, pace, dump):
     with Browser(a.port) as br:
         sent = SentList(br, pace).load()
         before_total, before_pill = len(sent.rows), sent.pill
@@ -320,12 +381,40 @@ def withdraw(a):
                 % (row["label"], link.count()))
 
         pace.before("withdraw")
-        # Activated with the KEYBOARD, not a coordinate click. On an anchor,
-        # Enter produces the browser's own activation - the page's handler sees
-        # a real click event and can cancel the navigation - and a keystroke
-        # cannot land a few pixels away on the next person's row.
-        br.press(link.first, "Withdraw for %s" % row["label"])
+        # ACTIVATED WITH A REAL MOUSE CLICK ON THE ELEMENT, AND THE FIRST
+        # ATTEMPT USED THE KEYBOARD AND DID NOT WORK - measured 2026-09-10.
+        #
+        # Everything else in this toolkit is pressed with focus + Enter, and the
+        # reason is written in cc_linkedin.py: a click delivered after a dialog
+        # has closed falls through to whatever is underneath it, and a keystroke
+        # cannot. That reason does not reach this control. There is no dialog
+        # here; the row is static; and Enter on this anchor produced NOTHING -
+        # no confirmation, no change to the list, and the page's own count
+        # unmoved at forty. The browser followed the anchor's href instead of
+        # the page's handler running, which is A5 happening exactly as amended.
+        #
+        # locator.click() is a trusted CDP mouse event AND it hit-tests: it
+        # scrolls the element into view, and it refuses if the element at that
+        # point is not this one. So the thing the keyboard was protecting
+        # against - landing a few pixels away on the next person's row - is
+        # checked by the click itself rather than avoided by not clicking.
+        box = link.first.bounding_box()
+        # A MARKER THAT DOES NOT SURVIVE A NAVIGATION. This is how "the page
+        # swallowed the activation" is told apart from "the browser followed the
+        # anchor's href", and the two are otherwise identical here: for every row
+        # past the first ten that href IS this page, so a fall-through navigation
+        # reloads the Sent tab and leaves the address bar exactly where it was.
+        # The URL assertion A5 asks for cannot see that. This can.
+        br.page.evaluate("() => { window.__ccWithdrawMarker = 1; }")
+        log("clicking the withdraw control for %s at %s" % (row["label"], box))
+        link.first.click(timeout=15000)
         time.sleep(ACTIVATE_SETTLE)
+        survived = br.page.evaluate("() => window.__ccWithdrawMarker === 1")
+        dump["page_survived_the_activation"] = bool(survived)
+        log("the page %s the activation" % ("SWALLOWED" if survived else "NAVIGATED away on"))
+        dump["what_appeared"] = br.page.evaluate(APPEARED_JS)
+        for w in dump["what_appeared"]:
+            log("  appeared: %s" % json.dumps(w)[:400])
 
         # Whatever appeared, dumped BEFORE anything answers it. This is the
         # measurement survey section 10.4 says was never taken.
@@ -341,28 +430,38 @@ def withdraw(a):
 
         if dialogs:
             d = dialogs[0]
-            confirm = None
-            for label in d["buttons"]:
-                if S.CONFIRM_WITHDRAW.match(label.strip()):
-                    confirm = label.strip()
-                    break
-            if confirm is None:
+            # THE TARGET IS NAMED A THIRD TIME, on the last control pressed. The
+            # confirm button's visible text is "Withdraw", and so is part of the
+            # dialog's own heading, so a bare word has three candidates here.
+            # Its ACCESSIBLE NAME is the same sentence the row carried, and that
+            # is what is matched, scoped inside the open dialog.
+            btn = br.page.locator(S.DIALOG_OPEN).locator(
+                'button[aria-label="%s"]' % row["label"].replace('"', '\\"'))
+            if btn.count() != 1:
                 die("a confirmation appeared and this verb cannot identify which control "
-                    "confirms it. It holds %s and says %r. NOTHING WAS CONFIRMED and the "
-                    "invitation to %s still stands - put the right name in "
-                    "selectors.CONFIRM_WITHDRAW and run it again."
-                    % (d["buttons"], d["text"][:200], name))
-            btn = br.page.get_by_role("button", name=re.compile(r"^%s$" % re.escape(confirm), re.I))
-            if btn.count() < 1:
-                die("the confirmation offers %r and it cannot be located to press. Nothing "
-                    "was confirmed." % confirm)
-            br.press(btn.first, "the confirmation %r" % confirm)
-            dump["confirmed_with"] = confirm
+                    "confirms it: %d buttons inside it are labelled %r. It holds %s and says "
+                    "%r. NOTHING WAS CONFIRMED and the invitation to %s still stands."
+                    % (btn.count(), row["label"], d["buttons"], d["text"][:200], name))
+            btn.first.click(timeout=15000)
+            log("confirmed: clicked the dialog's %r" % row["label"])
+            dump["confirmed_with"] = row["label"]
+            dump["confirmation_said"] = d["text"]
             time.sleep(ACTIVATE_SETTLE)
             dump["consequence_text_after_confirming"] = br.page.evaluate(CONSEQUENCE_JS)
         else:
+            # A CONFIRMATION WAS MEASURED ON THIS SURFACE on 2026-09-10, so its
+            # absence is a change in the page and not a shortcut. It is not
+            # treated as one: the last time this verb said "no confirmation
+            # appeared", one was open on screen intercepting every pointer
+            # event, and the only thing that had gone wrong was its own probe.
+            # An absence that used to be a presence is a broken instrument until
+            # something proves otherwise.
             dump["confirmed_with"] = None
-            log("no confirmation appeared: activating the control is the whole act")
+            die("no confirmation dialog appeared. One was measured on this surface on "
+                "2026-09-10 - a native <dialog data-testid=\"dialog\"> reading 'If you "
+                "withdraw now, you won't be able to resend to this person for up to 3 "
+                "weeks.' - so this is either a changed page or a probe that has gone blind "
+                "again. Nothing was confirmed and the invitation to %s still stands." % name)
 
         pace.after("withdraw")
 
@@ -404,10 +503,6 @@ def withdraw(a):
 
         restriction = _restriction(dump)
         dump["reinvite_restriction"] = restriction
-        if a.dump:
-            with open(a.dump, "w", encoding="utf-8") as f:
-                json.dump(dump, f, indent=1, ensure_ascii=False)
-            log("wrote %s" % a.dump)
         print(json.dumps({"kind": "withdrawn", "person": "/in/" + slug, "name": name,
                           "age_displayed": age, "age_months_at_least": months,
                           "outstanding_before": before_total,
@@ -427,6 +522,17 @@ def _restriction(dump):
     checking.
     """
     said = []
+    # First choice: the sentence the confirmation dialog itself states, matched
+    # by the pattern measured off it. This is the thing design 4.2 asked for and
+    # it exists - it just could not be found until the probe could see a native
+    # <dialog>.
+    for d in dump.get("confirmation") or []:
+        m = S.REINVITE_RESTRICTION.search(d.get("text") or "")
+        if m:
+            # The tight sentence, and nothing else. A RESULT line that also
+            # carried the whole dialog would bury the one clause the caller has
+            # to read behind the button names.
+            return "stated-on-screen: you " + m.group(0).strip()
     for text in (dump.get("consequence_text_on_screen") or []) + \
                 (dump.get("consequence_text_after_confirming") or []):
         if re.search(r"(weeks?|days?|months?)\b", text, re.I) and \

@@ -314,7 +314,31 @@ SENT_SCROLLER_JS = """
 }
 """
 
-# A confirmation, if there is one. UNMEASURED until the first real withdrawal -
-# see docs/phase-3-withdraw-report.md. The verb dumps whatever appears and
-# fails naming it rather than pressing something it cannot identify.
-CONFIRM_WITHDRAW = re.compile(r"^(Withdraw|Yes|Confirm|OK)$", re.I)
+# THE CONFIRMATION - MEASURED 2026-09-10, and it had never been measured before
+# (survey section 10.4). It is a NATIVE <dialog>, which is why the first three
+# attempts reported "no confirmation appeared": a native <dialog> carries an
+# IMPLICIT role, so it has no role attribute and '[role="dialog"]' does not
+# match it. The probe was blind, its pass condition was an absence, and so it
+# certified a confirmation that was open on screen intercepting every click.
+#
+#     <dialog open data-testid="dialog" aria-labelledby="dialog-header">
+#       heading  "Withdraw invitation"
+#       text     "If you withdraw now, you won't be able to resend to this
+#                 person for up to 3 weeks."
+#       buttons  Dismiss | Cancel | <the withdraw sentence again>
+#
+# THE CONFIRM BUTTON IS NOT CALLED "Withdraw". Its visible text is, but its
+# accessible name is the SAME SENTENCE the row's control carries - "Withdraw
+# invitation sent to <Full Name>" - and the dialog's own heading also reads
+# "Withdraw invitation". Matching the bare word would have three candidates on
+# screen, one of them a heading. So the confirm control is identified
+# positively: a BUTTON, inside the open dialog, whose accessible name is the
+# withdraw sentence naming THE SAME PERSON the row named. That is the target's
+# name read a third time, off the last control that gets pressed.
+DIALOG_OPEN = 'dialog[open], [data-testid="dialog"]'
+# What the page itself says a withdrawal costs, quoted from the live dialog on
+# 2026-09-10. Note "UP TO 3 weeks": the design said "about three weeks", and the
+# page's own words are both weaker and vaguer than that. The RESULT line carries
+# what the page said, never what the design remembered.
+REINVITE_RESTRICTION = re.compile(
+    r"won.?t be able to resend to this person for ([^.]+)", re.I)
