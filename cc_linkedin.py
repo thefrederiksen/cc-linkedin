@@ -801,6 +801,11 @@ def main():
     sp.add_argument("--menu-expect",
                     help="what THAT profile says, for row P2-10. REQUIRED, never committed, and "
                          "its company must be none. " + T.EXPECT_SYNTAX)
+    sp.add_argument("--pending-profile",
+                    help="row P2-11: a profile we have ALREADY SENT an invitation to, which has "
+                         "not been accepted, so its top card reads Pending. REQUIRED and never "
+                         "committed. No other fixture reaches that state, and none of it can be "
+                         "fabricated - an invitation has to have been sent to a real person.")
     sp.add_argument("--company", default="centerconsulting-inc", help="company slug (row P2-4)")
     sp.add_argument("--query-people", default="Soren Frederiksen mindzie",
                     help="people search whose first row is the owner (row P2-5)")

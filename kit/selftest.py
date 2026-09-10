@@ -9,12 +9,27 @@
                          --menu-profile  <a profile whose invitation is behind More and
                                           whose top card states no employer>
                          --menu-expect   "...; company=none; ..."
+                         --pending-profile <a profile with an invitation of ours
+                                          already outstanding>
 
 TWO BLOCKS, and the run does BOTH. Phase 1 writes: on a post of ours it
 comments, replies, reacts, unreacts and deletes everything it made, and on the
 Page it publishes a throwaway post and deletes it. Phase 2 only reads: a
 profile, a second person's profile, a refusal, a company page, two searches,
 the notifications page and the Page's analytics.
+
+WHAT ONE RUN COSTS, as of 2026-09-10. SIX against the safety cap - profile B,
+the menu profile, the pending profile, one people search and two content
+searches - and FIVE on the uncapped own-surface counter: the owner's profile
+twice (P2-1, and the P2-3 refusal, which navigates before it refuses), his Page,
+his notifications and his Page's analytics. The last two only started counting
+with F2.
+
+That eleven is a fact about the rows, not something this suite asserts. There is
+deliberately no constant to compare it against: P2-9 reconciles the pacing file's
+movement against the run's own registry of what it opened, because a hand-set
+number is the one thing in here a tired Manager can retune until a run goes
+green.
 
 NOTHING IS SKIPPED. A fixture that is missing fails the run and says which one.
 A verb quietly skipped is how a suite goes green over code that never ran, and
@@ -44,6 +59,12 @@ that contained every value the verb could produce. So now:
     defects are visible on that one shape and on no other, so without it neither
     fix can be watched failing - a path that never executes is not covered by a
     green suite, however green.
+  * --pending-profile (F3, 2026-09-10) is a profile with an invitation of ours
+    already outstanding. It is the only fixture that reaches that state and the
+    only one nobody can fabricate: an invitation has to have been sent to a real
+    person. Row P2-11 is also what makes a change in LinkedIn's own Pending
+    label LOUD - without it, that change turns invitation_pending quietly false
+    everywhere and no row goes red.
 
 On Soren's own profile there is no invite control, no degree badge and no
 Message button, so without profile B half the record is never exercised at all.
@@ -215,6 +236,14 @@ def _profile_holds(r, slug):
          "company=%r reason=%r" % (cur.get("company"), (cur.get("company_reason") or "")[:40])),
         ("can_connect_reason", bool(r.get("can_connect_reason")),
          repr((r.get("can_connect_reason") or "")[:40])),
+        # F3, 2026-09-10. The field is a boolean on EVERY profile, not only the
+        # pending one, so a run against any of them catches it going missing.
+        ("invitation_pending is a boolean",
+         isinstance(r.get("invitation_pending"), bool), repr(r.get("invitation_pending"))),
+        ("a pending invitation offers no invitation",
+         (not r.get("invitation_pending")) or (cc is False and via is None and curl is None),
+         "pending=%r can_connect=%r via=%r url=%r"
+         % (r.get("invitation_pending"), cc, via, curl)),
         ("connections", (r.get("connections") is None and bool(r.get("connections_reason")))
          or (isinstance(r.get("connections"), int)
              and "connection" in (r.get("connections_raw") or "")),
@@ -297,7 +326,7 @@ PHASE1_ROWS = ("P1-read-post", "P1-comment", "P1-read-comments-1", "P1-comment-i
                "P1-reply", "P1-read-comments-2", "P1-reply-is-there", "P1-react",
                "P1-unreact", "P1-delete-reply", "P1-delete-comment", "P1-read-comments-3",
                "P1-nothing-left", "P1-page-post", "P1-page-delete-post")
-PHASE2_ROWS = ("P2-1", "P2-2", "P2-2b", "P2-10", "P2-3", "P2-4", "P2-5",
+PHASE2_ROWS = ("P2-1", "P2-2", "P2-2b", "P2-10", "P2-11", "P2-3", "P2-4", "P2-5",
                "P2-6a", "P2-6b", "P2-6c", "P2-7", "P2-8", "P2-9")
 # Profile B must be the shape the design asks for - ruling R12. The row used to
 # accept 3rd and 3rd+ as well, which is not what docs/phase-2-design.md says.
@@ -554,12 +583,17 @@ def run(a):
     a.other_expect = FX.value(a.other_expect, "other_profile", "expect")
     a.menu_profile = FX.value(a.menu_profile, "menu_profile", "url")
     a.menu_expect = FX.value(a.menu_expect, "menu_profile", "expect")
+    # F3's fixture. It exists because a REAL invitation was sent to that person
+    # on 2026-09-09, at the owner's instruction; nothing about it can be
+    # fabricated and no other profile can stand in for it.
+    a.pending_profile = FX.value(a.pending_profile, "pending_profile", "url")
     if not a.post:
         print("FAIL --post is required: a permalink of a post WE authored, which the\n"
               "comment rows comment on and then delete from. Pass it, or put it in %s\n"
               "as \"post\" -> \"url\" (ruling R20)." % FX.path(), flush=True)
         sys.exit(1)
-    if not (a.other_profile and a.other_expect and a.menu_profile and a.menu_expect):
+    if not (a.other_profile and a.other_expect and a.menu_profile and a.menu_expect
+            and a.pending_profile):
         print("FAIL the Phase 2 profile fixtures are required, and none of them is committed: "
               "this repository is public, so no third party's URL or details go in it.\n"
               "  --other-profile  a 1st- or 2nd-degree profile URL (rows P2-2, P2-2b)\n"
@@ -569,6 +603,10 @@ def run(a):
               "                   control on the top card, AND whose top card states no current\n"
               "                   employer (no company pill). Row P2-10.\n"
               "  --menu-expect    what a person reads off THAT profile; its company must be none\n"
+              "  --pending-profile  a profile we have ALREADY SENT an invitation to, which has\n"
+              "                   not been accepted, so its top card reads Pending. Row P2-11.\n"
+              "                   No other fixture reaches that state and none of it can be\n"
+              "                   fabricated - an invitation has to have been sent.\n"
               "  the expect syntax: " + EXPECT_SYNTAX + "\n"
               "Soren's own profile has no degree badge, no invite control and no Message button, "
               "so without profile B most of what read-profile returns is never exercised. The "
@@ -582,13 +620,15 @@ def run(a):
               "to live (ruling R20):\n"
               "  %s\n"
               '  {"other_profile": {"url": ..., "expect": ...},\n'
-              '   "menu_profile":  {"url": ..., "expect": ...}}\n'
+              '   "menu_profile":  {"url": ..., "expect": ...},\n'
+              '   "pending_profile": {"url": ...}}\n'
               "Supplied now: %s." % (FX.path(), ", ".join(
                   "%s=%s" % (k, "yes" if v else "NO")
                   for k, v in (("other_profile", a.other_profile),
                                ("other_expect", a.other_expect),
                                ("menu_profile", a.menu_profile),
-                               ("menu_expect", a.menu_expect)))), flush=True)
+                               ("menu_expect", a.menu_expect),
+                               ("pending_profile", a.pending_profile)))), flush=True)
         sys.exit(1)
     menu_exp = _expect(a.menu_expect, "--menu-expect")
     if menu_exp["company"].lower() != "none":
@@ -789,6 +829,40 @@ def run(a):
                                        (cur.get("company_reason") or "")[:50])),
         ] + _profile_says(r, menu_exp) + _profile_holds(r, want_m)
     check("P2-10", every(subs), "menu profile, %d checks" % len(subs))
+
+    # -- P2-11: an invitation that has already been sent ----------------------
+    # F3, 2026-09-10. The state no other fixture reaches. Until today this
+    # profile answered can_connect: false - right - with the reason "no invite
+    # control on the top card and none in the More menu", while the card in
+    # front of it said Pending. This row is also the ONLY thing that notices if
+    # LinkedIn changes the label the detection is matched on: without it, that
+    # change turns invitation_pending quietly false and nothing goes red.
+    #
+    # It asserts no name, headline or location, because the fixture needs none:
+    # what makes this profile the right one is a fact about the invitation, and
+    # asking a person to transcribe three more fields for it would add nothing a
+    # wrong reading could catch.
+    want_p = (re.search(r"/in/([^/?#]+)", a.pending_profile)
+              or [None, a.pending_profile.strip("/")])[1]
+    ok, out = attempt("read-profile P", P.read_profile, url=a.pending_profile)
+    recs = _records(out)
+    r = recs[0] if recs else {}
+    subs = [("a record came back", bool(ok and recs), "ok=%s records=%d" % (ok, len(recs)))]
+    if ok and recs:
+        why = r.get("can_connect_reason") or ""
+        subs += [
+            ("invitation_pending is true", r.get("invitation_pending") is True,
+             repr(r.get("invitation_pending"))),
+            ("can_connect is a definite no, not an undecided",
+             r.get("can_connect") is False, repr(r.get("can_connect"))),
+            ("the reason names the pending state", "pending" in why.lower(), repr(why[:90])),
+            ("the reason is no longer the uninformative one",
+             "no invite control" not in why.lower(), repr(why[:90])),
+            ("no invitation is handed out",
+             r.get("connect_via") is None and r.get("connect_url") is None,
+             "via=%r url=%r" % (r.get("connect_via"), r.get("connect_url"))),
+        ] + _profile_holds(r, want_p)
+    check("P2-11", every(subs), "pending-invitation profile, %d checks" % len(subs))
 
     # -- P2-3: a deliberately wrong --expect must REFUSE ----------------------
     ok, out = attempt("read-profile X", P.read_profile, url=a.profile,

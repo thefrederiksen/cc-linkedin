@@ -378,9 +378,60 @@ def is_own_page(key):
     return (key or "").strip().strip("/").lower() in OWN_PAGE_KEYS
 
 
+# The three paths a URL has to be on before it can be one of ours. Each captures
+# the identifier, which is then matched EXACTLY against the lists above - a
+# substring test would put /in/sorenfrederiksen2, somebody else entirely, on the
+# uncapped counter.
+_URL_PROFILE = re.compile(r"//(?:[a-z0-9-]+\.)*linkedin\.com/in/([^/?#]+)", re.I)
+_URL_COMPANY = re.compile(
+    r"//(?:[a-z0-9-]+\.)*linkedin\.com/(?:company|school|showcase)/([^/?#]+)", re.I)
+_URL_NOTIFICATIONS = re.compile(
+    r"//(?:[a-z0-9-]+\.)*linkedin\.com/notifications(?:[/?#]|$)", re.I)
+
+
+def surface_kind(url):
+    """Which counter a URL belongs on: "view_self" or "view".
+
+    F1, 2026-09-10. For a caller that holds a URL rather than a slug - the survey
+    tool - so that "is this ours" is decided in ONE place by the same lists
+    read_profile and read_company use, instead of a second opinion that drifts.
+
+    "view_self" needs a positive identification: a linkedin.com URL on one of the
+    three paths below whose identifier is on the owner's own list, or his own
+    notifications page. EVERYTHING ELSE IS "view", including a URL this does not
+    recognise, a URL that is not LinkedIn's, an empty string and None. The
+    unrecognised direction has to be the capped one - the failure mode of a
+    classifier that guesses generously is a day of stranger-views that the safety
+    number never saw.
+
+    IT IS AN ENUMERATION, and an enumeration always loses to the form it has not
+    met (R17, which is why the redactor stopped enumerating). Here that loss is
+    harmless in the one direction that matters: a new own-surface it has never
+    heard of is counted against the cap, which spends the budget faster and
+    protects nothing less. It cannot silently uncap a stranger.
+    """
+    u = (url or "").strip()
+    if not u:
+        return "view"
+    m = _URL_PROFILE.search(u)
+    if m and is_own_profile(m.group(1)):
+        return "view_self"
+    m = _URL_COMPANY.search(u)
+    if m and is_own_page(m.group(1)):
+        return "view_self"
+    if _URL_NOTIFICATIONS.search(u):
+        return "view_self"
+    return "view"
+
+
 class Pace(object):
     """Daily caps and gaps, kept in a file so they hold across sessions and
     agents. TWO TRACKS, and they never touch each other.
+
+    WHAT IT COUNTS, IN ONE SENTENCE: views taken through this toolkit. Not views
+    taken on this machine, and not views taken against the owner's account - see
+    the last item under IT DOES NOT GUARANTEE, which is the difference between
+    those three and is the reason this sentence is the first thing here.
 
       * OUTBOUND - comment, react, connect, message, invite. 45 to 90 seconds
         between actions, because these reach a person.
@@ -423,6 +474,23 @@ class Pace(object):
         conservative direction on purpose: this cap exists to keep the owner's
         account safe, and a request that errored may still have reached LinkedIn.
       * anything about another machine. The file is local.
+      * that it saw every profile the owner's account opened. THIS IS THE
+        IMPORTANT ONE and it is F1, 2026-09-10. A view registers here only when
+        it goes through this code. An agent hand-driving a browser -
+        browser-harness, Playwright by hand, a person clicking in Chrome - opens
+        a real profile against the owner's account, leaves the ordinary "viewed
+        your profile" trace, and appears nowhere in pace.json. That is not a
+        theory: on 2026-09-09 the Manager of the live-proving pass read two
+        fixture top cards that way while the counter sat at eighty, and the
+        Architect had done the same thing the night before. NEITHER NOTICED.
+        The number in pace.json is therefore a FLOOR under the day's real total,
+        never the total. If you need the real one, add what you opened by hand -
+        or better, open it through `tools/survey.py`, which since F1 registers
+        its view like every other read here.
+      * a defence against a caller that deliberately routes around it. There is
+        none, and there is not meant to be one: `Browser` will open any URL it
+        is given. What there is instead is one obvious way to do it right, used
+        by every read verb and by the survey tool.
 
     An overstated guarantee in the one file that exists to keep his account safe
     is worse than an honest limitation, because it is the sentence somebody

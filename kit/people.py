@@ -400,6 +400,32 @@ def _invite(controls):
     return None
 
 
+def _pending(controls):
+    """The control saying an invitation to this person is ALREADY OUTSTANDING, or
+    None - F3, 2026-09-10.
+
+    Matched on the accessible label measured on the live card, never on the bare
+    word "Pending", which is the same rule `_invite` applies to the bare word
+    "Connect" and it is chosen the same way: precision over recall. A false
+    positive here tells Phase 3's `withdraw` there is an invitation to take back
+    when there is not. A false negative gives back the answer this replaces -
+    can_connect false with a true but uninformative reason - which is a worse
+    report and not a wrong one.
+
+    WHAT THAT COSTS, SAID OUT LOUD: this was measured on ONE profile. A Pending
+    control rendered without that label - another locale, another layout - is
+    not detected, and `invitation_pending` is then false on a profile where an
+    invitation really is outstanding. The live row P2-11 is what makes that
+    visible: it asserts true on a profile we know is pending, so the day
+    LinkedIn changes the label the run goes red instead of the field going
+    quiet.
+    """
+    for c in controls:
+        if S.INVITE_PENDING_ARIA.match((c.get("aria") or "").strip()):
+            return c
+    return None
+
+
 def _decide(item, where, via):
     """(can_connect, reason, via, url) from the invite control that was found.
 
@@ -426,28 +452,54 @@ def _decide(item, where, via):
 
 
 def _connect(br, card, name, degree):
-    """Can we send this person an invitation, and where does the control live?
+    """Can we send this person an invitation, where does the control live, and is
+    one already outstanding?
 
-    Three fields, because the caller's question ("can I connect with this
-    person") is not the question the old `connection_state` answered ("what does
-    a button here say"). Measured 2026-09-09: the invite control is on the top
-    card on some profiles and behind the More menu on others, and the primary
-    button is unrelated to which - one of the six profiles measured has Message
-    filled, Follow beside it, and the invitation in the menu.
+    FIVE values: (can_connect, reason, via, url, invitation_pending). The first
+    four because the caller's question ("can I connect with this person") is not
+    the question the old `connection_state` answered ("what does a button here
+    say"). Measured 2026-09-09: the invite control is on the top card on some
+    profiles and behind the More menu on others, and the primary button is
+    unrelated to which - one of the six profiles measured has Message filled,
+    Follow beside it, and the invitation in the menu.
 
-    The menu is opened ONLY when the top card has no invite control, and its
-    contents are believed only when the item every menu carries is in them. An
-    empty menu read looks exactly like a menu with no invite in it, and that
-    reading would report can_connect=false forever without ever being wrong out
-    loud.
+    The fifth is F3, 2026-09-10. `invitation_pending` is true only where a
+    pending control was POSITIVELY SEEN; false means this run read the card (and
+    the menu, where it got that far) and no pending control was on it. That is
+    a reading of a card we did read, not an absence noticed by an instrument
+    that never looked - but it is still narrower than "no invitation is
+    outstanding", and no caller should read it as that. See `_pending` for the
+    one profile it was measured on.
+
+    The menu is opened ONLY when the top card has no invite control and no
+    pending control, and its contents are believed only when the item every menu
+    carries is in them. An empty menu read looks exactly like a menu with no
+    invite in it, and that reading would report can_connect=false forever
+    without ever being wrong out loud.
     """
     if degree == "self":
-        return None, "this is the signed-in member's own profile", None, None
+        return None, "this is the signed-in member's own profile", None, None, False
+
+    # BEFORE the invite control and before the menu. The card cannot carry both
+    # Connect and Pending - LinkedIn paints one or the other - but if one ever
+    # does, the answer that acts on nobody is the one to keep. And answering
+    # from the card here is what stops this path opening a menu to go looking
+    # for something it has already found: until F3 a pending profile cost a
+    # click, a settle loop and several seconds to arrive at a worse sentence.
+    pending = _pending(card["controls"])
+    if pending is not None:
+        return (False,
+                "an invitation to %s is already PENDING - the top card carries the control "
+                "labelled %r, which is LinkedIn saying an invitation has been sent and not "
+                "yet answered. Sending another is not possible until this one is withdrawn "
+                "or expires." % (name, (pending.get("aria") or pending.get("text") or "")[:80]),
+                None, None, True)
 
     top = _invite(card["controls"])
     decided = _decide(top, "on the top card", "topcard")
     if decided:
-        return decided
+        # No pending control on the card this was read from, three lines above.
+        return decided + (False,)
 
     more = br.page.locator(S.PROFILE_TOPCARD).first.get_by_role(
         "button", name=S.PROFILE_MORE_NAME)
@@ -487,14 +539,28 @@ def _connect(br, card, name, degree):
         die("the More menu on %r's profile did not come back with %r in it (%d items read). "
             "An empty or half-rendered menu is a broken instrument, not a menu with no invite "
             "in it." % (name, S.PROFILE_MENU_PROOF, len(items)))
+    # The same label, in the menu. NOT MEASURED THERE - the pending control was
+    # measured on the top card and nowhere else, and this is here because the
+    # menu is the other place an invite control lives, so it is the other place
+    # this one might. It fires only on the exact string that was measured, so it
+    # cannot invent a pending state; if LinkedIn renders one here in some other
+    # form, this reports what it does today and says so below.
+    menu_pending = _pending(items)
+    if menu_pending is not None:
+        return (False,
+                "an invitation to %s is already PENDING - the More menu carries the item "
+                "labelled %r." % (name, (menu_pending.get("aria")
+                                         or menu_pending.get("text") or "")[:80]),
+                None, None, True)
+
     decided = _decide(_invite(items), "in the More menu", "more-menu")
     if decided:
-        return decided
+        return decided + (False,)
     return (False,
             "no invite control on the top card and none in the More menu, which settled and "
             "read: %s"
             % ", ".join(sorted((i["text"] or i["aria"] or "?")[:40] for i in items)),
-            None, None)
+            None, None, False)
 
 
 # How long the More menu is given to stop changing, and how often it is read.
@@ -655,7 +721,8 @@ def read_profile(a):
                     % (a.expect, name, headline[:60]))
             log("profile verified: contains %r" % a.expect)
 
-        can_connect, connect_reason, connect_via, connect_url = _connect(br, card, name, degree)
+        (can_connect, connect_reason, connect_via, connect_url,
+         invitation_pending) = _connect(br, card, name, degree)
         connections, connections_raw, connections_reason = _connections(card)
         followers, followers_raw, followers_reason = _followers(br)
 
@@ -673,6 +740,11 @@ def read_profile(a):
             "can_connect_reason": connect_reason,
             "connect_via": connect_via,
             "connect_url": connect_url,
+            # F3. True only where a pending-invitation control was positively
+            # seen; false means this run read the card and no such control was
+            # on it, which is narrower than "no invitation is outstanding". The
+            # reason field says which of the two it is, in words.
+            "invitation_pending": invitation_pending,
             "connections": connections,
             "connections_raw": connections_raw,
             "connections_reason": connections_reason,
@@ -683,9 +755,9 @@ def read_profile(a):
         }
         print(json.dumps(rec, ensure_ascii=True))
         print("RESULT read-profile slug=%s name=%r degree=%s primary=%r can_connect=%s "
-              "via=%s about=%d chars"
+              "via=%s pending=%s about=%d chars"
               % (want, name, degree, primary, can_connect, connect_via,
-                 len(rec["about"] or "")))
+                 invitation_pending, len(rec["about"] or "")))
 
 
 # ---------------------------------------------------------------- read-company

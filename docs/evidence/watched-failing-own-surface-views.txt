@@ -1,0 +1,32 @@
+F2 - notifications and stats counted no view at all, not even view_self.
+
+The tests in tests/test_own_surface_views.py, watched failing on the code that
+shipped as a7e4ae5, BEFORE any of the fix was written. 2026-09-10, 02:35.
+
+    py -3.11 -m unittest tests.test_own_surface_views
+
+  ERROR: NotificationsAreCountedAsOurOwn.test_it_is_on_the_self_counter_and_not_the_capped_one
+  IndexError: list index out of range        (the registry was empty at the navigation)
+  ERROR: NotificationsAreCountedAsOurOwn.test_the_registry_says_what_was_opened
+  IndexError: list index out of range
+  ERROR: StatsIsCountedAsOursOnlyWhenItIsOurs.test_our_own_page_by_slug_is_also_a_self_view
+  IndexError: list index out of range
+  ERROR: StatsIsCountedAsOursOnlyWhenItIsOurs.test_somebody_elses_page_id_is_a_capped_view
+  IndexError: list index out of range
+  ERROR: StatsIsCountedAsOursOnlyWhenItIsOurs.test_the_registry_names_the_page_that_was_asked_for
+  IndexError: list index out of range
+
+  FAIL: NotificationsAreCountedAsOurOwn.test_it_registers_a_view_before_it_opens_the_page
+  AssertionError: 0 != 1 : notifications used to open its page and count nothing
+  FAIL: StatsIsCountedAsOursOnlyWhenItIsOurs.test_our_own_page_is_a_self_view
+  AssertionError: 0 != 1 : stats used to count nothing at all
+  FAIL: NeitherVerbSpendsTheSafetyNumber.test_a_run_of_both_leaves_the_capped_counter_where_it_was
+  AssertionError: 0 != 2
+
+  Ran 9 tests in 1.184s
+  FAILED (failures=3, errors=5)
+
+The ninth test PASSED before the fix and is meant to: it asserts VIEW_SELF_CAP
+is None by driving Pace directly, which was already true. It is here because F2
+is what puts these two verbs on that counter, and "uncapped" is the property
+that makes doing so safe.
