@@ -1,17 +1,17 @@
 # Inspection slice 4: claims, safety, and what leaked
 
 Independent static inspection updated through committed HEAD
-`1efa02df27470e29b1fba88099d3f6adde8e1e4b` on 2026-09-09. I did not open
-LinkedIn or run a verb. I inspected the current tracked tree and all 38 commits
-reachable from the local refs. Per the brief, I
+`5bb04230fa760c19ebccfc6b62ce31f9f3fb267f` on 2026-09-09. I did not open
+LinkedIn or run a verb. I inspected the current 53-file tracked tree and all 44
+commits reachable from the local refs. Per the brief, I
 did not assess the URN resolver, `kit/selftest.py`, or the read verbs' extraction
 logic; I did inspect their side effects and the claims made about them.
 
-At the final read, another session had uncommitted edits in `kit/browser.py` and
-`kit/selftest.py`. I did not modify them. The `browser.py` delta registers views
-for the self-test; it does not lock or atomically save `pace.json`, so the pacing
-findings apply to both committed HEAD and that worktree delta. All other findings
-below are stated against committed HEAD.
+At the final read, another session had an uncommitted R15 implementation in
+`kit/browser.py` plus `tests/test_pace.py`. I did not modify either. Because it
+materially changes the answer about two pacing writers, section 1 explicitly
+audits that newer worktree code; all other findings are stated against committed
+HEAD.
 
 `PROVED` means the result follows from committed code, artifacts, or Git
 history. `SUSPECTED` means the code creates the opportunity but the external
@@ -21,91 +21,84 @@ effect was not observed here.
 
 | Rank | Consequence | Status | Finding |
 |---:|---|---|---|
-| 1 | HIGH - outbound caps can be exceeded while the file says they were obeyed | PROVED | `pace.json` has an unlocked, non-atomic check/action/account sequence and fails open on read or write damage. |
-| 2 | HIGH - a public repository can identify people and content that were meant to be anonymous | PROVED | The redactor removed profile slugs and names but left a distinctive third-party headline, organization/content URLs, post IDs/URNs, a job ID, and an address. |
-| 3 | MEDIUM - a command advertised as read-only overwrites user state and changes browser permissions | PROVED | `search-posts` clears/replaces the system clipboard and grants clipboard permissions to the default browser context without resetting them. |
+| 1 | HIGH - caps or gaps can reset while the file still looks usable | PROVED | The pending R15 code fixes the ordinary lost-update/cap race, but malformed state and local-date/timezone changes still reset caps, and concurrent writers can still collapse the required gap. |
+| 2 | HIGH - data meant to be anonymous was pushed publicly and remains in reachable history | PROVED | The tip redacts almost all exposed headline/URL/URN data, but history retains it and the new leak test itself contains one real third-party company ID. |
+| 3 | MEDIUM - “read-only” can still destroy non-text clipboard state | PROVED conditional path | `search-posts` now restores readable text and resets permissions, but proceeds when the original clipboard is unreadable/non-text or restoration/reset fails. |
 | 4 | MEDIUM - “MEASURED” and ruling language is stronger than its evidence or code | PROVED | The renderer classifier demonstrably mislabels classic pages; repeated-load and fixture claims have no committed repeat evidence; `share_url` and signed-in invariants are not enforced as claimed. |
 | 5 | MEDIUM - some reads can be visible to other people or counted by LinkedIn | PROVED navigation; external result partly SUSPECTED | `read-profile` deliberately opens another person's profile, which the accepted design says leaves a “viewed your profile” trace. Notification-seen and content-impression effects were not measured. |
 
-## 1. `pace.json` is not a cross-process safety boundary - PROVED
+## 1. `pace.json`: the lost-count race is fixed in the pending R15 code, but the safety boundary still fails open - PROVED
 
-`Pace` says its file makes caps hold “across sessions and agents”
-(`kit/browser.py:200-207`). It does not provide that property.
+Committed HEAD still has the original unlocked check/action/account sequence.
+The newer worktree code changes that answer and is the version assessed here.
 
-### Two writers
+### Two writers: cap fixed, gap not fixed
 
-`before()` loads and checks (`kit/browser.py:250-257`), the caller performs the
-external action, and `after()` separately reloads, increments, and saves
-(`kit/browser.py:259-264`). There is no reservation, file lock, compare-and-swap,
-or atomic update. `_save()` truncates the live file and writes JSON directly
-(`kit/browser.py:235-240`).
+The pending code adds one `pace.json.lock`, makes `_reserve()` check and
+increment under it, and atomically replaces the JSON file
+(`kit/browser.py:273-320` in the worktree). A reservation happens after waiting
+but before the external action (`kit/browser.py:326-340`). Therefore two writers
+at 59 cannot both take the last cap slot, and updates to different fields no
+longer overwrite one another. The old 61-actions-recorded-as-60 interleaving is
+closed.
 
-Concrete interleaving at a comment count of 59:
-
-1. writers A and B both load 59 in `before()` and both pass the cap check;
-2. both publish a comment;
-3. both load 59 in `after()`, increment their private copy to 60, and save 60.
-
-There have been 61 comments, but the durable counter says 60. Updates to
-different fields can also erase each other: A can save a view increment based
-on an old snapshot after B saved a comment increment. `last_outbound` and
-`last_view` are subject to the same lost-update race, so spacing can fail too.
-
-The per-browser lock is only an incidental partial defence. `BrowserLock` is
-keyed by CDP port (`kit/browser.py:90-114`) and is held around a normal `Browser`
-run (`kit/browser.py:294-374`). Two cooperative commands on the same port are
-serialized. Different ports have different locks while all `Pace` instances use
-the same `pace.json`; a direct/out-of-band writer is also outside that lock.
-Nothing in `Pace` itself serializes its global file.
-
-The cap check also occurs before the randomized wait. Even if two writers do not
-check simultaneously, another writer can consume the last slot while the first
-is sleeping; the first does not recheck before acting.
+The required gap is still not cross-process safe. Both writers read the same
+old `last_outbound` outside the lock and finish `_wait()` independently. They
+then reserve successive cap slots under the lock and can act at nearly the same
+time. `last_outbound` is written only by `after()` after each action
+(`kit/browser.py:316-343`). Thus the count can be right while the claimed 45-90
+second separation is zero. The same applies to `last_view`. A per-port
+`BrowserLock` serializes same-port callers, but different ports share the pacing
+file and have different browser locks.
 
 ### Crash and damaged-file cases
 
-The outbound callers perform the real action before `Pace.after()`
-(`kit/comments.py:319-321`, `337-339`, `366-379`). Profile/company/search
-navigations likewise occur between `before_view()` and `after_view()`. A crash,
-timeout, process kill, or exception in that interval leaves a real action or
-view uncounted. Restarting can repeat it without encountering the cap.
+Reservation changes a crash from undercounting to conservative overcounting. A
+crash after `before()` reserves but before the action leaves a used slot even if
+no action occurred. A crash after the action but before `after()` still leaves
+the reservation counted, so the daily cap does not fail open; however, it leaves
+the last-action timestamp stale, allowing the next process to skip the gap.
 
-A crash or competing write after the `"w"` open can leave `pace.json` empty or
-partial. `_load()` catches every exception and returns `{}`
-(`kit/browser.py:228-233`), treating corruption, permission failure, and missing
-data alike as a clean zero. The next successful `after()` overwrites the damaged
-file with reset counters. This is a fail-open safety instrument.
+Atomic replacement means a normal process crash during `_save()` leaves either
+the prior complete file or the new complete file. But `_load()` still catches
+every exception and returns `{}` (`kit/browser.py:282-287`). A malformed file,
+permission/read error, or externally damaged file is treated as a clean zero;
+the next reservation can overwrite it and reset every cap and timestamp. The
+new lock does not turn an unreadable safety record into a refusal.
 
 ### Midnight and local-time changes
 
-Day buckets use the process's current local date, recomputed at several points;
-no timezone is recorded.
+Day buckets still use the process's current local date with no stored timezone.
 
-* An action just before midnight can be charged after midnight because accounting
-  happens after the action.
-* If midnight falls after `after()` creates yesterday's bucket but before
-  `_save()` recomputes `today`, `_save()` deletes the increment it is about to
-  persist as an old key (`kit/browser.py:236-238`).
-* A wait can cross midnight without another cap check on the day in which the
-  action actually occurs.
-* Moving the OS clock/timezone forward produces a new empty date bucket early
-  and deletes the earlier one on save. Moving it backward normally selects a
-  previously deleted bucket while retaining, but ignoring, the future-dated
-  key. Either direction can reset an effective daily cap within 24 hours.
+* A reservation immediately before midnight can authorize an action just after
+  midnight against yesterday's count.
+* `_reserve()` chooses the bucket and `_save()` recomputes `today`; if midnight
+  falls between them, `_save()` deletes the reservation as an old key
+  (`kit/browser.py:303-309`).
+* Moving the OS clock/timezone forward selects a new empty date bucket early and
+  deletes the earlier bucket on save. Moving it backward normally selects a
+  previously deleted bucket while retaining but ignoring the future-dated key.
+  Either direction can reset the effective cap inside 24 hours.
 
-DST changes that do not change the calendar date do not reset the bucket; the
-gap timestamps use epoch seconds. The unsafe boundary is the local date, not
-the one-hour DST offset by itself.
+DST changes that stay on the same calendar date do not reset the bucket; gap
+timestamps use epoch seconds. The unsafe boundary is the local date, not a DST
+offset by itself.
 
 ## 2. Public-repository leak audit - PROVED
 
-The claim “No third party's name, profile URL or headline appears here or in the
-code” (`docs/phase-2-fixes.md:10-13`) is false. The narrower statement that the
-first profile-URL leak was caught before commit is supported by Git history.
+At the original inspection point, the claim “No third party's name, profile URL
+or headline appears here or in the code” was false in the same file that made
+it. The current `docs/phase-2-fixes.md:10-35` now admits and describes the
+redaction. The narrower statement that the first profile-URL leak was caught
+before commit is supported by Git history.
 
-### What is present
+### What was present in reachable public branch history
 
-| Committed location | Data left public | Why redaction did not cover it |
+The following coordinates are those recorded at inspection commit `7817011`;
+later tip commits redact most of them. The old objects remain reachable from the
+branch history, as accepted ruling R14 itself notes.
+
+| Historical committed location | Data left public | Why redaction did not cover it |
 |---|---|---|
 | `docs/phase-2-fixes.md:36-45`, `205-216` | Profile D's distinctive HR/job-search headline plus 205 connections, identified as a measured third-party profile | This is prose outside the survey redactor. It directly contradicts the file's lines 10-13. |
 | `kit/search.py:38-42` | Three exact `lnkd.in` post short links copied from three measured cards | The links are handwritten into a module docstring. Following one can recover the content and author. |
@@ -116,12 +109,11 @@ first profile-URL leak was caught before commit is supported by Git history.
 | `docs/surveys/stats-2026-09-09.txt:3-4`, `244-269`, `573-586` | The administered Page ID and its exact post/activity identifiers | These appear to be owner/project fixtures rather than third-party data, but the “safe dump” still preserves stable identifiers. |
 | `docs/surveys/company-member-2026-09-09.txt:277`, `304` | Owner business website and a precise Toronto postal-code map URL | This appears to be owner/business data, not an anonymous third party; it is nevertheless unredacted location data. |
 
-The survey text filter is broad, but attribute redaction recognizes only `/in/`
-slugs, `ACoA...` member IDs, and a fixed list of query parameters
-(`tools/survey.py:78-95`). It has no rule for company paths/IDs, post or event
-URNs, jobs, articles, short links nested in `url=`, or map addresses. The claim
-that `--out` is the safe public dump (`tools/survey.py:20-26`, `302-303`) is
-therefore not supported by its implementation.
+At the inspection baseline, attribute redaction recognized only `/in/` slugs,
+`ACoA...` member IDs, and a fixed query-parameter list. That is why the table's
+other forms survived. Current `tools/survey.py:20-40`, `106-184` no longer calls
+the output safe, adds the named forms, and adds a catch-all for 15-or-more digit
+content IDs. That materially improves the tip; it cannot retract the history.
 
 Some identifiers above may point to owner-affiliated material. Profile D is
 explicitly a third party, and the search/notification identifiers are paired
@@ -129,15 +121,32 @@ with redacted actors, so ownership cannot be established from the public dump.
 That uncertainty does not make the links anonymous: they are stable lookup keys
 to the hidden content and actors.
 
+### What remains at the current tip - PROVED
+
+R13, R17, and R18 removed the distinctive headline/count, the three real short
+links, the real post IDs copied into tests and evidence, the organization and
+article paths, the job ID, and the postal-code map URL. Current survey dumps use
+shape placeholders, and the module docstring uses a short-link shape instead of
+a resolvable link.
+
+One known third-party identifier remains: `tests/test_no_leak.py:104` repeats
+the exact eight-digit company ID that the notification dump exposed. It appears
+as a negative control proving only that the 15-digit content-ID detector does
+not match an organization ID. The source-tree tests inventory real short links
+and 15-or-more digit runs, not shorter numeric company paths, so they cannot
+catch the identifier they have reintroduced. The test's pass would prove its
+two shapes absent, not that the tree contains no third-party identifiers.
+
 ### What I did not find
 
-In the current 48 tracked files I found no unredacted third-party `/in/` slug,
-`ACoA...` member ID, email address, LinkedIn-style `@handle`, personal name, real
-message body, or real invitation note. The only concrete profile URL is the
-owner's; `/in/someone/` and ellipses are examples. Candidate capitalized
-two-word names were manually reviewed rather than treated as automatically
-personal. The scan also covered `href`/`aria-label`, company/content paths,
-URNs, short links, job/article paths, and location URLs.
+Apart from that company ID, in the current 53 tracked files I found no
+unredacted third-party `/in/` slug, `ACoA...` member ID, email address,
+LinkedIn-style `@handle`, personal name, headline, real message body, real
+invitation note, resolvable short link, or real post/content ID. The only
+concrete profile URL is the owner's; `/in/someone/` and ellipses are examples.
+Candidate capitalized two-word names were manually reviewed rather than treated
+as automatically personal. The scan also covered `href`/`aria-label`,
+company/content paths, URNs, job/article paths, and location URLs.
 
 The absence checks were tested with positive controls: a fabricated profile
 URL, email address, and two-word name each matched its intended detector. This
@@ -147,19 +156,18 @@ target.
 
 ### Did the retaken surveys replace the first leak?
 
-All eight current survey files were introduced together in commit
-`1173f451a8dd2633a4fd0ac21e840f15cb86c30d`; no other reachable commit changes
-`docs/surveys` or `tools/survey.py`. The current dumps use `<slug>`, `<memberid>`,
-and `<value>` where those three patterns apply. Thus, in the 34-commit local
-reachable history at the first inspection point—and still in the current
-38-commit history—there is no committed earlier dump containing the reported
-ten profile URLs. This supports `docs/phase-2-report.md:183-187`'s specific claim
-that the first pass was caught before commit.
+All eight survey files were introduced together in commit
+`1173f451a8dd2633a4fd0ac21e840f15cb86c30d`; the later R13/R17/R18 commits
+redact those same files in place. No commit in the current 44-commit reachable
+history contains an earlier dump with the reported ten raw profile URLs. This
+supports `docs/phase-2-report.md:183-187`'s specific claim that the first pass was
+caught before commit.
 
 That proof does not cover untracked scratch files, reflog-only/unreachable
-objects, or refs not present locally. More importantly, the retake fixed the
-specific profile/member/query leak but did not make the dumps generally safe;
-the table above is the residual leak.
+objects, or refs not present locally. The retake fixed the specific
+profile/member/query leak, but its first committed “redacted” version still
+contained the historical identifiers catalogued above. Tip redaction does not
+remove them from reachable history.
 
 ## 3. “Read-only” in fact
 
@@ -173,37 +181,42 @@ button names.
 | `read-profile` | Navigates to the requested profile; may click only the top-card More menu and About expansion (`kit/people.py:357-380`, `420-431`). | The accepted mission explicitly says other-profile reads leave the ordinary “viewed your profile” trace (`docs/MISSION.md:41-44`). I did not independently exercise that platform effect. |
 | `read-company` | Navigation and DOM reads; no direct write control found. | Server-side access logging is inherent. No person-facing effect is established here. |
 | `search-people` | Navigation and DOM reads; no direct write control found. | No person-facing effect is established here. |
-| `search-posts` | Grants permissions, clears the clipboard, opens each card menu, clicks “Copy link to post,” and reads the clipboard (`kit/search.py:192-242`). Optional resolving adds post navigations. | Clipboard loss is direct. Whether search/result/post loads count an impression is SUSPECTED; the repository supplies no network or before/after measurement. |
+| `search-posts` | Grants permissions, saves readable clipboard text, opens each card menu, clears/replaces the clipboard, then attempts restoration and permission reset (`kit/search.py:195-300`, `320-338`). Optional resolving adds post navigations. | Readable text is restored on the success path. Non-text/unreadable content and restore/reset failures are reported but do not fail the command. Whether loads count an impression is SUSPECTED. |
 | `notifications` | Navigates and evaluates card DOM; it does not click a card (`kit/account.py:93-130`). The captured post-load DOM still contains two `nt-card--unread` cards (`docs/surveys/notifications-2026-09-09.txt:188-210`, `242`). | Marking a page/card as “seen,” clearing a badge, or sending a server acknowledgement on load remains SUSPECTED. A single after-load dump is not a before/after or network trace. |
 | `stats` | Opens the range control, selects a preset, and can press the first page-global visible button named Update (`kit/account.py:225-278`). | No social write is shown. Persistence of the selected analytics range/account preference is SUSPECTED and unmeasured. |
 
 “Read-only” is therefore defensible only in the narrow sense “does not
-intentionally publish/connect/react/message.” It is false as a statement that
-the commands do not alter state or create an externally visible trace.
+intentionally publish/connect/react/message.” The CLI now discloses the
+clipboard side effect (`cc_linkedin.py:741-753`), but the README's blanket “All
+read-only” still does not convey the conditional state loss or profile trace.
 
-### Clipboard permission and persistence - PROVED
+### Clipboard and permission cleanup is conditional - PROVED
 
 `search-posts` sends `Browser.grantPermissions` for the LinkedIn origin with
 `clipboardReadWrite` and `clipboardSanitizedWrite`, without a
-`browserContextId` (`kit/search.py:234-242`). In the Chrome DevTools Protocol,
+`browserContextId` (`kit/search.py:279-287`). In the Chrome DevTools Protocol,
 omitting that ID targets the default browser context; the command grants the
 listed permissions and rejects the others for the origin. Permission reset is
 a separate `Browser.resetPermissions` operation. See the official
 [CDP Browser domain](https://chromedevtools.github.io/devtools-protocol/tot/Browser/).
 
-The code never sends that reset. It attaches to an existing browser's default
-context (`kit/browser.py:294-374`), closes the created page, and disconnects; it
-does not terminate the signed-in Chrome process or destroy its default context.
-The permission override is therefore left in that context for later work. This
-inspection does not establish survival across a full Chrome restart.
+R16 now sends that reset in a `finally` (`kit/search.py:288-300`). That closes
+the unconditional persistence defect. If reset raises, however, the code logs
+and exits successfully, leaving the override's lifetime uncontrolled. The CDP
+operation resets permission management for all origins in the default context,
+not merely the two permissions just granted; the code does not snapshot any
+pre-existing CDP overrides.
 
 The normal Clipboard API is permission-controlled, and `writeText()` writes to
 the system clipboard; see the [W3C Clipboard API](https://www.w3.org/TR/clipboard-apis/).
-The code treats the CDP grant as required by aborting if it fails. Whether this
-particular browser profile would have allowed the same operation without the
-grant was not tested. After the grant, `_copy_link()` first attempts
-`writeText('')` and swallows failure, then the menu action replaces the clipboard
-with a post URL. The prior clipboard value is never saved or restored.
+The code treats the grant as required by aborting if it fails. Whether this
+browser profile would allow the API without the grant was not tested. R16 saves
+clipboard text and restores it in `finally`. If the original cannot be read as
+text, or restoration fails, `_restore_clipboard()` returns false but the verb
+continues and prints `clipboard=NOT-RESTORED` (`kit/search.py:205-234`,
+`320-338`, `373-379`). Thus ordinary text is preserved on success, while an
+image, file, unreadable value, or restore error still ends with a successful
+read that may have destroyed the original clipboard state.
 
 ## 4. Claims and accepted rulings versus current evidence/code
 

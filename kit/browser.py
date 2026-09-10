@@ -87,8 +87,8 @@ def close_file_dialogs(where):
 
 # ---------------------------------------------------------------- the lock
 
-class BrowserLock(object):
-    """One run per Chrome. A second run waits (up to `wait` seconds) and says so.
+class FileLock(object):
+    """Mutual exclusion around one file, held by a sentinel beside it.
 
     RULING R3.3, 2026-09-09. The sentinel is written to a temporary file and then
     LINKED into place, so the file at `self.path` is complete the instant it
@@ -108,10 +108,11 @@ class BrowserLock(object):
     than the bug being fixed.
     """
 
-    def __init__(self, port, wait=900):
-        os.makedirs(STATE_DIR, exist_ok=True)
-        self.path = os.path.join(STATE_DIR, "browser-%d.lock" % port)
+    def __init__(self, path, wait=900, what="the browser"):
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+        self.path = path
         self.wait = wait
+        self.what = what
 
     def _holder(self):
         """(holder, why it is unreadable). A lock we cannot read is broken."""
@@ -127,6 +128,12 @@ class BrowserLock(object):
         if not isinstance(holder, dict) or not holder.get("pid"):
             return None, "it names no process (%r)" % raw[:60]
         return holder, None
+
+    # Seconds between attempts while somebody else holds it. Short by default:
+    # this class guards a state file whose critical section is a read, an
+    # increment and a write. The browser lock overrides it - waiting three
+    # seconds between attempts is right when the holder is a whole run.
+    poll = 0.05
 
     def _sentinel(self):
         """A complete lock record in a temporary file, ready to be linked in."""
@@ -161,13 +168,14 @@ class BrowserLock(object):
                         _discard(self.path)
                         continue
                     if not told:
-                        log("waiting for the browser: another run holds it (pid %s since %s, %s)"
-                            % (pid, holder.get("since"), " ".join(holder.get("argv", []))))
+                        log("waiting for %s: another run holds it (pid %s since %s, %s)"
+                            % (self.what, pid, holder.get("since"),
+                               " ".join(holder.get("argv", []))))
                         told = True
                     if time.time() > deadline:
-                        die("gave up waiting for the browser after %ds; pid %s still holds it"
-                            % (self.wait, pid))
-                    time.sleep(3)
+                        die("gave up waiting for %s after %ds; pid %s still holds it"
+                            % (self.what, self.wait, pid))
+                    time.sleep(self.poll)
         finally:
             _discard(tmp)
 
@@ -175,11 +183,51 @@ class BrowserLock(object):
         _discard(self.path)
 
 
-def _discard(path):
-    try:
-        os.remove(path)
-    except OSError:
-        pass
+class BrowserLock(FileLock):
+    """One run per Chrome. A second run waits (up to `wait` seconds) and says so.
+
+    Two Playwright clients attached to one Chrome block each other's navigations
+    (measured 2026-09-09 14:34), so one Chrome is one run at a time.
+    """
+
+    poll = 3
+
+    def __init__(self, port, wait=900):
+        FileLock.__init__(self, os.path.join(STATE_DIR, "browser-%d.lock" % port),
+                          wait=wait, what="the browser")
+
+
+def _discard(path, tries=60, gap=0.05):
+    """Remove a file this process owns, and say so if it cannot.
+
+    MEASURED 2026-09-09, by the concurrency test written for ruling R15, against
+    the R3 fix itself. On Windows, Python's open() does not ask for
+    FILE_SHARE_DELETE, so while ANY reader has the lock file open - and every
+    waiter reads it to see who holds it - os.remove raises a sharing violation.
+    The code here swallowed that as `except OSError: pass`, so a release could
+    silently not happen and the lock stayed behind with a live pid in it, which
+    no reclaim rule will ever touch. Six concurrent writers wedged permanently
+    on the first attempt.
+
+    That is the R3 defect exactly, reintroduced one layer down by an error
+    handler that treated "I could not do it" as "it is done". So this RETRIES,
+    for a bounded three seconds, and returns False and logs if it still cannot -
+    because a lock that will not release is the thing most worth being loud
+    about in this file.
+    """
+    for i in range(tries):
+        try:
+            os.remove(path)
+            return True
+        except FileNotFoundError:
+            return True
+        except OSError as exc:
+            if i == tries - 1:
+                log("COULD NOT REMOVE %s after %.0fs (%s). If that is a lock file, the next "
+                    "run will wait behind it." % (path, tries * gap,
+                                                  str(exc).splitlines()[0][:80]))
+                return False
+            time.sleep(gap)
 
 
 def _pid_alive(pid):
@@ -214,6 +262,33 @@ class Pace(object):
     CPython's hash of a string is deterministic within a run and the low bits of
     a timestamp string are close to uniform only by accident. A rhythm that
     looks fixed is exactly what pattern detection is for.
+
+    WHAT THIS FILE ACTUALLY GUARANTEES, AND WHAT IT DOES NOT - ruling R15,
+    2026-09-09. This docstring used to say the caps hold "across sessions and
+    agents", and the code could not keep that promise: `before` loaded and
+    checked, the action happened, and `after` separately reloaded and
+    incremented, with no lock and no atomic write. Two runs at 59 both passed a
+    cap of 60, both acted, and both saved 60 - so 61 actions happened and the
+    file said 60. Whole fields overwrote each other the same way, so the spacing
+    timestamps could be lost too.
+
+    IT NOW GUARANTEES, across processes on this machine:
+      * the cap check and the increment are ONE atomic critical section, guarded
+        by a lock file beside pace.json, so the count is a RESERVATION. Two runs
+        cannot both take the same last slot.
+      * every read-modify-write of the file happens inside that lock and the file
+        is replaced atomically, so no increment and no timestamp is lost.
+
+    IT DOES NOT GUARANTEE:
+      * that a reserved action happened. The slot is taken immediately before the
+        action, so an action that then fails is still counted. That is the
+        conservative direction on purpose: this cap exists to keep the owner's
+        account safe, and a request that errored may still have reached LinkedIn.
+      * anything about another machine. The file is local.
+
+    An overstated guarantee in the one file that exists to keep his account safe
+    is worse than an honest limitation, because it is the sentence somebody
+    relies on instead of checking.
     """
 
     CAPS = {"comment": 60, "react": 100, "connect": 20, "message": 30, "invite": 5}
@@ -225,6 +300,11 @@ class Pace(object):
         os.makedirs(STATE_DIR, exist_ok=True)
         self.path = os.path.join(STATE_DIR, "pace.json")
 
+    def _lock(self):
+        """Held for one read-modify-write of pace.json and no longer. Short by
+        design: a run must never wait behind another run's 90-second gap."""
+        return FileLock(self.path + ".lock", wait=60, what="the pacing file")
+
     def _load(self):
         try:
             with open(self.path, encoding="utf-8") as f:
@@ -233,11 +313,37 @@ class Pace(object):
             return {}
 
     def _save(self, data):
+        """Replace pace.json atomically. Only ever called holding the lock."""
         today = time.strftime("%Y-%m-%d")
         for k in [k for k in data if DAY_KEY.match(k) and k < today]:
             del data[k]
-        with open(self.path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=1)
+        fd, tmp = tempfile.mkstemp(prefix="pace-", dir=STATE_DIR)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=1)
+            os.replace(tmp, self.path)
+        except BaseException:
+            _discard(tmp)
+            raise
+
+    def _reserve(self, kind, cap, what):
+        """Check the cap and take a slot, as ONE atomic step. Returns the count
+        after the reservation; dies over the cap without taking one."""
+        with self._lock():
+            data = self._load()
+            day = data.setdefault(time.strftime("%Y-%m-%d"), {})
+            n = day.get(kind, 0)
+            if cap is not None and n >= cap:
+                die("daily cap reached for %s (%d today, cap %d). Tomorrow." % (what, n, cap))
+            day[kind] = n + 1
+            self._save(data)
+            return n + 1
+
+    def _stamp(self, field):
+        with self._lock():
+            data = self._load()
+            data[field] = time.time()
+            self._save(data)
 
     def count(self, kind, when=None):
         """How many of `kind` have been done today. Used by the selftest to prove
@@ -248,20 +354,19 @@ class Pace(object):
     # -- outbound -----------------------------------------------------------
 
     def before(self, kind):
-        """Wait out the gap and refuse over the cap. Call right before the action."""
-        data = self._load()
-        n = data.get(time.strftime("%Y-%m-%d"), {}).get(kind, 0)
-        cap = self.CAPS.get(kind)
-        if cap is not None and n >= cap:
-            die("daily cap reached for %s (%d today). Tomorrow." % (kind, n))
-        self._wait(data.get("last_outbound", 0), self.GAP, kind)
+        """Wait out the gap, then RESERVE a slot. Call right before the action.
+
+        The wait comes first and the reservation second, so the window between
+        deciding and counting is one atomic step rather than the length of a
+        90-second gap (ruling R15).
+        """
+        self._wait(self._load().get("last_outbound", 0), self.GAP, kind)
+        self._reserve(kind, self.CAPS.get(kind), kind)
 
     def after(self, kind):
-        data = self._load()
-        day = data.setdefault(time.strftime("%Y-%m-%d"), {})
-        day[kind] = day.get(kind, 0) + 1
-        data["last_outbound"] = time.time()
-        self._save(data)
+        """The action is done. The slot was taken in before(); this records when,
+        so the next run spaces itself from it."""
+        self._stamp("last_outbound")
 
     # -- views --------------------------------------------------------------
 
@@ -279,20 +384,15 @@ class Pace(object):
         is wrong or the registry is, and both deserve a red run.
         """
         _VIEWS.append({"what": what, "counted": False})
-        data = self._load()
-        n = data.get(time.strftime("%Y-%m-%d"), {}).get("view", 0)
-        if n >= self.VIEW_CAP:
-            die("daily cap reached for views (%d today, cap %d). Tomorrow." % (n, self.VIEW_CAP))
-        self._wait(data.get("last_view", 0), self.VIEW_GAP, "view of %s" % what)
-
-    def after_view(self):
-        data = self._load()
-        day = data.setdefault(time.strftime("%Y-%m-%d"), {})
-        day["view"] = day.get("view", 0) + 1
-        data["last_view"] = time.time()
-        self._save(data)
+        self._wait(self._load().get("last_view", 0), self.VIEW_GAP, "view of %s" % what)
+        self._reserve("view", self.VIEW_CAP, "views")
         if _VIEWS:
             _VIEWS[-1]["counted"] = True
+
+    def after_view(self):
+        """The page is open. The view was counted in before_view(); this records
+        when, so the next read spaces itself from it."""
+        self._stamp("last_view")
 
     def _wait(self, last, span, what):
         gap = random.uniform(span[0], span[1])
