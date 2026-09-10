@@ -330,15 +330,38 @@ class Rows(object):
     def report(self, name):
         self.reported.append(name)
 
-    def reconcile(self):
+    def reconcile(self, reporting_now=None):
+        """Which declared rows never reported, and which reported undeclared.
+
+        `reporting_now` is the row that is reconciling AS IT RECONCILES - the
+        INVENTORY row itself. It is one of the declared rows, and the check()
+        call that records it cannot happen until this method has returned the
+        result it is checking, so without this it names itself as the row that
+        never ran. It did that on every run: the first live run of 2026-09-10
+        printed
+
+            INVENTORY FAILED: 29 rows declared, 28 reported; NEVER RAN: INVENTORY
+            RESULT selftest passed=26 failed=3 rows=29/29
+
+        - the summary saying all 29 reported and the inventory row saying 28, in
+        the same three lines. A clean run was arithmetically impossible.
+
+        It is excused because it is reporting at this instant, NOT because of
+        its name: it must have been declared like any other row, and every other
+        missing row is still named. The fencepost is the only thing being fixed
+        here.
+        """
         want, got = {}, {}
         for n in self.declared:
             want[n] = want.get(n, 0) + 1
         for n in self.reported:
             got[n] = got.get(n, 0) + 1
+        if reporting_now is not None:
+            got[reporting_now] = got.get(reporting_now, 0) + 1
         missing = sorted(n for n in want if got.get(n, 0) < want[n])
         extra = sorted(n for n in got if got[n] > want.get(n, 0))
-        detail = "%d rows declared, %d reported" % (len(self.declared), len(self.reported))
+        detail = "%d rows declared, %d reported" % (
+            len(self.declared), len(self.reported) + (1 if reporting_now is not None else 0))
         if missing:
             detail += "; NEVER RAN: " + ", ".join(missing)
         if extra:
@@ -919,7 +942,9 @@ def run(a):
     # -- the inventory: did every row this run declared actually report? -------
     # RULING R9. A count of passes means nothing without the denominator it came
     # from, and a row that never ran is a failed run, not an absent line.
-    ok, detail = rows.reconcile()
+    # INVENTORY is itself a declared row, and it is reporting at the moment it
+    # reconciles - see Rows.reconcile.
+    ok, detail = rows.reconcile(reporting_now="INVENTORY")
     check("INVENTORY", ok, detail)
 
     print("RESULT selftest passed=%d failed=%d rows=%d/%d"

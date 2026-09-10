@@ -153,6 +153,51 @@ class TheRunDeclaresItsRowsAndReconcilesThem(unittest.TestCase):
         # Every declared name is distinct except where a row genuinely repeats.
         self.assertEqual(len(set(T.PHASE2_ROWS)), len(T.PHASE2_ROWS))
 
+    def test_the_inventory_row_reconciles_ITSELF(self):
+        """THE FENCEPOST, and it made a clean run impossible.
+
+        INVENTORY is one of the 29 declared rows, and it is the row that DOES
+        the reconciling - so at the moment it reconciles it has not reported
+        yet, and it names itself as the row that never ran. Measured on the
+        first live run of 2026-09-10:
+
+            INVENTORY FAILED: 29 rows declared, 28 reported; NEVER RAN: INVENTORY
+            RESULT selftest passed=26 failed=3 rows=29/29
+
+        The denominator on the RESULT line is right - 29 of 29 did report - so
+        the run's own summary and its inventory row contradicted each other in
+        the same three lines.
+        """
+        r = T.Rows()
+        r.declare(("P2-1", "P2-2", "INVENTORY"))
+        for n in ("P2-1", "P2-2"):
+            r.report(n)
+        ok, detail = r.reconcile(reporting_now="INVENTORY")
+        self.assertTrue(ok, detail)
+        self.assertNotIn("NEVER RAN", detail)
+
+    def test_a_row_that_really_never_ran_is_still_caught_alongside_it(self):
+        """The control. Excusing the reconciling row must not excuse anything
+        else - that would turn R9's denominator back into decoration."""
+        r = T.Rows()
+        r.declare(("P2-1", "P2-2", "INVENTORY"))
+        r.report("P2-1")
+        ok, detail = r.reconcile(reporting_now="INVENTORY")
+        self.assertFalse(ok)
+        self.assertIn("P2-2", detail)
+        self.assertNotIn("INVENTORY", detail.split("NEVER RAN:")[-1])
+
+    def test_the_reconciling_row_must_have_been_DECLARED_to_be_excused(self):
+        """It is excused because it is reporting right now, not because of its
+        name. A name that was never declared is still 'reported but not
+        declared'."""
+        r = T.Rows()
+        r.declare(("P2-1",))
+        r.report("P2-1")
+        ok, detail = r.reconcile(reporting_now="INVENTORY")
+        self.assertFalse(ok, detail)
+        self.assertIn("not declared", detail)
+
 
 class TheViewCountHasNoConstantToRetune(unittest.TestCase):
     """R7. EXPECTED_VIEWS was a hand-set number that P2-9 compared the view
