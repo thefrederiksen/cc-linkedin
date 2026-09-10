@@ -1,17 +1,19 @@
 # Inspection slice 4: claims, safety, and what leaked
 
 Independent static inspection updated through committed HEAD
-`5bb04230fa760c19ebccfc6b62ce31f9f3fb267f` on 2026-09-09. I did not open
-LinkedIn or run a verb. I inspected the current 53-file tracked tree and all 44
+`c169346c045ae1e0d44438af2467e79424746ad7` on 2026-09-09. I did not open
+LinkedIn or run a verb. I inspected the current 55-file tracked tree and all 45
 commits reachable from the local refs. Per the brief, I
 did not assess the URN resolver, `kit/selftest.py`, or the read verbs' extraction
 logic; I did inspect their side effects and the claims made about them.
 
-At the final read, another session had an uncommitted R15 implementation in
-`kit/browser.py` plus `tests/test_pace.py`. I did not modify either. Because it
-materially changes the answer about two pacing writers, section 1 explicitly
-audits that newer worktree code; all other findings are stated against committed
-HEAD.
+R15 was committed while this review was being updated. Section 1 therefore
+audits the reservation/atomic-write implementation now at HEAD, not the earlier
+unlocked implementation that first triggered the ruling.
+
+No Python interpreter was available (`py -3.11` returned exit 112), so I did
+not execute the new unit tests. The Git/history sweeps and positive controls in
+this report were run directly; code-path conclusions are static.
 
 `PROVED` means the result follows from committed code, artifacts, or Git
 history. `SUSPECTED` means the code creates the opportunity but the external
@@ -21,23 +23,20 @@ effect was not observed here.
 
 | Rank | Consequence | Status | Finding |
 |---:|---|---|---|
-| 1 | HIGH - caps or gaps can reset while the file still looks usable | PROVED | The pending R15 code fixes the ordinary lost-update/cap race, but malformed state and local-date/timezone changes still reset caps, and concurrent writers can still collapse the required gap. |
+| 1 | HIGH - caps or gaps can reset while the file still looks usable | PROVED | R15 fixes the ordinary lost-update/cap race, but malformed state and local-date/timezone changes still reset caps, and concurrent writers can still collapse the required gap. |
 | 2 | HIGH - data meant to be anonymous was pushed publicly and remains in reachable history | PROVED | The tip redacts almost all exposed headline/URL/URN data, but history retains it and the new leak test itself contains one real third-party company ID. |
 | 3 | MEDIUM - “read-only” can still destroy non-text clipboard state | PROVED conditional path | `search-posts` now restores readable text and resets permissions, but proceeds when the original clipboard is unreadable/non-text or restoration/reset fails. |
 | 4 | MEDIUM - “MEASURED” and ruling language is stronger than its evidence or code | PROVED | The renderer classifier demonstrably mislabels classic pages; repeated-load and fixture claims have no committed repeat evidence; `share_url` and signed-in invariants are not enforced as claimed. |
 | 5 | MEDIUM - some reads can be visible to other people or counted by LinkedIn | PROVED navigation; external result partly SUSPECTED | `read-profile` deliberately opens another person's profile, which the accepted design says leaves a “viewed your profile” trace. Notification-seen and content-impression effects were not measured. |
 
-## 1. `pace.json`: the lost-count race is fixed in the pending R15 code, but the safety boundary still fails open - PROVED
-
-Committed HEAD still has the original unlocked check/action/account sequence.
-The newer worktree code changes that answer and is the version assessed here.
+## 1. `pace.json`: R15 fixes the lost-count race, but the safety boundary still fails open - PROVED
 
 ### Two writers: cap fixed, gap not fixed
 
-The pending code adds one `pace.json.lock`, makes `_reserve()` check and
+The code adds one `pace.json.lock`, makes `_reserve()` check and
 increment under it, and atomically replaces the JSON file
-(`kit/browser.py:273-320` in the worktree). A reservation happens after waiting
-but before the external action (`kit/browser.py:326-340`). Therefore two writers
+(`kit/browser.py:303-340`). A reservation happens after waiting but before the
+external action (`kit/browser.py:356-369`). Therefore two writers
 at 59 cannot both take the last cap slot, and updates to different fields no
 longer overwrite one another. The old 61-actions-recorded-as-60 interleaving is
 closed.
@@ -46,7 +45,7 @@ The required gap is still not cross-process safe. Both writers read the same
 old `last_outbound` outside the lock and finish `_wait()` independently. They
 then reserve successive cap slots under the lock and can act at nearly the same
 time. `last_outbound` is written only by `after()` after each action
-(`kit/browser.py:316-343`). Thus the count can be right while the claimed 45-90
+(`kit/browser.py:342-369`). Thus the count can be right while the claimed 45-90
 second separation is zero. The same applies to `last_view`. A per-port
 `BrowserLock` serializes same-port callers, but different ports share the pacing
 file and have different browser locks.
@@ -61,7 +60,7 @@ the last-action timestamp stale, allowing the next process to skip the gap.
 
 Atomic replacement means a normal process crash during `_save()` leaves either
 the prior complete file or the new complete file. But `_load()` still catches
-every exception and returns `{}` (`kit/browser.py:282-287`). A malformed file,
+every exception and returns `{}` (`kit/browser.py:308-313`). A malformed file,
 permission/read error, or externally damaged file is treated as a clean zero;
 the next reservation can overwrite it and reset every cap and timestamp. The
 new lock does not turn an unreadable safety record into a refusal.
@@ -74,7 +73,7 @@ Day buckets still use the process's current local date with no stored timezone.
   midnight against yesterday's count.
 * `_reserve()` chooses the bucket and `_save()` recomputes `today`; if midnight
   falls between them, `_save()` deletes the reservation as an old key
-  (`kit/browser.py:303-309`).
+  (`kit/browser.py:317-339`).
 * Moving the OS clock/timezone forward selects a new empty date bucket early and
   deletes the earlier bucket on save. Moving it backward normally selects a
   previously deleted bucket while retaining but ignoring the future-dated key.
@@ -139,7 +138,7 @@ two shapes absent, not that the tree contains no third-party identifiers.
 
 ### What I did not find
 
-Apart from that company ID, in the current 53 tracked files I found no
+Apart from that company ID, in the current 55 tracked files I found no
 unredacted third-party `/in/` slug, `ACoA...` member ID, email address,
 LinkedIn-style `@handle`, personal name, headline, real message body, real
 invitation note, resolvable short link, or real post/content ID. The only
@@ -158,7 +157,7 @@ target.
 
 All eight survey files were introduced together in commit
 `1173f451a8dd2633a4fd0ac21e840f15cb86c30d`; the later R13/R17/R18 commits
-redact those same files in place. No commit in the current 44-commit reachable
+redact those same files in place. No commit in the current 45-commit reachable
 history contains an earlier dump with the reported ten raw profile URLs. This
 supports `docs/phase-2-report.md:183-187`'s specific claim that the first pass was
 caught before commit.
@@ -222,7 +221,7 @@ read that may have destroyed the original clipboard state.
 
 ### Renderer classification is a broken instrument - PROVED
 
-`tools/survey.py:210-211` labels a surface `ember` when `[data-urn]` is nonzero
+`tools/survey.py:275-276` labels a surface `ember` when `[data-urn]` is nonzero
 and `react` when it is zero. All eight dumps say `react`. Yet the code's own
 measured descriptions call company member view, notifications, and stats
 classic surfaces (`kit/people.py:72-81`, `kit/account.py:7-10`, `22-38`), and
@@ -253,16 +252,16 @@ happened; the committed evidence does not let another reader verify them.
 
 ### Claimed invariants are not the implemented invariants - PROVED
 
-* `share_url` is documented and ruled “always present” (`kit/search.py:51-52`,
+* `share_url` is documented and ruled “always present” (`kit/search.py:54-55`,
   `docs/rulings-phase-2.md:25-29`), and the ruling requires every row to have a
   non-empty author and `share_url` (`docs/rulings-phase-2.md:43-49`). Production
   code emits `author: None` and/or `share_url: None` per row and fails only when
-  every row lacks a share URL (`kit/search.py:257-269`). The self-test ruling is
+  every row lacks a share URL (`kit/search.py:329-342`). The self-test ruling is
   outside this slice; the production/output claim is still false.
 * `assert_signed_in` claims its matching button is the global navigation's
-  identity control and exists only when signed in (`kit/browser.py:386-402`),
+  identity control and exists only when signed in (`kit/browser.py:533-550`),
   but the locator is page-global and not scoped to a navigation element
-  (`kit/browser.py:404-411`). Any visible role=button with the same accessible
+  (`kit/browser.py:551-558`). Any visible role=button with the same accessible
   name satisfies it. The phase report itself says the broken-selector test
   proved only that the guard fires, not that an authwall lacks the assumed
   control (`docs/phase-2-report.md:172-175`).
@@ -275,22 +274,25 @@ happened; the committed evidence does not let another reader verify them.
   claim does not.
 * Accepted inspection ruling R3 now matches committed code. `BrowserLock`
   prepares a complete sentinel and atomically links it into place, and treats an
-  unreadable sentinel as broken (`kit/browser.py:116-175`). `Browser.__enter__`
+  unreadable sentinel as broken (`kit/browser.py:116-183`). `Browser.__enter__`
   starts local Playwright work before taking the lock and tears down on every
-  `BaseException` (`kit/browser.py:305-343`); `_teardown()` releases in its outer
-  `finally` (`kit/browser.py:345-374`). This clears the R3 mismatch present at
+  `BaseException` (`kit/browser.py:452-490`); `_teardown()` releases in its outer
+  `finally` (`kit/browser.py:492-521`). This clears the R3 mismatch present at
   the original inspection point. It does not lock `pace.json`; the locks solve
   different problems.
 
-### Newly accepted slice-4 rulings are not yet implemented - PROVED
+### Accepted slice-4 ruling status - PROVED
 
-Committed HEAD adds R13 (redact the leak), R15 (make pace read-modify-write
-mutually excluded and atomic), and R16 (restore the clipboard and reset its
-permission) at `docs/rulings-inspection-2026-09-09.md:245-339`. It changes only
-the report and ruling document relative to the preceding R3 commit. The leaked
-values remain at the locations catalogued above; `Pace` remains unchanged; and
-`search-posts` still clears the clipboard, grants permission, and never restores
-either. These rulings are accepted decisions, not current implementation.
+* R13/R17/R18: implemented at tip for the headline, short links, long content
+  IDs, organization/article/job/map paths, plus positive artifact checks. The
+  original objects remain in reachable public history, and the shorter company
+  ID in `tests/test_no_leak.py:104` is outside the new source detectors.
+* R16: implemented for readable text and successful cleanup. Unreadable/non-text
+  clipboard state and restore/reset failures remain successful conditional
+  loss paths, as section 3 shows.
+* R15: committed at HEAD with a shared reservation lock and atomic replace,
+  closing the lost-update and last-cap-slot races. It does not close the
+  concurrent gap, malformed-state, midnight, or timezone cases in section 1.
 
 ### Claims with direct support found
 
@@ -305,9 +307,11 @@ the member widget can leak into the returned Page numbers.
 ## Bottom line
 
 The repository can substantiate the narrow claim that the first set of raw
-profile URLs was not committed. It cannot substantiate the broader claims that
-the committed surveys are public-safe, that all six commands are read-only in
-fact, that the pacing file holds caps across agents, or that every fact labelled
-MEASURED is reproducible from committed evidence. The highest safety defect is
-the pacing state: it is used as an enforcement boundary but treats concurrent,
-late, lost, and corrupt state as permission to proceed.
+profile URLs was not committed. The current tip is substantially cleaner than
+the inspected tip, but reachable public history still contains the leaked data
+and one third-party company ID remains in the new leak test. “Read-only” is now
+honest in CLI help but still conditional in implementation and broad README
+language. The pending pacing code makes cap reservations cross-process safe for
+a valid, stable-date file; gaps, malformed state, midnight, and timezone changes
+remain fail-open. Several facts labelled MEASURED are still not reproducible
+from the committed evidence.

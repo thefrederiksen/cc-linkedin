@@ -60,9 +60,8 @@ from contextlib import redirect_stdout
 
 from . import comments as C
 from . import selectors as S
-from .browser import Pace, log
+from .browser import Pace
 
-DEGREES_NOT_SELF = ("1st", "2nd", "3rd", "3rd+", "you")
 SOREN = "https://www.linkedin.com/in/sorenfrederiksen/"
 
 # WHAT THE READER MUST SAY THE PAGE SAYS -------------------------- 2026-09-09
@@ -256,13 +255,159 @@ def _profile_holds(r, slug):
                     "degree=%r via=%r" % (r.get("degree"), via)))
     return out
 
-# What one full Phase 2 block must cost on the view clock. read-profile costs
-# one each - the owner's, profile B, the menu profile, and the refusal, which
-# navigates before it refuses - read-company one, and each search one; the two
-# searches that share a query still open two pages. notifications and stats cost
-# NOTHING: they are our own screens, not anybody's profile. Resolving a short
-# link is a navigation to a post, not a profile view.
-EXPECTED_VIEWS = 8
+# THERE IS NO EXPECTED_VIEWS ANY MORE, AND THAT IS THE POINT - ruling R7,
+# 2026-09-09.
+#
+# There used to be a hand-set constant here saying what one full Phase 2 block
+# must cost on the view clock, and P2-9 compared the day's view counter against
+# it. That made the test its own oracle: if a regression made the block consume
+# seven views and the only red result was `took == 8`, changing the 8 to a 7
+# made the run green, and nothing executable anywhere derived the number
+# independently. The Manager of the fix pass flagged it unprompted as "the one
+# constant in this suite a tired Manager can quietly retune until a run goes
+# green", and it was right.
+#
+# What replaces it is a REGISTRY: every operation that costs a view registers
+# itself, by name, as it is invoked (kit/browser.Pace.before_view), and P2-9
+# compares the pacing file's delta against that registry and prints the names.
+# There is then no number to retune. A disagreement means either the pacing is
+# wrong or the registry is, and both deserve a red run.
+#
+# SAY WHAT THIS NO LONGER PROVES. The old row could catch "this block cost a
+# different number of views than it should". The new one cannot: if the block
+# comes to cost seven, the registry says seven, the counter says seven, and P2-9
+# passes. That question now belongs to the row inventory (ruling R9) - which
+# rows ran - and not to an arithmetic identity that could be edited into
+# agreement. Adjusting a constant until the suite agrees with the code is not a
+# fix and must never read as one.
+
+# THE ROWS THIS RUN INTENDS TO EXECUTE, declared before it starts - ruling R9.
+# A count of passes means nothing without the denominator it came from, and a
+# row that never ran is a failed run, not an absent line.
+PHASE1_ROWS = ("P1-read-post", "P1-comment", "P1-read-comments-1", "P1-comment-is-there",
+               "P1-reply", "P1-read-comments-2", "P1-reply-is-there", "P1-react",
+               "P1-unreact", "P1-delete-reply", "P1-delete-comment", "P1-read-comments-3",
+               "P1-nothing-left", "P1-page-post", "P1-page-delete-post")
+PHASE2_ROWS = ("P2-1", "P2-2", "P2-2b", "P2-10", "P2-3", "P2-4", "P2-5",
+               "P2-6a", "P2-6b", "P2-6c", "P2-7", "P2-8", "P2-9")
+# Profile B must be the shape the design asks for - ruling R12. The row used to
+# accept 3rd and 3rd+ as well, which is not what docs/phase-2-design.md says.
+PROFILE_B_DEGREES = ("1st", "2nd")
+
+
+class Rows(object):
+    """What the run said it would do, against what it actually reported.
+
+    Ruling R9. A missing --page used to skip the entire Page publish-and-delete
+    block in silence, and the summary had no inventory that could name its
+    absence. This is the denominator: every row is declared before the run
+    starts, every row reports exactly once, and a row that is declared and never
+    reported fails the run by name.
+    """
+
+    def __init__(self):
+        self.declared = []
+        self.reported = []
+
+    def declare(self, names):
+        self.declared.extend(names)
+
+    def also(self, name):
+        """A row discovered as the run goes - the leftover sweep finds however
+        many stale posts it finds. Declared the moment it is known, so it is
+        still owed a report."""
+        self.declared.append(name)
+
+    def report(self, name):
+        self.reported.append(name)
+
+    def reconcile(self):
+        want, got = {}, {}
+        for n in self.declared:
+            want[n] = want.get(n, 0) + 1
+        for n in self.reported:
+            got[n] = got.get(n, 0) + 1
+        missing = sorted(n for n in want if got.get(n, 0) < want[n])
+        extra = sorted(n for n in got if got[n] > want.get(n, 0))
+        detail = "%d rows declared, %d reported" % (len(self.declared), len(self.reported))
+        if missing:
+            detail += "; NEVER RAN: " + ", ".join(missing)
+        if extra:
+            detail += "; reported but not declared: " + ", ".join(extra)
+        return (not missing and not extra), detail
+
+
+def _norm(t):
+    return re.sub(r"\s+", " ", t or "").strip()
+
+
+def _same_post(row, rec, urn):
+    """Is the post read-post loaded the post the search row was about?
+
+    Ruling R2.4. P2-6c used to assert that read-post returned a non-empty
+    author, which proves the page loaded - something that was never in doubt. It
+    could not tell a resolved permalink that named the right post from one that
+    named a stranger's, which is precisely the failure the resolver could
+    produce and the verbs would then act on.
+
+    The text probe is the first 60 characters of what the search card showed.
+    That is a judgement: too short and it stops distinguishing posts, too long
+    and it starts failing on rendering differences between the search card and
+    the post page. If a live run fails here on a post that is plainly the right
+    one, the fix is to compare fewer characters and write down why - not to drop
+    the comparison, which is what was there before.
+    """
+    want_author, got_author = _norm(row.get("author")), _norm(rec.get("author"))
+    want_text, got_text = _norm(row.get("text")), _norm(rec.get("text"))
+    probe = want_text[:60].rstrip()
+    return [
+        ("the permalink names the post that was read", rec.get("urn") == urn,
+         "%r wanted %r" % (rec.get("urn"), urn)),
+        ("the search row named an author", bool(want_author), repr(want_author)),
+        ("author", bool(want_author) and want_author == got_author,
+         "read-post says %r, the search row said %r" % (got_author, want_author)),
+        ("the search row had enough text to compare", len(want_text) >= 20,
+         "%d characters" % len(want_text)),
+        ("text", len(want_text) >= 20 and bool(probe) and probe.lower() in got_text.lower(),
+         "read-post text does not contain the search row's first %d characters %r"
+         % (len(probe), probe)),
+    ]
+
+
+def _notification_holds(recs, limit):
+    """What P2-7 can assert that `notifications` does not already enforce.
+
+    Ruling R10, and READ THE LABEL. The verb itself filters to rows with text
+    and refuses an empty list, so the row that checked "at least one row, and
+    every row has text" could only ever go red if the verb crashed. It was a
+    test that Python still works.
+
+    This is honestly a SMOKE TEST plus shape invariants, and the phase does not
+    claim `notifications` is proven by it. Proving it would mean checking each
+    notification's actor and target against what is on the screen, and the only
+    reading of that screen this suite has is the verb's own - so the choice R10
+    offers is between a real correspondence check and an honest label, and this
+    is the honest label. What follows are the things the producer does NOT
+    guarantee, which is the most a shape check can be worth.
+    """
+    return [
+        ("at least one notification", len(recs) >= 1, "%d rows" % len(recs)),
+        ("the limit was respected", len(recs) <= limit, "%d rows for a limit of %d"
+         % (len(recs), limit)),
+        ("the ranks are 1..n with none missing or repeated",
+         [r.get("rank") for r in recs] == list(range(1, len(recs) + 1)),
+         repr([r.get("rank") for r in recs])),
+        ("every row says who or what it is about",
+         all_of((bool(r.get("actor") or r.get("url")) for r in recs), len(recs)),
+         repr([(r.get("actor"), (r.get("url") or "")[:30]) for r in recs
+               if not (r.get("actor") or r.get("url"))][:3])),
+        ("every row is marked read or unread, as a boolean",
+         all_of((isinstance(r.get("unread"), bool) for r in recs), len(recs)),
+         repr([r.get("unread") for r in recs][:5])),
+        ("every row has text", all_of(((r.get("text") or "").strip() for r in recs), len(recs)),
+         "%d rows" % len(recs)),
+    ]
+
 
 
 def _run(name, fn, **kw):
@@ -348,6 +493,17 @@ def sweep_page(a):
 
 
 def run(a):
+    # RULING R9. --page and --page-name used to be optional, and a missing one
+    # SILENTLY SKIPPED the whole Page publish-and-delete block: not a failed row,
+    # no row at all. That is the skip-counted-as-a-pass that phase-2-design.md
+    # section 8 already forbade, so this is the existing rule being enforced
+    # rather than a new one.
+    if not (a.page and a.page_name):
+        print("FAIL --page and --page-name are required. Without them the run would skip "
+              "publishing a post to the Page and deleting it again - the only place this "
+              "suite writes anything outside a comment - and would say nothing about having "
+              "skipped it. A missing fixture is a failed run, not a shorter one.", flush=True)
+        sys.exit(1)
     if not (a.other_profile and a.other_expect and a.menu_profile and a.menu_expect):
         print("FAIL the Phase 2 profile fixtures are required, and none of them is committed: "
               "this repository is public, so no third party's URL or details go in it.\n"
@@ -380,13 +536,35 @@ def run(a):
     reply_text = "Reply from the selftest %s, also deleted." % stamp
     passed = failed = 0
 
-    def step(name, fn, **kw):
+    rows = Rows()
+    rows.declare(PHASE1_ROWS)
+    rows.declare(PHASE2_ROWS)
+    rows.declare(("INVENTORY",))
+    print("--- this run intends to execute %d rows: %s ---"
+          % (len(rows.declared), ", ".join(rows.declared)), flush=True)
+
+    # The tab census before anything opens a tab, so P2-9 can say whether the
+    # run left one behind. Read from the DevTools endpoint, which needs no lock
+    # and opens nothing.
+    from .browser import open_tabs
+    try:
+        tabs_before = open_tabs(a.port)
+    except Exception as exc:
+        tabs_before = None
+        print("      could not count the browser's tabs before the run (%s); P2-9 will fail "
+              "on it rather than report a tidy zero" % str(exc).splitlines()[0][:80], flush=True)
+
+    def step(row, name, fn, **kw):
+        """Run one verb and record it against the row it is. Every row goes
+        through exactly one accounting path (ruling R9)."""
         nonlocal passed, failed
         ok, out = _run(name, fn, port=a.port, **kw)
+        rows.report(row)
         if ok:
             passed += 1
         else:
             failed += 1
+            print("      %s FAILED: the verb did not return cleanly" % row, flush=True)
         return ok, out
 
     def attempt(name, fn, **kw):
@@ -398,6 +576,7 @@ def run(a):
 
     def check(row, ok, detail):
         nonlocal passed, failed
+        rows.report(row)
         if ok:
             passed += 1
         else:
@@ -409,34 +588,35 @@ def run(a):
 
     # ======================================================== PHASE 1: writing
     print("--- Phase 1: comments, replies, reactions, deletes ---", flush=True)
-    ok, out = step("read-post", C.read_post, url=a.post)
+    ok, out = step("P1-read-post", "read-post", C.read_post, url=a.post)
     m = re.search(r'"text": "(.{0,40})', out)
     expect = None
     if m:
         expect = m.group(1).split("\\n")[0].strip('"')[:30]
-    step("comment", C.comment, url=a.post, expect=expect, text=text)
-    ok, out = step("read-comments", C.read_comments, url=a.post)
-    if text[:40] not in out:
-        print("      the new comment is NOT in the read-comments output", flush=True)
-        failed += 1
-    step("reply", C.reply, url=a.post, expect=expect, to=text[:40], text=reply_text)
-    ok, out = step("read-comments", C.read_comments, url=a.post)
-    if reply_text[:30] not in out:
-        print("      the reply is NOT in the read-comments output", flush=True)
-        failed += 1
-    step("react", C.react, url=a.post, expect=expect, kind="like")
-    step("unreact", C.unreact, url=a.post)
-    step("delete-reply", C.delete_comment, url=a.post, match=reply_text[:30])
-    step("delete-comment", C.delete_comment, url=a.post, match=text[:40])
-    ok, out = step("read-comments", C.read_comments, url=a.post)
-    if text[:40] in out or reply_text[:30] in out:
-        print("      leftovers: the selftest comment or reply is still on the post", flush=True)
-        failed += 1
+    step("P1-comment", "comment", C.comment, url=a.post, expect=expect, text=text)
+    ok, out = step("P1-read-comments-1", "read-comments", C.read_comments, url=a.post)
+    check("P1-comment-is-there", text[:40] in out,
+          "the comment just written is in the read-comments output")
+    step("P1-reply", "reply", C.reply, url=a.post, expect=expect, to=text[:40], text=reply_text)
+    ok, out = step("P1-read-comments-2", "read-comments", C.read_comments, url=a.post)
+    check("P1-reply-is-there", reply_text[:30] in out,
+          "the reply just written is in the read-comments output")
+    step("P1-react", "react", C.react, url=a.post, expect=expect, kind="like")
+    step("P1-unreact", "unreact", C.unreact, url=a.post)
+    step("P1-delete-reply", "delete-reply", C.delete_comment, url=a.post, match=reply_text[:30])
+    step("P1-delete-comment", "delete-comment", C.delete_comment, url=a.post, match=text[:40])
+    ok, out = step("P1-read-comments-3", "read-comments", C.read_comments, url=a.post)
+    check("P1-nothing-left", not (text[:40] in out or reply_text[:30] in out),
+          "neither the selftest comment nor the reply is still on the post")
 
-    if a.page and a.page_name:
+    if True:                      # never conditional again - ruling R9
         import cc_linkedin as tool
         for urn in sweep_page(a):
-            step("delete-leftover", C.delete_post, url=C.permalink(urn), expect="Throwaway post")
+            # Discovered work: declared the moment it is known, so it is still
+            # owed a report and cannot vanish from the inventory.
+            rows.also("P1-delete-leftover")
+            step("P1-delete-leftover", "delete-leftover", C.delete_post,
+                 url=C.permalink(urn), expect="Throwaway post")
         body = "cc-linkedin selftest %s. Throwaway post, deleted by the tool a minute later." % stamp
         tf = tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False, encoding="utf-8")
         tf.write(body)
@@ -456,12 +636,14 @@ def run(a):
         print("[%s] %-16s %-70s %s  (%.0fs)" % (time.strftime("%H:%M:%S"), "post (page)", line[:70],
                                                 "ok" if ok else "FAIL", time.time() - t0), flush=True)
         m = re.search(r"url=(\S+)", line)
+        check("P1-page-post", bool(ok and m),
+              "the Page post was published and gave back a URL to delete it by")
         if ok and m:
-            passed += 1
-            step("delete-post", C.delete_post, url=m.group(1), expect="Throwaway post")
+            step("P1-page-delete-post", "delete-post", C.delete_post,
+                 url=m.group(1), expect="Throwaway post")
         else:
-            failed += 1
-            print("      no post URL to delete; check the Page for a leftover selftest post", flush=True)
+            check("P1-page-delete-post", False,
+                  "no post URL to delete; check the Page for a leftover selftest post")
 
     # ======================================================== PHASE 2: reading
     print("--- Phase 2: profiles, company, search, notifications, stats ---", flush=True)
@@ -498,8 +680,13 @@ def run(a):
         check("P2-2", every(says), "profile B against the page, %d fields" % len(says))
         holds = _profile_holds(r, want_b) + [
             ("degree is not self", r.get("degree") != "self", repr(r.get("degree"))),
-            ("degree is somebody else's", (r.get("degree") or "").lower() in DEGREES_NOT_SELF,
-             repr(r.get("degree")))]
+            # RULING R12. The design asks for a 1st- or 2nd-degree profile here,
+            # and the row used to accept 3rd and 3rd+ as well - accepting
+            # whatever turned up instead of enforcing what was specified.
+            ("degree is 1st or 2nd, as the design requires",
+             (r.get("degree") or "").lower() in PROFILE_B_DEGREES,
+             "%r is not one of %r; --other-profile must be a 1st- or 2nd-degree profile"
+             % (r.get("degree"), PROFILE_B_DEGREES))]
         check("P2-2b", every(holds), "profile B invariants, %d of them" % len(holds))
 
     # -- P2-10: the invitation that lives BEHIND THE MORE MENU ----------------
@@ -570,47 +757,104 @@ def run(a):
           "resolved %d of %d rows to a post urn" % (len(resolved), len(recs)))
 
     if resolved:
-        ok, out = attempt("read-post chain", C.read_post, url=resolved[0]["permalink"])
+        # RULING R2.4. This used to assert that read-post came back with a
+        # non-empty author, which proves the page loaded - never in doubt - and
+        # could not tell a permalink naming the right post from one naming a
+        # stranger's. It now compares the AUTHOR AND THE TEXT with the search row
+        # the permalink came from, which is the only thing that distinguishes
+        # them, and is the check that would have caught the resolver defect.
+        row = resolved[0]
+        ok, out = attempt("read-post chain", C.read_post, url=row["permalink"])
         chain = _records(out)
-        check("P2-6c", ok and bool(chain) and bool(chain[0].get("author")),
-              "a resolved permalink fed to read-post returned author=%r"
-              % (chain[0].get("author") if chain else None))
+        subs = [("read-post returned a record", bool(ok and chain),
+                 "ok=%s records=%d" % (ok, len(chain)))]
+        if ok and chain:
+            subs += _same_post(row, chain[0], C.urn_of(row["permalink"]))
+        check("P2-6c", every(subs),
+              "the resolved permalink loaded the post the search row was about")
     else:
         check("P2-6c", False, "no resolved permalink to feed to read-post")
 
     # -- P2-7: notifications --------------------------------------------------
     ok, out = attempt("notifications", A.notifications, limit=10)
     recs = _records(out)
-    check("P2-7", ok and len(recs) >= 1 and all((x.get("text") or "").strip() for x in recs),
-          "rows=%d, every row has text=%s"
-          % (len(recs), all((x.get("text") or "").strip() for x in recs)))
+    subs = [("the verb returned cleanly", ok, "ok=%s" % ok)] + _notification_holds(recs, 10)
+    check("P2-7", every(subs),
+          "SMOKE TEST ONLY - shape, not correspondence with the page (R10): %d rows"
+          % len(recs))
 
     # -- P2-8: the Page's analytics -------------------------------------------
     ok, out = attempt("stats", A.stats, page=a.page, page_name=a.page_name, days=30)
     recs = _records(out)
     r = recs[0] if recs else {}
     posts = r.get("posts") or []
-    check("P2-8", ok and bool(recs)
-          and isinstance(r.get("followers"), int)
-          and r.get("name") == a.page_name
-          and r.get("window_days") == 30
-          and bool(r.get("window_start")) and bool(r.get("window_end"))
-          and all(isinstance(p.get("impressions"), int) for p in posts),
-          "followers=%r name matched=%s window=%rd (%s..%s) posts with integer impressions=%s"
-          % (r.get("followers"), r.get("name") == a.page_name, r.get("window_days"),
-             r.get("window_start"), r.get("window_end"),
-             all(isinstance(p.get("impressions"), int) for p in posts)))
+    # RULING R11. The per-post assertion used to be `all(...)` over `posts`, which
+    # is TRUE when there are no posts: a stats record built from an empty table
+    # satisfied it by examining nothing. Every "all rows satisfy X" is now paired
+    # with the cardinality that makes it mean something, in the same check.
+    check("P2-8", every([
+        ("the verb returned a record", bool(ok and recs), "ok=%s records=%d" % (ok, len(recs))),
+        ("followers is a number", isinstance(r.get("followers"), int), repr(r.get("followers"))),
+        ("the Page is the one that was asked for", r.get("name") == a.page_name,
+         "%r wanted %r" % (r.get("name"), a.page_name)),
+        ("the window is the one that was asked for", r.get("window_days") == 30,
+         repr(r.get("window_days"))),
+        ("the window states its own dates", bool(r.get("window_start"))
+         and bool(r.get("window_end")),
+         "%r..%r" % (r.get("window_start"), r.get("window_end"))),
+        ("the table had at least one post in it", len(posts) >= 1, "%d posts" % len(posts)),
+        ("every post has an integer impressions count",
+         all_of((isinstance(x.get("impressions"), int) for x in posts), len(posts)),
+         repr([x.get("impressions") for x in posts][:5])),
+    ]), "Page stats: %d posts, followers=%r" % (len(posts), r.get("followers")))
 
-    # -- P2-9: the run left nothing behind, and cost what it should -----------
-    from .browser import BrowserLock, open_file_dialogs, STATE_DIR
+    # -- P2-9: the run left nothing behind, and the two records of what it
+    # -- viewed agree -------------------------------------------------------
+    from .browser import open_file_dialogs, views_taken, STATE_DIR
     views_after = Pace().count("view")
     took = views_after - views_before
+    registered = views_taken()
     lock = os.path.join(STATE_DIR, "browser-%d.lock" % a.port)
     dialogs = open_file_dialogs()
-    check("P2-9", took == EXPECTED_VIEWS and not os.path.exists(lock) and not dialogs,
-          "views rose by %d (expected %d), lock released=%s, native dialogs=%d"
-          % (took, EXPECTED_VIEWS, not os.path.exists(lock), len(dialogs)))
+    try:
+        tabs_after = open_tabs(a.port)
+        tabs_why = None
+    except Exception as exc:
+        tabs_after, tabs_why = None, str(exc).splitlines()[0][:100]
 
-    print("RESULT selftest passed=%d failed=%d" % (passed, failed), flush=True)
+    print("      the views this run registered, in order:", flush=True)
+    for i, v in enumerate(registered, 1):
+        print("        %2d. %s" % (i, v["what"]), flush=True)
+
+    check("P2-9", every([
+        # R7: no constant. The pacing file's delta against the run's own registry
+        # of what it viewed. There is no number here to retune into agreement.
+        ("the pacing file and the run's own registry agree", took == len(registered),
+         "the pacing file rose by %d, the run registered %d views" % (took, len(registered))),
+        ("the run viewed something", len(registered) >= 1, "%d views" % len(registered)),
+        ("the browser lock is released", not os.path.exists(lock), lock),
+        ("no native file dialog is on screen", not dialogs, repr(dialogs)),
+        # The stray-tab assertion the design asked for and the row never had.
+        ("the browser's tabs could be counted", tabs_before is not None
+         and tabs_after is not None,
+         "before=%s after=%s (%s)" % (tabs_before is not None, tabs_after is not None, tabs_why)),
+        ("the run left no stray tab", tabs_before is not None and tabs_after is not None
+         and len(tabs_after) <= len(tabs_before),
+         "%d tabs before, %d after: %s"
+         % (len(tabs_before or []), len(tabs_after or []),
+            ", ".join(t[:60] for t in (tabs_after or []))[:200])),
+    ]), "views %d, lock released=%s, dialogs=%d, tabs %s->%s"
+        % (took, not os.path.exists(lock), len(dialogs),
+           len(tabs_before or []) if tabs_before is not None else "?",
+           len(tabs_after or []) if tabs_after is not None else "?"))
+
+    # -- the inventory: did every row this run declared actually report? -------
+    # RULING R9. A count of passes means nothing without the denominator it came
+    # from, and a row that never ran is a failed run, not an absent line.
+    ok, detail = rows.reconcile()
+    check("INVENTORY", ok, detail)
+
+    print("RESULT selftest passed=%d failed=%d rows=%d/%d"
+          % (passed, failed, len(rows.reported), len(rows.declared)), flush=True)
     if failed:
         sys.exit(1)
