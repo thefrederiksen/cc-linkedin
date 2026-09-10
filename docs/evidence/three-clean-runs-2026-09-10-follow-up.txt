@@ -1,0 +1,99 @@
+Three consecutive clean runs of the selftest on the Phase 2 follow-up code,
+2026-09-10, taken LAST - after every change that touches behaviour, so they
+certify the build that is committed and not an earlier one.
+
+    py -3.11 D:/ReposFred/cc-linkedin.mission/cc_linkedin.py selftest \
+        --page 107519091 --page-name "CenterConsulting, Inc."
+
+The three profile fixtures and --post came from the machine's own fixtures file
+(R20), outside this repository, so they are not on the command line and are not
+in this file. THAT IS ALSO WHY THE LINES BELOW ARE TRIMMED: a run's log names
+the people it read, and this file is committed to a PUBLIC repository. The
+verdicts are whole; the identifiers are not here.
+
+==========================================================================
+RUN 1
+==========================================================================
+[02:13:13] P2-1             own profile, 33 fields checked                                         ok
+[02:13:29] P2-2b            profile B invariants, 27 of them                                       ok
+[02:13:44] P2-10            menu profile, 38 checks                                                ok
+[02:13:55] P2-11            pending-invitation profile, 30 checks                                  ok
+[02:17:12] P2-9             views 6 capped + 5 own, lock released=True, dialogs=0, tabs 3->3       ok
+[02:17:12] INVENTORY        30 rows declared, 30 reported                                          ok
+
+    the views this run registered, in order:
+       1. [view_self] profile sorenfrederiksen (the owner's own)
+       2. [view] profile <a third party>
+       3. [view] profile <a third party>
+       4. [view] profile <a third party>
+       5. [view_self] profile sorenfrederiksen (the owner's own)
+       6. [view_self] company centerconsulting-inc (a Page the owner administers)
+       7. [view] a people search
+       8. [view] a content search
+       9. [view] a content search
+      10. [view_self] our own notifications page
+      11. [view_self] the analytics for Page 107519091 (one the owner administers)
+      against the safety cap: 49 of 80 today. Our own surfaces: 24.
+RESULT selftest passed=30 failed=0 rows=30/30
+
+==========================================================================
+RUN 2
+==========================================================================
+[02:22:53] P2-1             own profile, 33 fields checked                                         ok
+[02:23:06] P2-2b            profile B invariants, 27 of them                                       ok
+[02:23:24] P2-10            menu profile, 38 checks                                                ok
+[02:23:36] P2-11            pending-invitation profile, 30 checks                                  ok
+[02:26:59] P2-9             views 6 capped + 5 own, lock released=True, dialogs=0, tabs 3->3       ok
+[02:26:59] INVENTORY        30 rows declared, 30 reported                                          ok
+
+    the views this run registered, in order:
+       1. [view_self] profile sorenfrederiksen (the owner's own)
+       2. [view] profile <a third party>
+       3. [view] profile <a third party>
+       4. [view] profile <a third party>
+       5. [view_self] profile sorenfrederiksen (the owner's own)
+       6. [view_self] company centerconsulting-inc (a Page the owner administers)
+       7. [view] a people search
+       8. [view] a content search
+       9. [view] a content search
+      10. [view_self] our own notifications page
+      11. [view_self] the analytics for Page 107519091 (one the owner administers)
+      against the safety cap: 55 of 80 today. Our own surfaces: 29.
+RESULT selftest passed=30 failed=0 rows=30/30
+
+==========================================================================
+RUN 3
+==========================================================================
+[02:31:57] P2-1             own profile, 33 fields checked                                         ok
+[02:32:13] P2-2b            profile B invariants, 27 of them                                       ok
+[02:32:30] P2-10            menu profile, 38 checks                                                ok
+[02:32:41] P2-11            pending-invitation profile, 30 checks                                  ok
+[02:35:44] P2-9             views 6 capped + 5 own, lock released=True, dialogs=0, tabs 3->3       ok
+[02:35:44] INVENTORY        30 rows declared, 30 reported                                          ok
+
+    the views this run registered, in order:
+       1. [view_self] profile sorenfrederiksen (the owner's own)
+       2. [view] profile <a third party>
+       3. [view] profile <a third party>
+       4. [view] profile <a third party>
+       5. [view_self] profile sorenfrederiksen (the owner's own)
+       6. [view_self] company centerconsulting-inc (a Page the owner administers)
+       7. [view] a people search
+       8. [view] a content search
+       9. [view] a content search
+      10. [view_self] our own notifications page
+      11. [view_self] the analytics for Page 107519091 (one the owner administers)
+      against the safety cap: 61 of 80 today. Our own surfaces: 34.
+RESULT selftest passed=30 failed=0 rows=30/30
+
+Every run: 30 rows declared, 30 reported, none skipped. Six views against the
+safety cap and five on the uncapped own-surface counter, each agreeing with the
+run's own registry of what it opened. The browser lock released, no native file
+dialog on screen, and the same number of tabs afterwards as before.
+
+Rows 10 and 11 of every registry are new: F2 put notifications and the Page's
+analytics on the counter, and neither spends the safety number.
+
+The counter stood at 42 when this pass began and 61 when it ended - 19 of the
+80, one of them the survey that measured F3. The cap was neither raised nor
+reached.
