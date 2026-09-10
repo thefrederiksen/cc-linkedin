@@ -154,3 +154,86 @@ not another replace.**
 `docs/phase-2-design.md` section 0 stands and is reinforced by every finding
 above: a read that comes back empty is a failure, never a result, and every
 assertion is a check for something PRESENT. Nothing here relaxes it.
+
+---
+
+## Rulings on the self-test pass
+
+The self-test is the instrument every other claim in this phase is measured
+with. An instrument that cannot read low is not a lenient instrument, it is a
+broken one, and every "three clean runs" in this repository is worth exactly
+what it is worth.
+
+## R7. Delete `EXPECTED_VIEWS`. A test may not be its own oracle
+
+**Finding:** the expected view count is a hand-set constant that P2-9 compares
+the view counter against. Retuning it makes a view-count failure pass, and
+nothing executable derives the number independently. The Phase 2 fix Manager
+flagged this same constant unprompted as "the one constant in the suite a tired
+Manager can quietly retune until a run goes green" - and it was right.
+
+**Ruling. Remove the constant entirely.** Every operation that costs a view
+registers itself as it is invoked, and P2-9 compares the pacing file's delta
+against that registry. There is then no number to retune: a disagreement means
+either the pacing is wrong or the registry is, and both deserve a red run.
+
+Adjusting a constant until the suite agrees with the code is not a fix and must
+never read as one. If the registry and the counter disagree, the run fails and
+somebody finds out why.
+
+P2-9 also gains the stray-tab assertion the design asked for and it never had.
+
+## R8. An empty expectation is a FAIL, not a tautology
+
+**Finding:** `headline=` is accepted as a supplied key, making the headline
+comparison compare nothing to nothing and pass.
+
+**Ruling:** a supplied key with an empty value fails the run, naming the key.
+The whole point of the human-oracle rows is that a person looked at the screen
+and wrote down what it said; an empty value means they did not, and the row must
+say so rather than quietly agreeing with itself. Unknown keys already fail;
+empty ones now fail the same way.
+
+## R9. Nothing is skipped, and the run reconciles what it ran
+
+**Finding:** a missing `--page` or `--page-name` silently skips the entire Page
+publish-and-delete block, and no inventory is reconciled at the end.
+
+**Ruling:** this is the skip-counted-as-a-pass that `phase-2-design.md` section
+8 already forbade, so it is not a new rule, it is the existing one being
+enforced. A missing fixture FAILS. And the run declares the rows it intends to
+execute up front and reconciles that list against the rows that actually
+reported: a row that never ran is a failed run, not an absent line. A count of
+passes means nothing without the denominator it came from.
+
+## R10. A row must assert something the verb does not already enforce
+
+**Finding:** P2-7 repeats conditions `notifications` itself checks before
+returning, so it can only go red if the verb crashes; it cannot tell a correct
+notification from a wrong one.
+
+**Ruling:** a row that re-checks the verb's own preconditions is not a test of
+the verb, it is a test that Python still works. P2-7 asserts correspondence with
+the page - a notification whose actor and target are checked against what is
+actually on screen - or it is honestly labelled a smoke test and the phase stops
+claiming `notifications` is proven.
+
+Either is acceptable. Claiming the first while doing the second is not.
+
+## R11. Vacuous truth is banned
+
+**Finding:** P2-8's per-post assertion passes when zero posts were read, because
+`all()` over an empty sequence is true. The same shape appears wherever the
+suite checks "every row has X".
+
+**Ruling:** every "all rows satisfy X" assertion is paired with an assertion
+that there was at least one row, in the same check. This is the phase's
+zero-rows rule applied to the test suite instead of to the verbs, and it is the
+same defect: a condition that holds because nothing was examined.
+
+## R12. Profile B's required shape is enforced
+
+The design specifies a 1st- or 2nd-degree profile for the row that proves
+`read-profile` works on somebody other than its owner. The row currently accepts
+`3rd` and `3rd+` as well. Enforce what the design says, or amend the design
+deliberately - not by accepting whatever turns up.
