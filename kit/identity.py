@@ -115,29 +115,66 @@ def urn_from_url(url):
 def resolve_post_identity(final_url, stated):
     """(urn, error) for the post the browser landed on.
 
-    `stated` is what the PAGE said about itself: its post card's data-urn, its
-    canonical link, its og:url, its own "Copy link to post" value - whatever was
-    read out of the DOM, as raw strings. The final URL is only allowed to agree.
+    `stated` is what the PAGE said about itself, read out of the DOM as raw
+    strings. The page is now the ONLY source of identity. R1.1 asked for a
+    preference order over three sources - the post card's data-urn, the
+    canonical link, the og:url - and the survey it asked for was finally taken
+    live on 2026-09-10 across three landed post pages: every one carried a
+    post-card data-urn, and NONE carried a canonical link or an og:url. So the
+    order collapses to one item, and the caller passes what it finds.
+
+    RULING R1.2 IS RETIRED, 2026-09-10. Retired as REDUNDANT AND FALSE-PREMISED.
+    Not relaxed, and not softened because it went red - that distinction is the
+    whole of this comment, because a guard dropped for failing is how a suite
+    ends up certifying nothing.
+
+    R1.2 said: the URL path must AGREE with what the page said, and disagreement
+    is a FAIL. Two independent reasons it is gone:
+
+    1. ITS PREMISE WAS FALSE. It assumed the two sources would name ONE id under
+       two kind labels. LinkedIn does not work that way: an activity urn WRAPS a
+       share or a ugcPost, and the wrapper carries a DIFFERENT id from the thing
+       it wraps. So a post genuinely has two identities with two different
+       numbers, and "the page and the path must agree" was never a statement
+       about LinkedIn - it was a statement about what we assumed LinkedIn was.
+       Measured, not argued: on all three rows of the first live resolve the
+       page said urn:li:activity:<a> while the path said urn:li:share:<b> or
+       urn:li:ugcPost:<b> with a != b. Then the decisive test - asking LinkedIn
+       for the SHARE permalink of one of them serves the page whose single post
+       card states the ACTIVITY urn. The server itself treats them as one post.
+       That is routing behaviour, not our inference.
+    2. IT WAS ALREADY REDUNDANT. The attack it existed to stop was a urn
+       INFERRED from a URL string reaching a verb that comments, reacts or
+       deletes. R1.1 removed that attack entirely by reading identity from the
+       DOM: the path is no longer a source, so there is nothing to cross-check
+       it against. A cross-check between a measurement and a thing that is no
+       longer consulted is not a check.
+
+    What guards this instead is the stronger thing that was always there: P2-6c
+    compares the RESOLVED POST'S AUTHOR AND TEXT against the search row the
+    permalink came from, and `may_use_any_card` (R2.2) refuses to act on a page
+    whose stated identity is not the urn that was asked for. R2.2 met a real
+    mismatch on its first live outing - the share permalink above - and refused
+    by name. Neither of those is weakened here.
+
+    Still enforced, unchanged: more than one DISTINCT identity stated by the
+    page is ambiguity and resolves to nothing, and a page that states no
+    identity of its own resolves to nothing rather than having one inferred from
+    its URL. Those are R1.1 and R1.3, and they are what actually stop a
+    wrong-but-well-formed permalink.
     """
     said = distinct(stated)
     if len(said) > 1:
         return None, ("the page states more than one post identity (%s); that is ambiguity, "
                       "not a choice to make" % ", ".join(said))
-    from_path = urn_from_url(final_url)
     if not said:
+        from_path = urn_from_url(final_url)
         return None, ("the page at %s stated no identity of its own (no post-card data-urn, no "
                       "canonical link, no og:url), and a urn will not be inferred from the URL. "
                       "The URL's own path %s"
                       % ((final_url or "")[:140],
                          ("names %s, which is not evidence about the page" % from_path)
                          if from_path else "names no post either"))
-    if from_path and from_path != said[0]:
-        same_id = from_path.rsplit(":", 1)[-1] == said[0].rsplit(":", 1)[-1]
-        return None, ("the page says it is %s and the URL path says %s - %s. Refusing to "
-                      "prefer one of them"
-                      % (said[0], from_path,
-                         "the same post id under a different urn kind" if same_id
-                         else "two different posts"))
     return said[0], None
 
 

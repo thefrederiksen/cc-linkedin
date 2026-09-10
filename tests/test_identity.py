@@ -53,13 +53,49 @@ class ResolveFromTheLandedPage(unittest.TestCase):
         self.assertIsNone(urn)
         self.assertIn("stated no identity", err)
 
-    def test_the_page_and_the_path_must_agree(self):
-        # R1.2: disagreement is a FAIL for the row, never a preference.
+    def test_the_path_is_no_longer_consulted_for_identity_at_all(self):
+        """R1.2 RETIRED, 2026-09-10 - as redundant and false-premised, NOT as
+        relaxed because it went red.
+
+        It required the URL path to AGREE with what the page said. Its premise
+        was that the two would name one id under two kind labels. LinkedIn does
+        not work that way: an activity urn wraps a share or ugcPost and carries
+        a DIFFERENT id, so one post genuinely has two identities with two
+        different numbers. Proved live rather than argued - asking LinkedIn for
+        a post's SHARE permalink serves the page whose single post card states
+        the ACTIVITY urn, which is the server's own answer, not our inference.
+
+        It was redundant as well: the attack it existed to stop was a urn
+        INFERRED FROM A URL reaching a mutating verb, and R1.1 ended that by
+        reading identity from the DOM. There is nothing left to cross-check.
+
+        So a path that names something else no longer blocks the row. What the
+        PAGE said stands on its own.
+        """
         dest = "https://www.linkedin.com/posts/example_topic-share-7000000000000000444-987654321"
         urn, err = I.resolve_post_identity(dest, [OTHER])
+        self.assertIsNone(err, err)
+        self.assertEqual(urn, OTHER, "the page's own identity must stand alone")
+
+    def test_what_replaces_it_is_NOT_weakened(self):
+        """The controls for the retirement. R1.2 is gone; these are the rules
+        that actually stop a wrong-but-well-formed permalink, and if any of them
+        moved, the retirement went too far."""
+        # R1.3: two distinct stated identities is ambiguity, not a first match.
+        urn, err = I.resolve_post_identity("https://www.linkedin.com/feed/update/%s/" % REAL,
+                                           [REAL, OTHER])
         self.assertIsNone(urn)
-        self.assertIn("urn:li:share:7000000000000000444", err)
-        self.assertIn(OTHER, err)
+        # R1.1: a page that states nothing has nothing inferred from its URL.
+        urn, err = I.resolve_post_identity(
+            "https://www.linkedin.com/posts/example_topic-share-7000000000000000111-987654321", [])
+        self.assertIsNone(urn)
+        self.assertIn("stated no identity", err)
+        # R2.2: a page whose stated identity is not the urn asked for may not be
+        # acted on, however few cards it holds. THIS is the guard that met a
+        # real activity/share mismatch live and refused.
+        self.assertFalse(I.may_use_any_card(1, [OTHER], REAL))
+        self.assertTrue(I.may_use_any_card(1, [REAL], REAL))
+        self.assertFalse(I.may_use_any_card(2, [REAL], REAL))
 
     def test_two_stated_identities_are_ambiguity_not_a_first_match(self):
         # R1.3: more than one distinct candidate anywhere is ambiguity.
