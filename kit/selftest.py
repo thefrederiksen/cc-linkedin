@@ -513,6 +513,18 @@ def run(a):
               "suite writes anything outside a comment - and would say nothing about having "
               "skipped it. A missing fixture is a failed run, not a shorter one.", flush=True)
         sys.exit(1)
+    # RULING R20, 2026-09-10. The flags still win, but a value not passed is
+    # looked for in the machine's own fixtures file - outside the repository,
+    # beside pace.json - so that finding a profile of the required shape is paid
+    # for ONCE rather than by every seat, out of the daily view cap. What is
+    # committed is the SHAPE; what is on the machine is the value. A value that
+    # is in neither place still FAILS the run below - R20 moved where fixtures
+    # live, it did not make any of them optional.
+    from . import fixtures as FX
+    a.other_profile = FX.value(a.other_profile, "other_profile", "url")
+    a.other_expect = FX.value(a.other_expect, "other_profile", "expect")
+    a.menu_profile = FX.value(a.menu_profile, "menu_profile", "url")
+    a.menu_expect = FX.value(a.menu_expect, "menu_profile", "expect")
     if not (a.other_profile and a.other_expect and a.menu_profile and a.menu_expect):
         print("FAIL the Phase 2 profile fixtures are required, and none of them is committed: "
               "this repository is public, so no third party's URL or details go in it.\n"
@@ -530,7 +542,19 @@ def run(a):
               "defects are visible: on it, the code as it stood on 2026-09-09 reported the "
               "connections count as the employer and reported 'Message' as the connection state "
               "of somebody it could in fact invite. A row that never runs against that shape "
-              "cannot go red when either fix is taken out.", flush=True)
+              "cannot go red when either fix is taken out.\n"
+              "Pass them as flags, or put them in the machine's own fixtures file, "
+              "which is outside this repository and is where these values are meant "
+              "to live (ruling R20):\n"
+              "  %s\n"
+              '  {"other_profile": {"url": ..., "expect": ...},\n'
+              '   "menu_profile":  {"url": ..., "expect": ...}}\n'
+              "Supplied now: %s." % (FX.path(), ", ".join(
+                  "%s=%s" % (k, "yes" if v else "NO")
+                  for k, v in (("other_profile", a.other_profile),
+                               ("other_expect", a.other_expect),
+                               ("menu_profile", a.menu_profile),
+                               ("menu_expect", a.menu_expect)))), flush=True)
         sys.exit(1)
     menu_exp = _expect(a.menu_expect, "--menu-expect")
     if menu_exp["company"].lower() != "none":
