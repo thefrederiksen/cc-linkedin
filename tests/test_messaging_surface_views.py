@@ -1,30 +1,35 @@
 # -*- coding: utf-8 -*-
-"""A2: the messaging LIST and the invitation manager are our own surfaces. A
-THREAD is not.
+"""Which surfaces are ours, by the test that a read receipt is somebody else's.
 
-`docs/phase-3-amendments.md` A2, ruled by the Architect on 2026-09-10 after the
-survey measured that `/messaging/`, `/messaging/thread/<id>/` and
-`/mynetwork/invitation-manager/` all counted as capped `view` - because
-`surface_kind` recognised exactly three own-surfaces and everything else fell
-through to the safety number.
+A2 (`docs/phase-3-amendments.md`, 2026-09-10) put `/messaging/` on the uncapped
+counter because it is the owner's own inbox, and left `/messaging/compose/`
+capped by not matching it. CORRECTED before 1.0: the letter and the reason
+pointed opposite ways.
 
-THE SPLIT IS THE WHOLE POINT AND IT IS NOT ARBITRARY. The cap exists against
-activity that looks automated to LinkedIn AND reaches other people
-(`docs/ruling-view-cap-2026-09-09.md`).
+THE TEST IS NOT "IS THIS SURFACE MINE". It is "CAN LOADING IT CHANGE SOMETHING
+ANOTHER PERSON CAN SEE." A read receipt is visible to somebody else, so a
+surface that can raise one is capped no matter whose inbox it sits in. Ownership
+was the wrong question: every surface here is the owner's, and they still do not
+all cost the same.
 
-  * `/messaging/` - the owner's own inbox. Notifies nobody. No volume of reading
-    it resembles scraping. UNCAPPED.
-  * `/mynetwork/invitation-manager/...` - the owner's own invitations, sent and
-    received. Same reasoning. UNCAPPED.
-  * `/messaging/thread/<id>/` - CAPPED, and not because it looks like scraping.
-    Opening a thread marks it read and can show the other participant a read
-    receipt. It is the one messaging read with an outward, irreversible side
-    effect, so it stays on the safety number: a runaway loop meets a wall
-    instead of quietly marking a hundred conversations read.
+Applied:
 
-So the test that matters most in this file is the thread one. A classifier that
-got the two easy cases right and let a thread through would satisfy the letter
-of A2 and destroy its reason.
+  * `/messaging/` - CAPPED. The list is the route believed to select a
+    conversation into the reading pane, which marks it read. It is the owner's
+    own inbox and that is not the point. Uncap it only when somebody has
+    MEASURED that loading the bare list opens no conversation.
+  * `/messaging/compose/` - UNCAPPED. Measured to open no conversation: it is an
+    empty draft. Nothing is marked read and nobody is told it was loaded. Note
+    that this is the exact reverse of what A2 shipped.
+  * `/messaging/thread/<id>/` - CAPPED, unchanged. Opening a thread marks it
+    read and can show the other participant a receipt. The plainest case.
+  * `/mynetwork/invitation-manager/...` - UNCAPPED, unchanged. Sending an
+    invitation is what another person sees; reading the list of ones already
+    sent shows nobody anything.
+
+The cases that matter most here are `/messaging/` and `/messaging/compose/`. A
+classifier that has them the wrong way round satisfies "these are my own
+surfaces" perfectly and spends the safety budget on the wrong one.
 """
 import os
 import sys
@@ -35,17 +40,25 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from cc_linkedin_kit.browser import surface_kind
 
 
-class TheMessagingListIsOurs(unittest.TestCase):
+class TheComposeRouteIsOurs(unittest.TestCase):
+    """Uncapped because it opens no conversation, not because it is ours."""
 
-    def test_the_plain_list(self):
-        self.assertEqual(surface_kind("https://www.linkedin.com/messaging/"), "view_self")
+    def test_compose_with_a_recipient_on_the_query(self):
+        self.assertEqual(
+            surface_kind("https://www.linkedin.com/messaging/compose/?recipient=1234"),
+            "view_self")
 
-    def test_without_the_trailing_slash(self):
-        self.assertEqual(surface_kind("https://www.linkedin.com/messaging"), "view_self")
+    def test_compose_bare(self):
+        self.assertEqual(
+            surface_kind("https://www.linkedin.com/messaging/compose/"), "view_self")
 
-    def test_with_a_filter_on_the_query(self):
-        self.assertEqual(surface_kind("https://www.linkedin.com/messaging/?filter=unread"),
-                         "view_self")
+    def test_compose_without_the_trailing_slash(self):
+        self.assertEqual(
+            surface_kind("https://www.linkedin.com/messaging/compose"), "view_self")
+
+    def test_the_subdomain_form_is_still_ours(self):
+        self.assertEqual(
+            surface_kind("https://uk.linkedin.com/messaging/compose/"), "view_self")
 
 
 class TheInvitationManagerIsOurs(unittest.TestCase):
@@ -72,10 +85,19 @@ class TheInvitationManagerIsOurs(unittest.TestCase):
             "view_self")
 
 
-class AThreadIsNot(unittest.TestCase):
-    """The half of A2 that costs something. If these pass by accident - because
-    the messaging pattern was written as a prefix - A2 has been implemented
-    backwards and the read-receipt wall is gone."""
+class AnythingThatCanRaiseAReadReceiptIsCapped(unittest.TestCase):
+    """The half that costs something. Each of these is the owner's own surface
+    and each is capped anyway, which is the whole correction."""
+
+    def test_the_plain_list_is_capped(self):
+        self.assertEqual(surface_kind("https://www.linkedin.com/messaging/"), "view")
+
+    def test_the_list_without_a_trailing_slash_is_capped(self):
+        self.assertEqual(surface_kind("https://www.linkedin.com/messaging"), "view")
+
+    def test_the_list_with_a_filter_is_capped(self):
+        self.assertEqual(
+            surface_kind("https://www.linkedin.com/messaging/?filter=unread"), "view")
 
     def test_a_thread_is_capped(self):
         self.assertEqual(
@@ -85,49 +107,47 @@ class AThreadIsNot(unittest.TestCase):
         self.assertEqual(
             surface_kind("https://www.linkedin.com/messaging/thread/2-abc123def==/"), "view")
 
-    def test_the_compose_route_is_capped(self):
-        """/messaging/compose/?profileUrn=... opens a draft against a real
-        person and is where the survey did its thread work. Not the list."""
-        self.assertEqual(
-            surface_kind("https://www.linkedin.com/messaging/compose/?recipient=1234"), "view")
-
     def test_anything_else_under_messaging_is_capped(self):
         self.assertEqual(
             surface_kind("https://www.linkedin.com/messaging/anything-new-linkedin-adds/"),
             "view")
 
+    def test_a_thread_is_not_reached_by_the_compose_pattern(self):
+        """The failure this guards: writing compose as a prefix, which would
+        swallow every route under /messaging/ including the threads."""
+        self.assertEqual(
+            surface_kind("https://www.linkedin.com/messaging/compose/thread/2-abc=="), "view")
+
 
 class TheUnrecognisedDirectionIsStillTheCappedOne(unittest.TestCase):
-    """The enumeration rule from the ruling, re-asserted on the two forms A2
-    adds: positive match or nothing, and a near-miss is somebody else's."""
+    """Positive match or nothing, and a near-miss is somebody else's."""
 
     def test_another_host_serving_the_same_path_is_capped(self):
-        self.assertEqual(surface_kind("https://example.com/messaging/"), "view")
+        self.assertEqual(surface_kind("https://example.com/messaging/compose/"), "view")
         self.assertEqual(
             surface_kind("https://example.com/mynetwork/invitation-manager/"), "view")
 
     def test_a_lookalike_host_is_capped(self):
-        self.assertEqual(surface_kind("https://linkedin.com.evil.test/messaging/"), "view")
+        self.assertEqual(
+            surface_kind("https://linkedin.com.evil.test/messaging/compose/"), "view")
 
     def test_a_lookalike_path_is_capped(self):
-        self.assertEqual(surface_kind("https://www.linkedin.com/messaging-beta/"), "view")
+        self.assertEqual(surface_kind("https://www.linkedin.com/messaging-beta/compose/"), "view")
+        self.assertEqual(surface_kind("https://www.linkedin.com/messaging/composer/"), "view")
         self.assertEqual(
             surface_kind("https://www.linkedin.com/mynetwork/invitation-manager-v2/"), "view")
 
     def test_mynetwork_itself_is_capped(self):
-        """/mynetwork/ is the suggestions grid - other people's faces. It is not
-        the invitation manager and A2 does not name it."""
+        """/mynetwork/ is the suggestions grid - other people's faces."""
         self.assertEqual(surface_kind("https://www.linkedin.com/mynetwork/"), "view")
 
     def test_our_own_path_hidden_in_somebody_elses_query_is_capped(self):
         """The failure mode of a classifier that searches the whole URL string
         instead of its path."""
         self.assertEqual(
-            surface_kind("https://www.linkedin.com/in/somebody/?next=//www.linkedin.com/messaging/"),
+            surface_kind(
+                "https://www.linkedin.com/in/somebody/?next=//www.linkedin.com/messaging/compose/"),
             "view")
-
-    def test_the_subdomain_form_is_still_ours(self):
-        self.assertEqual(surface_kind("https://uk.linkedin.com/messaging/"), "view_self")
 
 
 class WhatWasAlreadyTrueStaysTrue(unittest.TestCase):
