@@ -184,6 +184,15 @@ That is the reported symptom: on a person the tool CAN invite, it reports that
 it cannot, because it only looked where the invitation was not. P2-1, P2-2,
 P2-2b, P2-3, P2-4, P2-7 and P2-8 stayed green through the same run.
 
+**The controls were not fully clean, and it was not the revert.** P2-5, P2-6a,
+P2-6b, P2-6c and P2-9 also failed in that run, all of them with
+`daily cap reached for views (80 today, cap 80)` - the run crossed the cap
+mid-way through, and the searches after it never opened a page. Section 7. So
+this proof shows P2-10 going red on the reverted behaviour with the reported
+symptom, and it shows seven controls staying green; it does NOT show the search
+rows staying green, and that half has to be re-observed when the counter rolls
+over.
+
 The file was restored with `git checkout --` and the tree confirmed clean.
 
 ### Revert 2: the employer read - NOT YET WATCHED FAILING
@@ -215,9 +224,12 @@ been run.**
 ## 6. What is NOT proven
 
 * **Revert 2 has not been watched failing** (section 5).
-* **Three consecutive clean runs have not been done.** Two full clean runs exist
-  (`passed=25 failed=0` at 19:50 and at 20:05 on 2026-09-09), the second with
-  the final fixtures. The third is blocked - section 7.
+* **Three consecutive clean runs have not been done. ONE has.** The final build
+  with the final fixtures ran `passed=25 failed=0` once, ending 20:05 on
+  2026-09-09. An earlier `passed=25 failed=0` at 19:50 does not count towards
+  the three: it was the build before `--menu-expect` existed and it used a
+  different menu profile. Two more runs are needed and both are blocked -
+  section 7.
 * **A pending invitation is unmeasured.** No profile with an invitation already
   sent was read. Such a profile has no invite control, so `can_connect` comes
   back false with the menu's contents quoted in the reason, which is honest but
@@ -248,8 +260,10 @@ local date roll.
 
 It is worth the Architect knowing what a verification pass now costs against that
 budget: one full selftest is 8 views, so three clean runs plus two revert proofs
-is 40 - half a day's budget for one pass, before any survey work.
+is 40 - half a day's budget for one pass, before any survey work. Most of today's
+80 went on surveying six profiles to find the two the rows now need, which is a
+one-off; the recurring cost is the 24 for three clean runs.
 
 Everything that does not need a view is done, committed and pushed. What remains
-is revert 2 and three consecutive clean runs, and both need the counter to roll
-over.
+is revert 2, the re-observation of revert 1's search controls, and three
+consecutive clean runs. All of it needs the counter to roll over.
