@@ -661,7 +661,12 @@ def run(a):
     from . import account as A
 
     pace = Pace()
+    # BOTH counters, since the view/view_self split of 2026-09-10. P2-9 compares
+    # each one against its own half of the registry: a comparison against the
+    # TOTAL would stay green while a stranger's profile drifted onto the
+    # uncapped counter, which is the one mistake that split can make.
     views_before = pace.count("view")
+    self_views_before = pace.count("view_self")
 
     # -- P2-1: the owner's own profile, every field it returns ----------------
     ok, out = attempt("read-profile", P.read_profile, url=a.profile)
@@ -821,7 +826,9 @@ def run(a):
     # -- viewed agree -------------------------------------------------------
     from .browser import open_file_dialogs, views_taken, STATE_DIR
     views_after = Pace().count("view")
+    self_views_after = Pace().count("view_self")
     took = views_after - views_before
+    took_self = self_views_after - self_views_before
     registered = views_taken()
     lock = os.path.join(STATE_DIR, "browser-%d.lock" % a.port)
     dialogs = open_file_dialogs()
@@ -833,14 +840,31 @@ def run(a):
 
     print("      the views this run registered, in order:", flush=True)
     for i, v in enumerate(registered, 1):
-        print("        %2d. %s" % (i, v["what"]), flush=True)
+        print("        %2d. [%s] %s" % (i, v["kind"], v["what"]), flush=True)
+    print("      against the safety cap: %d of %d today. Our own surfaces: %d."
+          % (views_after, Pace.VIEW_CAP, self_views_after), flush=True)
 
     check("P2-9", every([
         # R7: no constant. The pacing file's delta against the run's own registry
         # of what it viewed. There is no number here to retune into agreement.
-        ("the pacing file and the run's own registry agree", took == len(registered),
-         "the pacing file rose by %d, the run registered %d views" % (took, len(registered))),
+        ("the pacing file and the run's own registry agree on the CAPPED counter",
+         took == len(views_taken("view")),
+         "the safety counter rose by %d, the run registered %d views of other people's "
+         "surfaces" % (took, len(views_taken("view")))),
+        # The split of 2026-09-10 made this a second, separate identity rather
+        # than a wider one. Summing them would let a view move from the capped
+        # counter to the uncapped one without a single row going red.
+        ("the pacing file and the run's own registry agree on the SELF counter",
+         took_self == len(views_taken("view_self")),
+         "the self counter rose by %d, the run registered %d views of our own surfaces"
+         % (took_self, len(views_taken("view_self")))),
+        ("every registered view is on one of the two counters",
+         all_of((v["kind"] in ("view", "view_self") for v in registered), len(registered)),
+         repr(sorted({v["kind"] for v in registered}))),
         ("the run viewed something", len(registered) >= 1, "%d views" % len(registered)),
+        ("the run viewed somebody else's surface", len(views_taken("view")) >= 1,
+         "%d capped views - a selftest that never leaves our own surfaces is not "
+         "exercising the read verbs" % len(views_taken("view"))),
         ("the browser lock is released", not os.path.exists(lock), lock),
         ("no native file dialog is on screen", not dialogs, repr(dialogs)),
         # The stray-tab assertion the design asked for and the row never had.
@@ -852,8 +876,8 @@ def run(a):
          "%d tabs before, %d after: %s"
          % (len(tabs_before or []), len(tabs_after or []),
             ", ".join(t[:60] for t in (tabs_after or []))[:200])),
-    ]), "views %d, lock released=%s, dialogs=%d, tabs %s->%s"
-        % (took, not os.path.exists(lock), len(dialogs),
+    ]), "views %d capped + %d own, lock released=%s, dialogs=%d, tabs %s->%s"
+        % (took, took_self, not os.path.exists(lock), len(dialogs),
            len(tabs_before or []) if tabs_before is not None else "?",
            len(tabs_after or []) if tabs_after is not None else "?"))
 

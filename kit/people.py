@@ -85,7 +85,7 @@ import re
 import time
 
 from . import selectors as S
-from .browser import Browser, Pace, log, die
+from .browser import Browser, Pace, is_own_page, is_own_profile, log, die
 
 SLUG = re.compile(r"/in/([^/?#]+)")
 COMPANY_SLUG = re.compile(r"/company/([^/?#]+)")
@@ -597,7 +597,16 @@ def read_profile(a):
     want = m.group(1).lower()
     pace = Pace()
     with Browser(a.port) as br:
-        pace.before_view("profile %s" % want)
+        # The view/view_self split, 2026-09-10. `want` is the slug this verb is
+        # about to demand, and the assertion four lines down refuses to go on
+        # unless the page it LANDED on carries that same slug - so the value the
+        # counter was chosen from is the value the read is then held to. Asking
+        # for our own profile and being sent to somebody else's is a hard
+        # failure, not a mis-counted view.
+        if is_own_profile(want):
+            pace.before_self_view("profile %s (the owner's own)" % want)
+        else:
+            pace.before_view("profile %s" % want)
         final = br.read(url, "the profile %s" % want, settle=7)
         pace.after_view()
 
@@ -715,7 +724,13 @@ def read_company(a):
     url = S.COMPANY_MEMBER_VIEW % key
     pace = Pace()
     with Browser(a.port) as br:
-        pace.before_view("company %s" % key)
+        # The view/view_self split, 2026-09-10 - and see read_profile for why
+        # counting on the REQUESTED key is safe: the two assertions below refuse
+        # any landing that is not the member view of that same key.
+        if is_own_page(key):
+            pace.before_self_view("company %s (a Page the owner administers)" % key)
+        else:
+            pace.before_view("company %s" % key)
         final = br.read(url, "the company page %s" % key, settle=7)
         pace.after_view()
 

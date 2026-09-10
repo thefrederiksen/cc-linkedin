@@ -1,0 +1,20 @@
+The view/view_self split, watched failing first
+==============================================
+2026-09-10, the live-proving Manager, implementing
+docs/ruling-view-cap-2026-09-09.md.
+
+--- 1. THE SYMPTOM, DEMONSTRATED AGAINST THE OLD CODE
+The old Pace has ONE counter, so a view of the owner's own profile spends
+a slot of the 80 that exists to stop us looking like a scraper of OTHER
+people. This is exactly the call kit/people.read_profile made:
+
+    pace.json after two views of surfaces WE OWN:
+      view      = 2  <- two of the 80 safety slots, spent on ourselves
+      view_self = 0  <- the counter the ruling asks for does not exist
+    Pace has before_self_view: False
+    browser has is_own_profile: False
+
+--- 2. THE NEW TESTS, RUN AGAINST THAT CODE: 12 red of 18
+Ran 18 tests in 2.166s
+
+FAILED (errors=12)

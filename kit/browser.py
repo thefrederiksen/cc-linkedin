@@ -245,17 +245,67 @@ def _pid_alive(pid):
 
 # ---------------------------------------------------------------- pacing
 
+# ------------------------------------------------- whose surface is this, exactly
+#
+# RULING docs/ruling-view-cap-2026-09-09.md, IMPLEMENTED 2026-09-10. What each
+# counter is for, which the ruling asks to be written down here:
+#
+#   view      - OTHER PEOPLE'S profiles and company pages, and search results
+#               pages. CAP 80 A DAY. This is the safety number and it is the one
+#               the owner agreed to. It exists because high-volume viewing of
+#               other people's profiles is what scraping looks like from the
+#               outside, and it is the top trigger for an account warning.
+#   view_self - the owner's own profile, and a Page he administers. COUNTED AND
+#               REPORTED, NOT CAPPED. Loading your own profile notifies nobody,
+#               appears in nobody's "who viewed your profile", and no amount of
+#               it makes an account look like a scraper. It is counted anyway,
+#               because a runaway loop on our own profile should still be
+#               visible in pace.json - "uncapped" is not "invisible".
+#
+# THE WAY THIS GOES WRONG, stated so the next reader looks for it: a split like
+# this is one classification mistake away from being a way to spend MORE than 80
+# views on strangers. So the rule is POSITIVE MATCH OR NOTHING - an exact match,
+# case-folded, against the short lists below. Not a prefix, not a substring, not
+# a regular expression. Anything unrecognised, empty or None is somebody else's
+# and is capped. There is deliberately no way to reach the uncapped counter by
+# omission, by a default argument, or by failing to recognise something.
+#
+# These two lists are the owner's own identifiers. They are already in this
+# repository by intent - his Page id and his profile are public, and ruling
+# R13.3 keeps them - so naming them here leaks nothing that was not already
+# here. Adding anybody else to either list would be the mistake described above,
+# performed deliberately.
+OWN_PROFILE_SLUGS = frozenset({"sorenfrederiksen"})
+OWN_PAGE_KEYS = frozenset({"107519091", "centerconsulting-inc"})
+
+
+def is_own_profile(slug):
+    """True only when `slug` is positively the owner's own profile."""
+    return (slug or "").strip().strip("/").lower() in OWN_PROFILE_SLUGS
+
+
+def is_own_page(key):
+    """True only when `key` is positively a Page the owner administers - by
+    numeric id or by slug, since read-company accepts either."""
+    return (key or "").strip().strip("/").lower() in OWN_PAGE_KEYS
+
+
 class Pace(object):
     """Daily caps and gaps, kept in a file so they hold across sessions and
     agents. TWO TRACKS, and they never touch each other.
 
       * OUTBOUND - comment, react, connect, message, invite. 45 to 90 seconds
         between actions, because these reach a person.
-      * VIEW - a profile or a company page actually opened, and one search
-        results page however many cards it holds. 3 to 8 seconds, cap 80 a day.
-        High-volume profile viewing is one of the top triggers for an account
-        warning, so reads are capped; but a read must not make the next comment
-        wait 90 seconds, and a page of 25 search results must not take an hour.
+      * VIEW - somebody ELSE'S profile or company page actually opened, and one
+        search results page however many cards it holds. 3 to 8 seconds, cap 80
+        a day. High-volume viewing of other people's profiles is one of the top
+        triggers for an account warning, so reads are capped; but a read must
+        not make the next comment wait 90 seconds, and a page of 25 search
+        results must not take an hour.
+      * VIEW_SELF - the owner's OWN profile, and a Page he administers. Spaced
+        exactly like a view, COUNTED like a view, and NOT capped. See the note
+        at OWN_PROFILE_SLUGS below for why, and for the one way this could go
+        wrong.
 
     The gap is DRAWN from its range with random.uniform. It used to be
     `hash(str(time.time())) % span`, which is not random in any useful sense -
@@ -293,8 +343,9 @@ class Pace(object):
 
     CAPS = {"comment": 60, "react": 100, "connect": 20, "message": 30, "invite": 5}
     GAP = (45, 90)         # seconds between outbound actions
-    VIEW_CAP = 80          # profile/company/search pages opened per day
-    VIEW_GAP = (3, 8)      # seconds between reads
+    VIEW_CAP = 80          # OTHER people's profiles/companies + search pages, per day
+    VIEW_SELF_CAP = None   # our own profile and our own Pages: counted, NOT capped
+    VIEW_GAP = (3, 8)      # seconds between reads, on both counters
 
     def __init__(self):
         os.makedirs(STATE_DIR, exist_ok=True)
@@ -371,8 +422,9 @@ class Pace(object):
     # -- views --------------------------------------------------------------
 
     def before_view(self, what="page"):
-        """One view = one profile, one company page, or one page of search
-        results. Refuses over the daily cap; never touches the outbound clock.
+        """One view of SOMEBODY ELSE'S surface = one profile, one company page,
+        or one page of search results. Refuses over the daily cap; never touches
+        the outbound clock.
 
         Every view REGISTERS ITSELF here, by name - ruling R7, 2026-09-09. The
         selftest used to compare the day's view counter against EXPECTED_VIEWS,
@@ -383,9 +435,30 @@ class Pace(object):
         they are compared to each other. A disagreement means either the pacing
         is wrong or the registry is, and both deserve a red run.
         """
-        _VIEWS.append({"what": what, "counted": False})
+        self._view("view", self.VIEW_CAP, what, "views")
+
+    def before_self_view(self, what="page"):
+        """One view of a surface WE OWN - the owner's own profile, or a Page he
+        administers. Counted on its own counter and NOT capped.
+
+        A SEPARATE METHOD, not a flag on before_view, and deliberately so. The
+        uncapped path is the cheap one, so reaching it has to be a positive act
+        by name at the call site. A boolean argument gets a default, a default
+        gets passed through a wrapper, and the day one of those wrappers is
+        pointed at a stranger's profile the cap is gone with no line of code
+        having changed. There is no default that reaches this method.
+        """
+        self._view("view_self", self.VIEW_SELF_CAP, what, "views of our own surfaces")
+
+    def _view(self, kind, cap, what, noun):
+        """The one body both view paths share. The REGISTRY entry is written
+        before the reservation, so a view refused at the cap is still on the
+        record as attempted (R7), and it carries `kind` so that P2-9 can
+        reconcile each counter against its own half of the registry rather than
+        against a total that would hide one counter drifting into the other."""
+        _VIEWS.append({"what": what, "kind": kind, "counted": False})
         self._wait(self._load().get("last_view", 0), self.VIEW_GAP, "view of %s" % what)
-        self._reserve("view", self.VIEW_CAP, "views")
+        self._reserve(kind, cap, noun)
         if _VIEWS:
             _VIEWS[-1]["counted"] = True
 
@@ -411,14 +484,19 @@ class Pace(object):
 _VIEWS = []
 
 
-def views_taken():
-    """The views this process registered and completed, in order."""
-    return [v for v in _VIEWS if v["counted"]]
+def views_taken(kind=None):
+    """The views this process registered and completed, in order.
+
+    `kind` is "view" or "view_self"; omit it for everything. P2-9 asks for one
+    counter at a time, because a comparison against the TOTAL would stay green
+    while a stranger's profile drifted onto the uncapped counter - which is the
+    one mistake this split can make."""
+    return [v for v in _VIEWS if v["counted"] and (kind is None or v["kind"] == kind)]
 
 
-def views_registered():
+def views_registered(kind=None):
     """Every view this process began, completed or not."""
-    return list(_VIEWS)
+    return [v for v in _VIEWS if kind is None or v["kind"] == kind]
 
 
 def open_tabs(port):
