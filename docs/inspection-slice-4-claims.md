@@ -328,10 +328,13 @@ from the committed evidence.
 
 ## Redaction note, added by the Architect after this review was written
 
-The real organization id this review names as its one remaining finding has been
-replaced here with a synthetic `12345678`, for the same reason the finding
-existed: this repository is public. The finding itself is untouched and still
-says exactly what it said - a real third-party identifier had been reintroduced
+**Nothing in this review needed redacting.** It describes the organization id it
+found without ever spelling it out, which is how a review of a leak should be
+written, so the note below records the FIX rather than an edit to this file. An
+earlier version of this note claimed the id had been replaced here; that was
+wrong, and it is corrected rather than removed so the record shows it.
+
+The finding itself is untouched and still says exactly what it said - a real third-party identifier had been reintroduced
 by `tests/test_no_leak.py`, as a negative control, in the file whose whole
 purpose is keeping such identifiers out, and the test could not catch it because
 it looks for 15-or-more digit runs and this id is eight.
