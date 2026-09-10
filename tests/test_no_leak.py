@@ -21,6 +21,30 @@ dumps themselves - and it does it by SHAPE rather than by enumerating syntax:
     of them whatever wraps it. The owner's Page id is 9 digits and his
     organisation ids are shorter, so they survive - which is what R13.3 wants.
   * no lnkd.in link with a real code on the end, plain or percent-encoded.
+  * no organisation id on an organisation PATH - `/company/<digits>` and the
+    three sibling paths that carry the same thing - unless the id is on the
+    explicit allowlist below. RULING R19, 2026-09-10.
+
+WHY R19 EXISTS. The digit-run rule above has a floor of fifteen, chosen so that
+the owner's own nine-digit Page id survives it. A LinkedIn ORGANISATION id is
+six to nine digits, so it passes under that floor by construction - every one of
+them, the owner's and a stranger's alike. `tools/survey.py` already redacts
+these (ORG_PATH, with its own OWN allowlist), but nothing TESTED THE ARTEFACT
+for them, which is the exact gap R18 was written about: the redactor knew the
+form and the check did not, so a dump that skipped the redactor, or a path
+handwritten into a docstring, would have carried one out of here unnoticed.
+
+A shape rule cannot work here - no shape separates a real organisation id from a
+fabricated one - so this rule is an ALLOWLIST OF EXACT VALUES, and that is its
+weakness as well as its design. Adding a value to it is how this check would be
+silenced, so every entry carries the reason it is there, and an id that is not
+obviously the owner's or obviously made up does not go in the list: it comes out
+of the file.
+
+NOT COVERED, said plainly: an organisation id that appears somewhere OTHER than
+one of these paths - `urn:li:organization:<id>`, a `fsd_company` parameter, a
+bare number in prose. The urn form is redacted by shape in `tools/survey.py`;
+the others are not detected by anything here. This rule is the path form only.
 
 WHY THE DUMPS AND THE CODE, AND NOT THE DOCUMENTS. A shape rule cannot tell the
 owner's own content id from a stranger's, and the documents name one of his own
@@ -53,6 +77,33 @@ FABRICATED = re.compile(r"^" + FABRICATED_PREFIX + r"\d{3}$")
 # lnkd.in/<code>, plain or with the dot and slash percent-encoded, where <code>
 # is an actual code rather than the placeholder the redactor leaves behind.
 REAL_SHORT_LINK = re.compile(r"lnkd(?:\.|%2E)in(?:/|%2F)(?!<shortlink>)[A-Za-z0-9_%/-]{4,}", re.I)
+
+# R19, 2026-09-10. An organisation id sitting on an organisation path. The four
+# path names are the ones tools/survey.py's ORG_PATH already knows, taken from
+# the same list on purpose: two lists of paths drift apart, one does not.
+ORG_ID_PATH = re.compile(r"/(company|school|showcase|organization)/(\d+)", re.I)
+
+# Organisation ids this repository is allowed to contain. EVERY entry needs the
+# reason it is here. This allowlist is the only thing standing between a real
+# third party's id and a public repository, so growing it to make a red check go
+# green is not a fix - it is the defect, performed deliberately.
+ALLOWED_ORG_IDS = {
+    # The owner's own Page. Public, in these documents by intent, and a dump of
+    # his own Page's analytics that cannot say which Page it is has lost the
+    # thing it was taken for. Ruling R13.3.
+    "107519091": "the owner's own Page",
+    # Fabricated controls. Made up at the keyboard, not lifted from any page,
+    # and used by tests that need an id which is NOT the owner's.
+    "12345678": "fabricated, tests/test_no_leak.py negative control",
+    "999999": "fabricated, tests/test_stats_table.py wrong-Page control",
+}
+
+
+def _org_ids_not_allowed(line):
+    """Every organisation id on an organisation path in this line that is not on
+    the allowlist. Returns (path, id) pairs."""
+    return [(m.group(1), m.group(2)) for m in ORG_ID_PATH.finditer(line)
+            if m.group(2) not in ALLOWED_ORG_IDS]
 
 
 class TheCommittedDumpsCarryNoIdentifiers(unittest.TestCase):
@@ -87,6 +138,19 @@ class TheCommittedDumpsCarryNoIdentifiers(unittest.TestCase):
         self.assertEqual(bad, [], "following a short link recovers the post and its author:\n  "
                                   + "\n  ".join(bad[:10]))
 
+    def test_no_third_party_organisation_id_on_an_organisation_path(self):
+        """R19. An organisation id is six to nine digits, so the fifteen-digit
+        rule above cannot see one - the owner's or anybody else's."""
+        bad = []
+        for path in DUMPS:
+            with open(path, encoding="utf-8") as f:
+                for n, line in enumerate(f, 1):
+                    for kind, oid in _org_ids_not_allowed(line):
+                        bad.append("%s:%d /%s/%s" % (os.path.basename(path), n, kind, oid))
+        self.assertEqual(bad, [], "an organisation id names a real company page and is a stable "
+                                  "key to it; put it on ALLOWED_ORG_IDS only if it is the "
+                                  "owner's own or was made up:\n  " + "\n  ".join(bad[:10]))
+
     def test_the_detectors_can_actually_match(self):
         """Positive controls. A zero from a detector that cannot match its own
         target is not a clean result, it is a broken instrument.
@@ -111,6 +175,23 @@ class TheCommittedDumpsCarryNoIdentifiers(unittest.TestCase):
         self.assertTrue(REAL_SHORT_LINK.search(
             "url=https%3A%2F%2Flnkd%2Ein%2F" + FABRICATED_CODE))
         self.assertFalse(REAL_SHORT_LINK.search("https://lnkd.in/<shortlink>"))
+        # R19's detector. A fabricated id that is deliberately NOT on the
+        # allowlist - if this one ever has to be added to make a check pass,
+        # something is wrong with the check and not with the id.
+        stranger = "88888888"
+        self.assertNotIn(stranger, ALLOWED_ORG_IDS)
+        self.assertEqual(_org_ids_not_allowed("/company/" + stranger),
+                         [("company", stranger)])
+        for kind in ("school", "showcase", "organization"):
+            self.assertEqual(_org_ids_not_allowed("https://www.linkedin.com/%s/%s/about/"
+                                                  % (kind, stranger)), [(kind, stranger)])
+        # and the three things it must NOT flag
+        self.assertEqual(_org_ids_not_allowed("/company/107519091/admin/"), [])
+        self.assertEqual(_org_ids_not_allowed("/company/centerconsulting-inc"), [])
+        self.assertEqual(_org_ids_not_allowed("/company/%s"), [])
+        # every entry on the allowlist carries the reason it is there
+        for oid, why in ALLOWED_ORG_IDS.items():
+            self.assertTrue(why and why.strip(), "%s is allowlisted with no reason" % oid)
 
 
 class TheSourceTreeCarriesNoShortLinks(unittest.TestCase):
@@ -134,6 +215,19 @@ class TheSourceTreeCarriesNoShortLinks(unittest.TestCase):
                 for n, line in enumerate(f, 1):
                     for m in REAL_SHORT_LINK.finditer(line):
                         bad.append("%s:%d %s" % (os.path.relpath(path, ROOT), n, m.group(0)))
+        self.assertEqual(bad, [], "\n  ".join(bad[:10]))
+
+    def test_no_third_party_organisation_id_on_an_organisation_path_in_the_source(self):
+        """R19, on the source tree. The leak that started all of this was three
+        short links handwritten into a module docstring, where no redactor was
+        ever going to look; an organisation path written into a selector, a test
+        fixture or a comment is the same act."""
+        bad = []
+        for path in self._tracked_text():
+            with open(path, encoding="utf-8") as f:
+                for n, line in enumerate(f, 1):
+                    for kind, oid in _org_ids_not_allowed(line):
+                        bad.append("%s:%d /%s/%s" % (os.path.relpath(path, ROOT), n, kind, oid))
         self.assertEqual(bad, [], "\n  ".join(bad[:10]))
 
     def test_no_run_of_fifteen_or_more_digits_in_the_source(self):
