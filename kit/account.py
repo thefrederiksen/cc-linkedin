@@ -169,6 +169,72 @@ STATS_JS = r"""
 }
 """
 
+def page_key(url):
+    """The Page a /company/ URL is about, lower-cased, or None.
+
+    MEASURED 2026-09-09 (docs/surveys/stats-2026-09-09.txt, header lines 3-4):
+    the numeric Page id is preserved in the final URL of the analytics screen -
+    request and final are the same string. So the requested Page and the landed
+    Page are directly comparable, which is what ruling R4 needs.
+    """
+    m = re.search(r"/company/([^/?#]+)", url or "", re.I)
+    return m.group(1).lower() if m else None
+
+
+def rows_to_posts(header, rows, columns, to_number):
+    """One record per table row, or a FAIL naming the row that could not be read.
+
+    RULING R4. A row shorter than the header used to be silently skipped with
+    `continue`, so a table caught mid-hydration - every row short - produced
+    `posts: []` and a successful exit. An unreadable row is a failed read, not a
+    row that is not there.
+    """
+    idx = {c: header.index(c) for c in header}
+    out = []
+    for i, row in enumerate(rows or [], 1):
+        if len(row) < len(header):
+            die("row %d of the Content engagement table has %d cells and the header has %d. "
+                "A short row is a table read while it was still rendering, not a post with "
+                "missing numbers, and skipping it would turn a half-read table into a "
+                "confident smaller one." % (i, len(row), len(header)))
+        rec = {"title": row[idx["Post title"]][:200]}
+        for col in columns:
+            if col in idx:
+                raw = row[idx[col]]
+                rec[col.lower() + "_raw"] = raw
+                rec[col.lower()] = None if raw in ("-", "") else to_number(
+                    raw.rstrip("%"), "%s for a post" % col)
+        out.append(rec)
+    return out
+
+
+def sum_of_posts(posts, columns, source):
+    """The per-column sums, with the cells that had no number COUNTED, not zeroed.
+
+    RULING R4. `sum((p.get(key) or 0) for p in posts)` turned a cell reading "-"
+    into a literal zero inside an aggregate, and the aggregate then looked like a
+    measurement. A sum that skipped a post says so; a sum with nothing to add
+    says that instead of saying nought.
+    """
+    out = {}
+    for col in columns:
+        key = col.lower()
+        present = [p for p in posts if key in p]
+        if not present:
+            continue
+        numbers = [p[key] for p in present if isinstance(p[key], int)]
+        blank = len(present) - len(numbers)
+        if not numbers:
+            out[key] = {"value": None, "source": source, "posts_counted": 0,
+                        "posts_without_a_number": blank,
+                        "reason": "not one of the %d posts stated a %s" % (blank, col)}
+        else:
+            out[key] = {"value": sum(numbers), "source": source,
+                        "posts_counted": len(numbers),
+                        "posts_without_a_number": blank}
+    return out
+
+
 DATE = re.compile(r"([A-Z][a-z]{2})\s+(\d{1,2}),\s*(\d{4})")
 MONTHS = {m: i + 1 for i, m in enumerate(
     ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"])}
@@ -290,6 +356,16 @@ def stats(a):
         if "/admin/analytics" not in final:
             die("could not open the analytics for Page %s as this identity; landed on %s. "
                 "That is a failed read, not a Page with no numbers." % (a.page, final))
+        # RULING R4: prove this is the Page that was ASKED FOR before reading a
+        # number off it. The only check here used to be for the generic
+        # /admin/analytics path, so a bad or unauthorised --page redirected to
+        # another administered Page produced that Page's numbers labelled with
+        # the requested id - precise, plausible and wrong, on every run.
+        landed, wanted = page_key(final), str(a.page).lower()
+        if landed != wanted:
+            die("asked for Page %r and the analytics screen that opened belongs to Page %r "
+                "(%s). Refusing to report one Page's numbers under another Page's name - a "
+                "redirect is not a permission." % (wanted, landed, final))
 
         if days:
             _set_window(br, days)
@@ -309,6 +385,16 @@ def stats(a):
             die("the 'Content engagement' section has no table in it")
 
         header = d["header"]
+        # RULING R4: an unreadable table body is a FAIL, not a set of zeroes. The
+        # header assertion below proves the SCHEMA is the one this was written
+        # against; it says nothing about whether a single number is present, and
+        # a correct table whose tbody is empty after the range refresh used to
+        # exit successfully with posts: [] and RESULT ... impressions=0.
+        if not d["rows"]:
+            die("the Content engagement table on %s has no rows in it. A Page with no posts "
+                "in the window is a real answer and would still render its table - an empty "
+                "tbody is a table read before it filled, and reporting zeroes off it is the "
+                "quiet version of an empty read." % final)
         missing = [c for c in REQUIRED_COLUMNS if c not in header]
         if missing:
             die("the Content engagement table is not the table this was written against: it is "
@@ -329,30 +415,14 @@ def stats(a):
                 % d["pageName"])
         followers = to_int(re.match(r"^\s*([\d,]+)", followers_raw).group(1), "the follower count")
 
-        idx = {c: header.index(c) for c in header}
-        posts = []
-        for row in d["rows"] or []:
-            if len(row) < len(header):
-                continue
-            rec = {"title": row[idx["Post title"]][:200]}
-            for col in SUM_COLUMNS:
-                if col in idx:
-                    raw = row[idx[col]]
-                    rec[col.lower() + "_raw"] = raw
-                    rec[col.lower()] = None if raw in ("-", "") else to_int(raw.rstrip("%"), "%s for a post" % col)
-            posts.append(rec)
+        posts = rows_to_posts(header, d["rows"], SUM_COLUMNS, to_int)
 
         # The sum is called what it is. A Page's real impressions are NOT the sum
         # of its posts' impressions - they include arrivals the table never lists -
         # so a field called `totals` would be read as LinkedIn's own aggregate by
         # every caller who skipped the provenance string. The name carries the
         # meaning because the name is what gets used.
-        sum_of_posts = {}
-        for col in SUM_COLUMNS:
-            key = col.lower()
-            if any(key in p for p in posts):
-                sum_of_posts[key] = {"value": sum((p.get(key) or 0) for p in posts),
-                                     "source": SUM_SOURCE}
+        sums = sum_of_posts(posts, SUM_COLUMNS, SUM_SOURCE)
 
         rec = {
             "kind": "page_stats", "page": str(a.page), "name": d["pageName"],
@@ -360,10 +430,14 @@ def stats(a):
             "window_days": window_days, "window_raw": d["range"],
             "window_driven": bool(days),
             "followers": followers, "followers_raw": followers_raw,
-            "posts": posts, "sum_of_posts": sum_of_posts,
+            "posts": posts, "sum_of_posts": sums,
             "rendering": "ember",
         }
         print(json.dumps(rec, ensure_ascii=True))
-        print("RESULT stats page=%s name=%r followers=%d window=%dd (%s..%s) posts=%d impressions=%d"
+        # Never `.get("value", 0)`: an absent aggregate printed as 0 is a number
+        # that was never read, wearing the clothes of one that was (ruling R4).
+        impressions = sums.get("impressions", {}).get("value")
+        print("RESULT stats page=%s name=%r followers=%d window=%dd (%s..%s) posts=%d "
+              "impressions=%s"
               % (a.page, d["pageName"], followers, window_days, start, end, len(posts),
-                 sum_of_posts.get("impressions", {}).get("value", 0)))
+                 impressions if impressions is not None else "not-stated"))

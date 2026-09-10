@@ -213,6 +213,11 @@ TOPCARD_JS = r"""
       return {tag: e.tagName, text: clean(e.innerText),
               aria: e.getAttribute('aria-label') || '',
               href: e.getAttribute('href') || '',
+              // Ruling R5: a control that cannot be pressed must not be read as
+              // one that can. Never checked before.
+              disabled: e.disabled === true
+                        || e.getAttribute('aria-disabled') === 'true'
+                        || e.getAttribute('disabled') !== null,
               filled: [e, ...e.querySelectorAll('*')]
                   .some(n => getComputedStyle(n).backgroundColor === cfg.fill),
               x: Math.round(r.left), y: Math.round(r.top)};
@@ -228,13 +233,26 @@ TOPCARD_JS = r"""
 }
 """
 
+# RULING R5. This used to query the WHOLE DOCUMENT for [role=menuitem], so an
+# unrelated open menu elsewhere on the page could supply the item that proves
+# "the menu rendered" while the menu we actually opened was still empty - and
+# the verb would then report can_connect: false from a menu it never read. It
+# now finds the visible menus, requires there to be exactly ONE, and reads only
+# inside it. Two visible menus is a page state this was not written against and
+# is reported as such rather than guessed through.
 MENU_JS = r"""
 (sel) => {
   const vis = e => !!(e.offsetParent || e.getClientRects().length);
   const clean = t => (t || '').replace(/\s+/g, ' ').trim();
-  return [...document.querySelectorAll(sel)].filter(vis).map(e => ({
-      text: clean(e.innerText), aria: e.getAttribute('aria-label') || '',
-      href: e.getAttribute('href') || ''}));
+  const menus = [...document.querySelectorAll('[role=menu]')].filter(vis);
+  const scope = menus.length === 1 ? menus[0] : null;
+  const items = scope ? [...scope.querySelectorAll(sel)].filter(vis) : [];
+  return {menus: menus.length,
+          items: items.map(e => ({
+              text: clean(e.innerText), aria: e.getAttribute('aria-label') || '',
+              href: e.getAttribute('href') || '',
+              disabled: e.getAttribute('aria-disabled') === 'true'
+                        || e.getAttribute('disabled') !== null}))};
 }
 """
 
@@ -382,6 +400,31 @@ def _invite(controls):
     return None
 
 
+def _decide(item, where, via):
+    """(can_connect, reason, via, url) from the invite control that was found.
+
+    RULING R5, and both directions of it. "You can invite this person" must never
+    come from a path that did not positively see an invite control - it is only
+    ever returned here, with the control in hand. And a control that is DISABLED
+    is not a yes and not a no: the page is saying the invitation cannot be sent
+    right now and not why. That is a value this verb cannot decide, so it is null
+    WITH a reason naming what it could not read, rather than a false that a
+    caller would act on.
+
+    The enabled state was never checked at all before. A busy or disabled Connect
+    control that kept its href was reported as can_connect: true.
+    """
+    if item is None:
+        return None
+    if item.get("disabled"):
+        return (None,
+                "an invite control is %s but the page has it disabled, so whether this person "
+                "can be invited right now cannot be read off it - and a disabled control is "
+                "not the same answer as no invite control" % where,
+                None, None)
+    return True, "an invite control is %s" % where, via, _abs(item.get("href"))
+
+
 def _connect(br, card, name, degree):
     """Can we send this person an invitation, and where does the control live?
 
@@ -402,8 +445,9 @@ def _connect(br, card, name, degree):
         return None, "this is the signed-in member's own profile", None, None
 
     top = _invite(card["controls"])
-    if top:
-        return True, "an invite control is on the top card", "topcard", _abs(top["href"])
+    decided = _decide(top, "on the top card", "topcard")
+    if decided:
+        return decided
 
     more = br.page.locator(S.PROFILE_TOPCARD).first.get_by_role(
         "button", name=S.PROFILE_MORE_NAME)
@@ -418,23 +462,63 @@ def _connect(br, card, name, degree):
         die("%r's top card offers no invite control and no More button to look behind. "
             "can_connect cannot be answered from this page, and answering it false would be "
             "a guess dressed as a reading." % name)
-    time.sleep(1.5)
-    items = br.page.evaluate(MENU_JS, S.PROFILE_MENU_ITEM)
+    # RULING R5. This used to be a flat 1.5-second sleep and one read. A menu
+    # that renders "About this member" at 1.5 seconds and its Connect item at
+    # 1.8 passed the proof, and the verb then believed an absence it had read
+    # too early - reporting can_connect: false about somebody it could in fact
+    # invite. So the menu is now read until it STOPS CHANGING: two consecutive
+    # identical reads, and the proof item present, before anything is concluded
+    # from what is or is not in it. A menu still changing at the deadline is a
+    # page this cannot read, and it says so.
+    menus, items, stable = _settled_menu(br)
+    br.page.keyboard.press("Escape")
+    time.sleep(0.8)
+    if menus != 1:
+        die("opening More on %r's profile left %d visible menus on the page, not one. "
+            "Reading menu items across two menus is how an unrelated menu's contents come "
+            "to answer a question about this one." % (name, menus))
+    if not stable:
+        die("the More menu on %r's profile was still changing after %.1f seconds (%d items at "
+            "the last read). An absence read out of a menu that is still rendering is the "
+            "reading that reports can_connect false forever without ever being wrong out loud."
+            % (name, MENU_SETTLE_SECONDS, len(items)))
     proof = any(S.PROFILE_MENU_PROOF.lower() in (i["text"] or "").lower() for i in items)
     if not proof:
-        br.page.keyboard.press("Escape")
         die("the More menu on %r's profile did not come back with %r in it (%d items read). "
             "An empty or half-rendered menu is a broken instrument, not a menu with no invite "
             "in it." % (name, S.PROFILE_MENU_PROOF, len(items)))
-    item = _invite(items)
-    br.page.keyboard.press("Escape")
-    time.sleep(0.8)
-    if item:
-        return True, "an invite control is in the More menu", "more-menu", _abs(item["href"])
+    decided = _decide(_invite(items), "in the More menu", "more-menu")
+    if decided:
+        return decided
     return (False,
-            "no invite control on the top card and none in the More menu, which read: %s"
+            "no invite control on the top card and none in the More menu, which settled and "
+            "read: %s"
             % ", ".join(sorted((i["text"] or i["aria"] or "?")[:40] for i in items)),
             None, None)
+
+
+# How long the More menu is given to stop changing, and how often it is read.
+# Two consecutive identical reads is the test; the deadline is when this gives up
+# and fails rather than concluding anything from a moving target.
+MENU_SETTLE_SECONDS = 8.0
+MENU_READ_GAP = 0.4
+
+
+def _settled_menu(br):
+    """(visible menus, items, did it settle). Reads the open menu until two
+    consecutive reads agree, or the deadline passes."""
+    deadline = time.time() + MENU_SETTLE_SECONDS
+    last = None
+    menus, items = 0, []
+    while time.time() < deadline:
+        time.sleep(MENU_READ_GAP)
+        got = br.page.evaluate(MENU_JS, S.PROFILE_MENU_ITEM)
+        menus, items = got["menus"], got["items"]
+        now = [(i["text"], i["href"], i["disabled"]) for i in items]
+        if last is not None and now == last and items:
+            return menus, items, True
+        last = now
+    return menus, items, False
 
 
 def _abs(href):

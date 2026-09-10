@@ -1,8 +1,8 @@
 # Inspection slice 4: claims, safety, and what leaked
 
 Independent static inspection updated through committed HEAD
-`c169346c045ae1e0d44438af2467e79424746ad7` on 2026-09-09. I did not open
-LinkedIn or run a verb. I inspected the current 55-file tracked tree and all 45
+`782885c3838fae855683d6a2f324ddce3ba0e62a` on 2026-09-09. I did not open
+LinkedIn or run a verb. I inspected the current 58-file tracked tree and all 47
 commits reachable from the local refs. Per the brief, I
 did not assess the URN resolver, `kit/selftest.py`, or the read verbs' extraction
 logic; I did inspect their side effects and the claims made about them.
@@ -138,7 +138,7 @@ two shapes absent, not that the tree contains no third-party identifiers.
 
 ### What I did not find
 
-Apart from that company ID, in the current 55 tracked files I found no
+Apart from that company ID, in the current 58 tracked files I found no
 unredacted third-party `/in/` slug, `ACoA...` member ID, email address,
 LinkedIn-style `@handle`, personal name, headline, real message body, real
 invitation note, resolvable short link, or real post/content ID. The only
@@ -157,7 +157,7 @@ target.
 
 All eight survey files were introduced together in commit
 `1173f451a8dd2633a4fd0ac21e840f15cb86c30d`; the later R13/R17/R18 commits
-redact those same files in place. No commit in the current 45-commit reachable
+redact those same files in place. No commit in the current 47-commit reachable
 history contains an earlier dump with the reported ten raw profile URLs. This
 supports `docs/phase-2-report.md:183-187`'s specific claim that the first pass was
 caught before commit.
@@ -177,12 +177,12 @@ button names.
 
 | Verb | PROVED local/browser action | Externally visible possibility |
 |---|---|---|
-| `read-profile` | Navigates to the requested profile; may click only the top-card More menu and About expansion (`kit/people.py:357-380`, `420-431`). | The accepted mission explicitly says other-profile reads leave the ordinary “viewed your profile” trace (`docs/MISSION.md:41-44`). I did not independently exercise that platform effect. |
+| `read-profile` | Navigates to the requested profile; may click only the top-card More menu and About expansion (`kit/people.py:408-431`, `463-482`). | The accepted mission explicitly says other-profile reads leave the ordinary “viewed your profile” trace (`docs/MISSION.md:41-44`). I did not independently exercise that platform effect. |
 | `read-company` | Navigation and DOM reads; no direct write control found. | Server-side access logging is inherent. No person-facing effect is established here. |
 | `search-people` | Navigation and DOM reads; no direct write control found. | No person-facing effect is established here. |
 | `search-posts` | Grants permissions, saves readable clipboard text, opens each card menu, clears/replaces the clipboard, then attempts restoration and permission reset (`kit/search.py:195-300`, `320-338`). Optional resolving adds post navigations. | Readable text is restored on the success path. Non-text/unreadable content and restore/reset failures are reported but do not fail the command. Whether loads count an impression is SUSPECTED. |
 | `notifications` | Navigates and evaluates card DOM; it does not click a card (`kit/account.py:93-130`). The captured post-load DOM still contains two `nt-card--unread` cards (`docs/surveys/notifications-2026-09-09.txt:188-210`, `242`). | Marking a page/card as “seen,” clearing a badge, or sending a server acknowledgement on load remains SUSPECTED. A single after-load dump is not a before/after or network trace. |
-| `stats` | Opens the range control, selects a preset, and can press the first page-global visible button named Update (`kit/account.py:225-278`). | No social write is shown. Persistence of the selected analytics range/account preference is SUSPECTED and unmeasured. |
+| `stats` | Opens the range control, selects a preset, and can press the first page-global visible button named Update (`kit/account.py:285-344`). | No social write is shown. Persistence of the selected analytics range/account preference is SUSPECTED and unmeasured. |
 
 “Read-only” is therefore defensible only in the narrow sense “does not
 intentionally publish/connect/react/message.” The CLI now discloses the
@@ -221,7 +221,7 @@ read that may have destroyed the original clipboard state.
 
 ### Renderer classification is a broken instrument - PROVED
 
-`tools/survey.py:275-276` labels a surface `ember` when `[data-urn]` is nonzero
+`tools/survey.py:299-300` labels a surface `ember` when `[data-urn]` is nonzero
 and `react` when it is zero. All eight dumps say `react`. Yet the code's own
 measured descriptions call company member view, notifications, and stats
 classic surfaces (`kit/people.py:72-81`, `kit/account.py:7-10`, `22-38`), and
@@ -268,7 +268,7 @@ happened; the committed evidence does not let another reader verify them.
 * The stats ruling says headers are asserted before any cell is read
   (`docs/rulings-phase-2.md:85-90`). The single page evaluation reads the header
   and all body cells together (`kit/account.py:159-168`); Python validates the
-  header later (`kit/account.py:311-317`). The code does validate before parsing
+  header later (`kit/account.py:387-403`). The code does validate before parsing
   or reporting rows, and both header and cells come from the same table, so the
   intended wrong-table protection exists. The literal “before any cell is read”
   claim does not.

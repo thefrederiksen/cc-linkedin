@@ -250,9 +250,18 @@ def _profile_holds(r, slug):
         out.append(("can_connect=false carries no invite", via is None and curl is None,
                     "via=%r url=%r" % (via, curl)))
     else:
-        out.append(("can_connect=null only on our own profile",
-                    r.get("degree") == "self" and via is None and curl is None,
-                    "degree=%r via=%r" % (r.get("degree"), via)))
+        # RULING R5 widened what a null can mean: our own profile, OR an invite
+        # control the page has DISABLED, which is neither a yes nor a no and is
+        # reported as undecided with a reason rather than as a false a caller
+        # would act on. Either way there is no invitation to hand out, so via
+        # and connect_url stay null - and P2-2 and P2-10 compare the actual
+        # value against what a person read off the screen, so a null that turns
+        # up where the reader saw a Connect control still fails there.
+        out.append(("can_connect=null is our own profile or a stated undecidable",
+                    (r.get("degree") == "self" or bool(r.get("can_connect_reason")))
+                    and via is None and curl is None,
+                    "degree=%r via=%r reason=%r"
+                    % (r.get("degree"), via, (r.get("can_connect_reason") or "")[:60])))
     return out
 
 # THERE IS NO EXPECTED_VIEWS ANY MORE, AND THAT IS THE POINT - ruling R7,
