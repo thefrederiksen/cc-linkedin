@@ -777,7 +777,7 @@ def main():
     from kit import selftest as T
     sp = sub.add_parser("selftest",
                         help="run every verb on things we own, leaving nothing behind")
-    sp.add_argument("--post", required=True, help="permalink of a post WE authored (comments go here)")
+    sp.add_argument("--post", help="permalink of a post WE authored (comments go here). REQUIRED: pass it here, or record it in the machine's selftest fixtures file (R20). The run FAILS without it either way.")
     sp.add_argument("--page", help="Page id for the publish + delete-post round trip, and for stats")
     sp.add_argument("--page-name", help="exact Page name")
     sp.add_argument("--profile", default="https://www.linkedin.com/in/sorenfrederiksen/",

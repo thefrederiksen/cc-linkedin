@@ -521,10 +521,21 @@ def run(a):
     # is in neither place still FAILS the run below - R20 moved where fixtures
     # live, it did not make any of them optional.
     from . import fixtures as FX
+    # --post is a fixture as much as the profiles are: a permalink of a post WE
+    # authored, which the comment rows write to and delete from. It is the
+    # owner's own content rather than a third party's, so nothing stopped it
+    # being committed - but it had no home either, and every seat found one by
+    # hand. It lives with the others now.
+    a.post = FX.value(a.post, "post", "url")
     a.other_profile = FX.value(a.other_profile, "other_profile", "url")
     a.other_expect = FX.value(a.other_expect, "other_profile", "expect")
     a.menu_profile = FX.value(a.menu_profile, "menu_profile", "url")
     a.menu_expect = FX.value(a.menu_expect, "menu_profile", "expect")
+    if not a.post:
+        print("FAIL --post is required: a permalink of a post WE authored, which the\n"
+              "comment rows comment on and then delete from. Pass it, or put it in %s\n"
+              "as \"post\" -> \"url\" (ruling R20)." % FX.path(), flush=True)
+        sys.exit(1)
     if not (a.other_profile and a.other_expect and a.menu_profile and a.menu_expect):
         print("FAIL the Phase 2 profile fixtures are required, and none of them is committed: "
               "this repository is public, so no third party's URL or details go in it.\n"
