@@ -93,20 +93,20 @@ before commit is supported by Git history.
 
 ### What was present in reachable public branch history
 
-The following coordinates are those recorded at inspection commit `7817011`;
-later tip commits redact most of them. The old objects remain reachable from the
+The following coordinates identify representative reachable revisions; later
+tip commits redact most of them. The old objects remain reachable from the
 branch history, as accepted ruling R14 itself notes.
 
 | Historical committed location | Data left public | Why redaction did not cover it |
 |---|---|---|
-| `docs/phase-2-fixes.md:36-45`, `205-216` | Profile D's distinctive HR/job-search headline plus 205 connections, identified as a measured third-party profile | This is prose outside the survey redactor. It directly contradicts the file's lines 10-13. |
-| `kit/search.py:38-42` | Three exact `lnkd.in` post short links copied from three measured cards | The links are handwritten into a module docstring. Following one can recover the content and author. |
-| `kit/search.py:75-79` and `docs/inspection-slice-1-urn.md:48-67` | Exact measured post IDs in `share`/`ugcPost` URL shapes | The IDs were retained as examples and later copied into inspection evidence. |
-| `tests/test_identity.py:20-45`, `89-103` and `docs/evidence/watched-failing-identity.txt:4-20` | The same real measured post IDs copied into regression fixtures and watched-failure output | These new copies arrived after the first inspection pass; redacting only the original prose would leave the identifiers at the tip. |
-| `docs/surveys/search-posts-2026-09-09.txt:381-400`, `495`, `732-737`, `797-825`, `887-918` | Organization slugs, three encoded `lnkd.in` links, a job ID, article paths, and a quoted-post URN | Query-value redaction hides selected parameters, not identifiers embedded inside a parameter or path. |
-| `docs/surveys/notifications-2026-09-09.txt:492-497`, `552-588` | Numeric organization IDs, event post URNs, and an identifying article slug | Company/content paths are outside the three redacted identifier forms. |
-| `docs/surveys/stats-2026-09-09.txt:3-4`, `244-269`, `573-586` | The administered Page ID and its exact post/activity identifiers | These appear to be owner/project fixtures rather than third-party data, but the “safe dump” still preserves stable identifiers. |
-| `docs/surveys/company-member-2026-09-09.txt:277`, `304` | Owner business website and a precise Toronto postal-code map URL | This appears to be owner/business data, not an anonymous third party; it is nevertheless unredacted location data. |
+| `7817011:docs/phase-2-fixes.md:36-45`, `200-216` | Profile D's distinctive HR/job-search headline plus 205 connections, identified as a measured third-party profile | This is prose outside the survey redactor. It directly contradicted that file's lines 10-13. |
+| `7817011:kit/search.py:38-42` | Three exact `lnkd.in` post short links copied from three measured cards | The links were handwritten into a module docstring. Following one can recover the content and author. |
+| `47d836b:kit/search.py:68-74` and `7817011:docs/inspection-slice-1-urn.md:48-67` | Exact measured post IDs in `share`/`ugcPost` URL shapes | The IDs were retained as examples and later copied into inspection evidence. |
+| `7817011:tests/test_identity.py:20-45`, `89-103` and `7817011:docs/evidence/watched-failing-identity.txt:4-20` | The same real measured post IDs copied into regression fixtures and watched-failure output | These copies arrived after the first inspection pass; redacting only the original prose would have left the identifiers. |
+| `1173f45:docs/surveys/search-posts-2026-09-09.txt:381-400`, `495`, `732-737`, `797-825`, `887-918` | Organization slugs, three encoded `lnkd.in` links, a job ID, article paths, and a quoted-post URN | Query-value redaction hid selected parameters, not identifiers embedded inside a parameter or path. |
+| `1173f45:docs/surveys/notifications-2026-09-09.txt:492-497`, `552-588` | Numeric organization IDs, event post URNs, and an identifying article slug | Company/content paths were outside the three redacted identifier forms. |
+| `1173f45:docs/surveys/stats-2026-09-09.txt:3-4`, `244-269`, `573-586` | The administered Page ID and its exact post/activity identifiers | These appear to be owner/project fixtures rather than third-party data, but the “safe dump” preserved stable identifiers. |
+| `1173f45:docs/surveys/company-member-2026-09-09.txt:277`, `304` | Owner business website and a precise Toronto postal-code map URL | This appears to be owner/business data, not an anonymous third party; it was nevertheless unredacted location data. |
 
 At the inspection baseline, attribute redaction recognized only `/in/` slugs,
 `ACoA...` member IDs, and a fixed query-parameter list. That is why the table's

@@ -100,18 +100,69 @@ ELLIPSIS = chr(0x2026)
 
 # ---------------------------------------------------------------- numbers
 
+# THE NUMBER GRAMMAR - ruling R6, 2026-09-09.
+#
+# This used to be `.replace(",", "").replace("+", "")` and then a match. Stripping
+# the separators BEFORE deciding what they meant is the whole defect: the
+# European `1,2K` became `12K` and returned 12000 instead of 1200 - wrong by a
+# factor of ten, silently, in a field a caller writes straight into a CRM - and
+# `12+3` became `123`. So the separators are now part of the grammar and every
+# ambiguous form fails loudly.
+#
+#   groups      1,234 and 1,234,567: a comma is a thousands separator only when
+#               it is followed by EXACTLY three digits, in a well-formed group.
+#   decimal     1.2K, 12.5K, 1.2M: a decimal point is only a decimal point when a
+#               K, M or B follows it. A bare `1.234` is 1234 in a European
+#               rendering and 1.234 in an English one and nothing on the page
+#               says which, so it fails rather than picking one.
+#   plus        500+ and 1,234+: a plus is stripped only when TRAILING. Anywhere
+#               else it means this is not a number.
+#
+# NOT MEASURED, AND IT DECIDES ONE CASE. R6.1 leaves it to this pass whether
+# `1,2` is accepted as a decimal comma or fails, after measuring what LinkedIn
+# renders in a European locale. That measurement needs the live site in another
+# locale and the daily view cap was spent, so IT WAS NOT MADE and the form FAILS
+# - R6.3's default, and the only safe direction, because accepting it means
+# guessing between 1200 and 12 with no evidence and the wrong guess is silent.
+# Every English label this toolkit asserts on says the rendering it reads is the
+# English one, where the form should not occur; if it ever does, a person finds
+# out instead of a CRM.
+NUMBER = re.compile(r"""
+    ^\s*
+    (?P<int> \d{1,3}(?:,\d{3})+ | \d+ )      # 1,234,567 or 1234 - never 1,23
+    (?: \.(?P<frac> \d+) )?                  # .2, only legal with a multiplier
+    \s*
+    (?P<mult> [KMB] )?
+    \s*
+    (?P<plus> \+ )?                           # a lower-bound marker, trailing only
+    \s*$
+""", re.I | re.X)
+MULTIPLIER = {"K": 1000, "M": 1000000, "B": 1000000000}
+
+
 def to_int(raw, what):
-    """'1,234' and '1.2K' both become an integer. A value that will not parse is
-    a FAIL - never a null, and never the raw string smuggled into a number."""
+    """'1,234' and '1.2K' become integers. Anything ambiguous is a FAIL - never a
+    null, never the raw string smuggled into a number, and never a guess between
+    two readings that differ by a factor of ten."""
     if raw is None:
         die("no %s on the page at all; refusing to report a number that was never read" % what)
-    t = str(raw).strip().replace(",", "").replace("+", "")
-    m = re.match(r"^(\d+(?:\.\d+)?)\s*([KMB])?$", t, re.I)
+    t = str(raw).strip()
+    m = NUMBER.match(t)
     if not m:
-        die("%s reads %r, which is not a number" % (what, str(raw)[:40]))
-    n = float(m.group(1))
-    if m.group(2):
-        n *= {"K": 1e3, "M": 1e6, "B": 1e9}[m.group(2).upper()]
+        die("%s reads %r, which is not a number this will guess at. A comma is a thousands "
+            "separator only before exactly three digits, a decimal point is only allowed with "
+            "a K, M or B after it, and a plus is only allowed at the end."
+            % (what, str(raw)[:40]))
+    if m.group("frac") and not m.group("mult"):
+        die("%s reads %r. A bare decimal point is ambiguous - that is 1234 in a European "
+            "rendering and about 1 in an English one - so it is refused rather than read as "
+            "one of them." % (what, str(raw)[:40]))
+    n = float(m.group("int").replace(",", ""))
+    if m.group("frac"):
+        n = float("%s.%s" % (m.group("int").replace(",", ""), m.group("frac")))
+        n *= MULTIPLIER[m.group("mult").upper()]
+    elif m.group("mult"):
+        n *= MULTIPLIER[m.group("mult").upper()]
     return int(round(n))
 
 

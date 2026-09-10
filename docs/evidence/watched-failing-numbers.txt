@@ -1,0 +1,15 @@
+OLD to_int('1,2K'  ) = 12000
+OLD to_int('12+3'  ) = 123
+OLD to_int('1.234' ) = 1
+OLD to_int('12,,345') = 12345
+
+R6, watched failing against kit/people.py before the fix. Four inputs, four wrong
+answers, none of them an error:
+
+  1,2K    -> 12000, ten times the 1200 a European rendering means. The finding.
+  12+3    -> 123, because the plus was stripped wherever it appeared.
+  1.234   -> 1, because a bare decimal point was read as English. In a European
+             rendering that string is 1234.
+  12,,345 -> 12345, because every comma was removed before anything looked at it.
+
+All four now fail loudly, naming what they read.
