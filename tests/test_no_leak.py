@@ -60,9 +60,29 @@ a real person's content is in a public repository.
 import glob
 import os
 import re
+import sys
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "tools"))
+
+# THE RULES ARE IMPORTED, NOT RETYPED. Ruling 2026-09-10, and it is the whole
+# point of the second test class in this file.
+#
+# On 2026-09-10 tools/survey.py learned `vanityName` - a query parameter carrying
+# a profile slug, found live in dumps already on main in this PUBLIC repository -
+# and THIS FILE did not. That is R18's gap reopening one layer up: the redactor
+# knows the form, the artefact check cannot see it, the next dump leaks and the
+# suite stays green. Writing one assertion per parameter here would have
+# reproduced the defect exactly - teach the redactor a seventh parameter and the
+# check silently keeps passing without it.
+#
+# So nothing below enumerates a parameter, a path, or a urn spelling. Each rule
+# LOOPS over the list tools/survey.py builds its own regexes from. Adding a form
+# there arms the check here in the same edit, and there is no second list to
+# forget. This is the fifth time this coupling defect has appeared here.
+from survey import (SENSITIVE_QUERY_PARAMS, QUERY_PLACEHOLDER, PATH_FORMS,
+                    ORG_PATH_NAMES, URN_FORMS)
 DUMPS = sorted(glob.glob(os.path.join(ROOT, "docs", "surveys", "*.txt")))
 
 LONG_NUMBER = re.compile(r"\d{15,}")
@@ -192,6 +212,191 @@ class TheCommittedDumpsCarryNoIdentifiers(unittest.TestCase):
         # every entry on the allowlist carries the reason it is there
         for oid, why in ALLOWED_ORG_IDS.items():
             self.assertTrue(why and why.strip(), "%s is allowlisted with no reason" % oid)
+
+
+class TheCommittedDumpsCarryNoIdentifierTheRedactorKnows(unittest.TestCase):
+    """Every form tools/survey.py knows how to redact, checked ON THE ARTEFACT.
+
+    The class above tests three SHAPES - a run of digits, a short link, an
+    organisation id on a path - and it is deliberately independent of the
+    redactor, so that it still fires when the redactor is the thing that is
+    wrong. This class is the other half: it tests that everything the redactor
+    CLAIMS to remove is in fact absent from the committed files, and it reads the
+    claim from the redactor itself so that the two cannot drift apart.
+
+    A failure here means one of two things and both matter: an identifier is in a
+    public repository, or a dump was written by something that skipped the
+    redactor.
+
+    WHAT THIS DOES NOT COVER, and it is one of the four forms found on
+    2026-09-10: an identifier written into a DOM ELEMENT ID, with no path, no urn
+    and no parameter around it - `div#ProfilePostConnectDrawer_<slug>` and five
+    siblings. It is arbitrary text in an arbitrary attribute. No shape separates
+    it from an ordinary identifier, and enumerating the element-id prefixes is
+    the losing game R17 is about. What guards it instead is survey.py's
+    SUBJECT_TOKENS pass, which redacts the literal slugs and organisation keys
+    the LIVE PAGE names wherever they appear, plus a person reading the dump
+    before committing it. In practice a page that writes somebody's slug into an
+    element id also links to them, so the profile-path rule below usually catches
+    the same person by another route - that is a reason to expect the guard to
+    hold, NOT a proof, and it says nothing about a third party whom no link on
+    the page names.
+    """
+
+    def test_there_are_dumps_to_check(self):
+        # Same reason as the class above: a sweep whose pass condition is an
+        # absence certifies a run that never happened.
+        self.assertTrue(DUMPS, "no survey dumps found under docs/surveys - every absence "
+                               "asserted below would then be the absence of files")
+
+    def test_every_sensitive_query_parameter_carries_only_the_placeholder(self):
+        """ONE rule over SENSITIVE_QUERY_PARAMS. This is the check that was not
+        there when vanityName was taught to the redactor alone."""
+        self.assertTrue(SENSITIVE_QUERY_PARAMS, "the parameter list is empty, so this rule "
+                                                "would examine nothing")
+        rule = re.compile(r"[?&](%s)=([^&\"\s]*)" % "|".join(SENSITIVE_QUERY_PARAMS), re.I)
+        bad = []
+        for path in DUMPS:
+            with open(path, encoding="utf-8") as f:
+                for n, line in enumerate(f, 1):
+                    for m in rule.finditer(line):
+                        if m.group(2) and m.group(2) != QUERY_PLACEHOLDER:
+                            bad.append("%s:%d %s=%s" % (os.path.basename(path), n,
+                                                        m.group(1), m.group(2)[:40]))
+        self.assertEqual(bad, [], "a sensitive query parameter is carrying a real value, and "
+                                  "each of these resolves to a person, a company or a private "
+                                  "conversation:\n  " + "\n  ".join(bad[:10]))
+
+    def test_every_identifier_path_carries_only_its_placeholder(self):
+        """ONE rule over PATH_FORMS: the profile path in both spellings, the
+        conversation path, the job path."""
+        self.assertTrue(PATH_FORMS, "PATH_FORMS is empty, so this rule would examine nothing")
+        bad = []
+        for name in sorted(PATH_FORMS):
+            prefix, tail, placeholder = PATH_FORMS[name]
+            rule = re.compile("(%s)(%s)" % (prefix, tail), re.I)
+            for path in DUMPS:
+                with open(path, encoding="utf-8") as f:
+                    for n, line in enumerate(f, 1):
+                        for m in rule.finditer(line):
+                            if m.group(2) != placeholder.strip("<>"):
+                                bad.append("%s:%d [%s] %s%s"
+                                           % (os.path.basename(path), n, name,
+                                              m.group(1), m.group(2)[:40]))
+        self.assertEqual(bad, [], "an identifier is sitting on a path in a public "
+                                  "repository:\n  " + "\n  ".join(bad[:10]))
+
+    def test_every_organisation_path_carries_a_placeholder_or_an_allowed_key(self):
+        """ONE rule over ORG_PATH_NAMES, in both spellings.
+
+        The R19 rule in the class above covers NUMERIC organisation ids on the
+        four literal paths. This one covers the SLUG form and the percent-encoded
+        spelling, neither of which that rule can see."""
+        self.assertTrue(ORG_PATH_NAMES, "ORG_PATH_NAMES is empty")
+        allowed = set(ALLOWED_ORG_IDS) | {"company", "centerconsulting-inc"}
+        rule = re.compile(r"(?:/|%%2F)(?:%s)(?:/|%%2F)([A-Za-z0-9._%%-]+)"
+                          % "|".join(ORG_PATH_NAMES), re.I)
+        bad = []
+        for path in DUMPS:
+            with open(path, encoding="utf-8") as f:
+                for n, line in enumerate(f, 1):
+                    for m in rule.finditer(line):
+                        if m.group(1) not in allowed:
+                            bad.append("%s:%d %s" % (os.path.basename(path), n, m.group(1)[:40]))
+        self.assertEqual(bad, [], "an organisation is named on a path. Only the owner's own "
+                                  "Page survives redaction, by ruling R13.3:\n  "
+                                  + "\n  ".join(bad[:10]))
+
+    def test_every_urn_carries_only_its_placeholder(self):
+        """ONE rule over URN_FORMS - plain and percent-encoded. The encoded
+        spelling is how a urn arrives inside a query value, and the literal-only
+        rule walked past it until 2026-09-10."""
+        self.assertTrue(URN_FORMS, "URN_FORMS is empty")
+        bad = []
+        for prefix, tail, placeholder in URN_FORMS:
+            rule = re.compile("(%s)(%s)" % (prefix, tail), re.I)
+            for path in DUMPS:
+                with open(path, encoding="utf-8") as f:
+                    for n, line in enumerate(f, 1):
+                        for m in rule.finditer(line):
+                            if m.group(2) != placeholder.strip("<>"):
+                                bad.append("%s:%d %s%s" % (os.path.basename(path), n,
+                                                           m.group(1), m.group(2)[:40]))
+        self.assertEqual(bad, [], "a urn is a stable key to a post, a profile or an "
+                                  "organisation:\n  " + "\n  ".join(bad[:10]))
+
+    def test_these_rules_can_actually_fail(self):
+        """Positive controls, built from FABRICATED values.
+
+        Every rule above passes by finding nothing, and a rule that cannot match
+        its own target passes that way forever. Each is therefore pointed at a
+        made-up identifier of the right shape and watched matching it, and the
+        query rule is exercised once per parameter, so a parameter the regex
+        cannot actually match is caught here rather than by a leak.
+
+        Nothing real is written here. Putting a genuine identifier in this file
+        to prove identifiers are not in this repository is how the first pass of
+        the R18 fix failed, in this very file.
+        """
+        fake = "a-fabricated-value-1234"
+
+        rule = re.compile(r"[?&](%s)=([^&\"\s]*)" % "|".join(SENSITIVE_QUERY_PARAMS), re.I)
+        for param in SENSITIVE_QUERY_PARAMS:
+            m = rule.search("/x?%s=%s&next=1" % (param, fake))
+            self.assertIsNotNone(m, "%s is on the redactor's list but this rule cannot "
+                                    "match it" % param)
+            self.assertEqual(m.group(2), fake)
+            clean = rule.search("/x?%s=%s&next=1" % (param, QUERY_PLACEHOLDER))
+            self.assertEqual(clean.group(2), QUERY_PLACEHOLDER,
+                             "%s: a redacted value must read as the placeholder" % param)
+
+        samples = {"profile": "/in/" + fake,
+                   "thread": "/messaging/thread/2-AbCdEf1234",
+                   "job": "/jobs/view/1234567890"}
+        for name in sorted(PATH_FORMS):
+            prefix, tail, placeholder = PATH_FORMS[name]
+            r = re.compile("(%s)(%s)" % (prefix, tail), re.I)
+            self.assertIn(name, samples, "PATH_FORMS gained %r and this control did not - the "
+                                         "rule above is running unproven on it" % name)
+            m = r.search(samples[name])
+            self.assertIsNotNone(m, "%s: the path rule cannot match its own form" % name)
+            self.assertNotEqual(m.group(2), placeholder.strip("<>"))
+            redacted = samples[name].replace(m.group(2), placeholder.strip("<>"))
+            self.assertEqual(r.search(redacted).group(2), placeholder.strip("<>"),
+                             "%s: a redacted path must read as the placeholder" % name)
+
+        # The form that defeated the path rule and the literal-token rule at the
+        # same time: percent-encoded AND truncated by a probe's own slice.
+        prefix, tail, _ = PATH_FORMS["profile"]
+        profile_rule = re.compile("(%s)(%s)" % (prefix, tail), re.I)
+        self.assertIsNotNone(
+            profile_rule.search("body=https%3A%2F%2Fwww.linkedin.com%2Fin%2Fa-cut-slug-"),
+            "a percent-encoded, truncated profile path must still match - that exact string "
+            "is what got through on 2026-09-10")
+        # A BARE path prefix carries no identifier and must NOT be flagged: it is
+        # what a CSS selector inside a recorded probe expression looks like, and
+        # an earlier version of these rules rewrote one.
+        self.assertIsNone(profile_rule.search('a[href*="/in/"]'))
+        t_prefix, t_tail, _ = PATH_FORMS["thread"]
+        self.assertIsNone(re.compile("(%s)(%s)" % (t_prefix, t_tail), re.I)
+                          .search('a[href*="/messaging/thread/"]'))
+
+        org = re.compile(r"(?:/|%%2F)(?:%s)(?:/|%%2F)([A-Za-z0-9._%%-]+)"
+                         % "|".join(ORG_PATH_NAMES), re.I)
+        for name in ORG_PATH_NAMES:
+            self.assertEqual(org.search("/%s/%s" % (name, fake)).group(1), fake)
+            self.assertEqual(org.search("%%2F%s%%2F%s" % (name, fake)).group(1), fake)
+        self.assertIsNone(org.search("/company/<company>"))
+
+        urn_samples = ("urn:li:activity:" + FABRICATED_ID,
+                       "urn%3Ali%3Afsd_profile%3AACoAABfabricated")
+        self.assertEqual(len(urn_samples), len(URN_FORMS),
+                         "URN_FORMS changed and these controls did not")
+        for (prefix, tail, placeholder), sample in zip(URN_FORMS, urn_samples):
+            r = re.compile("(%s)(%s)" % (prefix, tail), re.I)
+            m = r.search(sample)
+            self.assertIsNotNone(m, "the urn rule cannot match its own form: %s" % prefix)
+            self.assertNotEqual(m.group(2), placeholder.strip("<>"))
 
 
 class TheSourceTreeCarriesNoShortLinks(unittest.TestCase):

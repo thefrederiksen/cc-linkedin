@@ -360,15 +360,46 @@ Applying the corrected rules to the ALREADY-COMMITTED Phase 2 dumps changed
 on `main`. They are removed here. **This is the Architect's to rule on** - the
 same question as R14, and with the same honest limit: unreachable is not gone.
 
-`tests/test_no_leak.py` passes on everything committed, and the 201 offline
-tests pass. **But the leak test did not find any of the four**, and could not
-have: it tests for digit runs, short links and organisation ids on paths, and
-these were slugs, a base64 conversation id and a truncated string. Its clean
-result on these dumps means those three shapes are absent. It is not evidence
-that a name or a slug is absent. The only guard for that class is a person
-reading the dump before committing it, and that is what happened here.
+### 8.2 The check that stops it coming back
 
-### 8.2 What the committed dumps now show
+**The leak test did not find any of the four, and could not have.** It tested
+three shapes - digit runs, short links, organisation ids on paths - and these
+were slugs, a base64 conversation id and a truncated string. Teaching only the
+redactor would have left exactly the gap R18 was written about: the redactor
+knows a form, the artefact check cannot see it, the next dump leaks and the
+suite stays green. That is why the fix and the guard land as one commit.
+
+`tests/test_no_leak.py` gains a second class, and the point of it is the
+COUPLING rather than the rules. The parameter names, the path forms, the
+organisation path names and the two urn spellings now live once, in
+`tools/survey.py`, as `SENSITIVE_QUERY_PARAMS`, `PATH_FORMS`, `ORG_PATH_NAMES`
+and `URN_FORMS`; the redactor builds its regexes from them and the test imports
+them and LOOPS. There is no second list, so teaching the redactor a fifteenth
+parameter arms the check in the same edit. One assertion per parameter would
+have reproduced the defect one layer up, and this is the fifth time this shape
+has appeared here.
+
+**Watched failing, on the real artefact.** With the three Phase 2 dumps restored
+to the state they are in on `main` right now, the query-parameter rule goes red
+and names six occurrences - one `connectionOf` and five `vanityName` - while the
+other five rules stay green. The path, organisation and urn rules were then
+watched going red on FABRICATED identifiers appended to a dump (a conversation
+id, a percent-encoded and truncated profile path, an encoded member urn, an
+organisation slug), and watched going green again after
+`tools/redact_surveys.py` cleaned exactly those four lines and no others. Real
+identifiers were not used as controls: putting one back into the repository to
+prove identifiers are not in the repository is how the first pass of the R18 fix
+failed, in this same file.
+
+**Three of the four forms are now guarded at the artefact. The fourth is not,
+and cannot be.** A slug written into a DOM element id has no shape that
+separates it from an ordinary identifier, and enumerating the element-id
+prefixes is the losing game R17 is about. What guards it is `survey.py`'s
+page-derived literal-token pass plus a person reading the dump before committing
+it - which is what happened here. That limit is written into the test class
+itself, where the next reader will meet it.
+
+### 8.3 What the committed dumps now show
 
 JS probe results used to be redacted line by line, which meant a menu of seven
 items was recorded as seven runs of `<redacted len=N>` - safe, and worthless.

@@ -142,16 +142,68 @@ OWN = ("107519091", "centerconsulting-inc")
 #     that is how its --check proves a dump is clean - so a rule that is not
 #     idempotent silently turns that check into a permanent failure. Measured the
 #     first time this rule was written, 2026-09-10.
-SLUG = re.compile(r"((?:/|%2F)in(?:/|%2F))(?!<)[A-Za-z0-9._~%-]*", re.I)
+#
+# PATH_FORMS is the second shared list, for the same reason SENSITIVE_QUERY_PARAMS
+# is the first: the redactor builds its rules from it and tests/test_no_leak.py
+# builds ONE artefact check from it. Each entry is (the path prefix, the tail the
+# identifier is made of, the placeholder that must be there instead). Adding a
+# path here teaches the redactor and arms the check in one edit.
+#
+# The tails are `+` and not `*`, and that distinction was measured too. `*` also
+# matches a bare path prefix with NOTHING after it - and a bare `/messaging/thread/`
+# is not an identifier, it is what a CSS selector in a probe expression looks
+# like. The first `*` version rewrote a probe's own recorded source. A TRUNCATED
+# identifier still has a non-empty tail, so `+` catches the case that mattered
+# and leaves the case that never carried anybody's data alone.
+PATH_FORMS = {
+    # Both spellings of the profile path. `%2Fin%2F` is how it arrives inside a
+    # query value, and the literal-only rule walked straight past it.
+    "profile": (r"(?:/|%2F)in(?:/|%2F)", r"[A-Za-z0-9._~%-]+", "<slug>"),
+    # A conversation. The messaging list gives its rows no href at all, so a
+    # thread id only ever appears once a thread is open - in the URL, and in
+    # whatever the page writes it into. It is a stable key to a private
+    # conversation between named people, which makes it the most sensitive
+    # identifier this toolkit has met.
+    "thread": (r"/messaging/thread/", r"[A-Za-z0-9%_=.:,-]+", "<threadid>"),
+    "job": (r"/jobs/view/", r"[A-Za-z0-9._%-]+", "<jobid>"),
+}
+
+
+def _path_rule(name):
+    prefix, tail, _ = PATH_FORMS[name]
+    return re.compile("(%s)(?!<)%s" % (prefix, tail), re.I)
+
+
+SLUG = _path_rule("profile")
+THREAD = _path_rule("thread")
+JOB = _path_rule("job")
 MEMBER_ID = re.compile(r"ACoA[A-Za-z0-9_-]{8,}")
+# THE SHARED LISTS - RULING: the redactor and the artefact check read the SAME
+# ones. 2026-09-10.
+#
+# When `vanityName` was added here, tests/test_no_leak.py did not learn it, and
+# that is R18's gap reopening exactly: the redactor knows a form and the check
+# that inspects the committed files cannot see it, so the next dump leaks and the
+# suite stays green. Six assertions in the test file, one per parameter, would
+# have the same defect one layer up - the seventh parameter gets taught to the
+# redactor and the test keeps passing without it.
+#
+# So the names live HERE, once, and tests/test_no_leak.py imports them. Adding a
+# parameter to this tuple teaches the redactor AND arms the check in the same
+# edit, and there is no second list to forget. This is the fifth time this shape
+# has appeared in this repository; the coupling is the fix, not the list.
+SENSITIVE_QUERY_PARAMS = (
+    "profileUrn", "recipient", "keywords", "fsd_profile", "trackingId", "urlhash",
+    "mt", "url", "vanityName", "connectionOf", "facetConnectionOf", "threadId",
+    "conversationId", "miniProfileUrn",
+)
+QUERY_PLACEHOLDER = "<value>"
 QUERY_VALUE = re.compile(
-    r"([?&](?:profileUrn|recipient|keywords|fsd_profile|trackingId|urlhash|mt|url|"
-    r"vanityName|connectionOf|facetConnectionOf|threadId|conversationId|miniProfileUrn)=)"
-    r"[^&\"\s]+",
-    re.I)
+    r"([?&](?:%s)=)[^&\"\s]+" % "|".join(SENSITIVE_QUERY_PARAMS), re.I)
 # An organisation, by slug or by numeric id, on any of the paths that carry one.
+ORG_PATH_NAMES = ("company", "school", "showcase", "organization")
 ORG_PATH = re.compile(
-    r"((?:/|%2F)(?:company|school|showcase|organization)(?:/|%2F))(?!<)([A-Za-z0-9._%-]*)", re.I)
+    r"((?:/|%%2F)(?:%s)(?:/|%%2F))(?!<)([A-Za-z0-9._%%-]+)" % "|".join(ORG_PATH_NAMES), re.I)
 # Any urn that names a thing: a post, a share, an event, a comment, an org, a
 # profile. The KIND stays - a selector is written against urn:li:activity - and
 # the id goes.
@@ -160,15 +212,15 @@ ORG_PATH = re.compile(
 # itself is usually also caught by MEMBER_ID or by the fifteen-digit shape rule,
 # so this is the belt to those braces rather than the only guard; measured
 # 2026-09-10 on a profile href that a probe had truncated before the id.
-URN = re.compile(r"(urn:li:[A-Za-z_]+:)(?!<)\(?[A-Za-z0-9%_,:.()-]+\)?")
-URN_ENC = re.compile(r"(urn%3Ali%3A[A-Za-z_]+%3A)(?!<)[A-Za-z0-9%_,.()-]+", re.I)
-JOB = re.compile(r"(/jobs/view/)[A-Za-z0-9._%-]+", re.I)
-# A conversation. Measured 2026-09-10: the messaging list gives its rows no href
-# at all, so a thread id only ever appears once a thread is open - in the URL, and
-# in whatever the page writes it into. It is a stable key to a private
-# conversation between named people, which makes it the most sensitive identifier
-# this toolkit has met, and none of the rules above has a shape that fits it.
-THREAD = re.compile(r"(/messaging/thread/)[A-Za-z0-9%_=.:,-]+", re.I)
+# The third shared list. Both spellings: a urn inside a query value arrives
+# percent-encoded, `urn%3Ali%3Afsd_profile%3A<id>`, and the literal form walks
+# past it. tests/test_no_leak.py loops over this.
+URN_FORMS = (
+    (r"urn:li:[A-Za-z_]+:", r"\(?[A-Za-z0-9%_,:.()-]+\)?", "<id>"),
+    (r"urn%3Ali%3A[A-Za-z_]+%3A", r"[A-Za-z0-9%_,.()-]+", "<id>"),
+)
+URN = re.compile("(%s)(?!<)%s" % (URN_FORMS[0][0], URN_FORMS[0][1]))
+URN_ENC = re.compile("(%s)(?!<)%s" % (URN_FORMS[1][0], URN_FORMS[1][1]), re.I)
 ARTICLE = re.compile(r"(/pulse/|/newsletters/|/events/|/groups/|/posts/)[^\"\s?&]+", re.I)
 # A shortened post link, plain or percent-encoded inside another URL. Following
 # one recovers the post and its author, which is exactly what a short link is
@@ -285,17 +337,17 @@ def redact_identifiers(value):
     v = MAP_URL.sub("<map url>", v)
     # BEFORE the short-link rule, so a short link nested inside a url= parameter
     # is taken out with the parameter rather than half-redacted inside it.
-    v = QUERY_VALUE.sub(lambda m: m.group(1) + "<value>", v)
+    v = QUERY_VALUE.sub(lambda m: m.group(1) + QUERY_PLACEHOLDER, v)
     v = SHORT_LINK.sub("lnkd.in/<shortlink>", v)
-    v = SLUG.sub(lambda m: m.group(1) + "<slug>", v)
+    v = SLUG.sub(lambda m: m.group(1) + PATH_FORMS["profile"][2], v)
     v = MEMBER_ID.sub("<memberid>", v)
     v = ORG_PATH.sub(_org, v)
-    v = URN.sub(lambda m: m.group(1) + "<id>", v)
-    v = URN_ENC.sub(lambda m: m.group(1) + "<id>", v)
-    v = JOB.sub(lambda m: m.group(1) + "<jobid>", v)
-    v = THREAD.sub(lambda m: m.group(1) + "<threadid>", v)
+    v = URN.sub(lambda m: m.group(1) + URN_FORMS[0][2], v)
+    v = URN_ENC.sub(lambda m: m.group(1) + URN_FORMS[1][2], v)
+    v = JOB.sub(lambda m: m.group(1) + PATH_FORMS["job"][2], v)
+    v = THREAD.sub(lambda m: m.group(1) + PATH_FORMS["thread"][2], v)
     v = ARTICLE.sub(lambda m: m.group(1) + "<article>", v)
-    v = QUERY_VALUE.sub(lambda m: m.group(1) + "<value>", v)
+    v = QUERY_VALUE.sub(lambda m: m.group(1) + QUERY_PLACEHOLDER, v)
     v = LONG_NUMBER.sub("<id>", v)          # R17: the shape rule, under all of them
     return v
 
