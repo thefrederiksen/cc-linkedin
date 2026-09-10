@@ -738,7 +738,20 @@ def main():
     sp.add_argument("--port", type=int, default=9224)
     sp.set_defaults(fn=Q.search_people)
 
-    sp = sub.add_parser("search-posts", help="search posts, print each result as JSON")
+    sp = sub.add_parser(
+        "search-posts", help="search posts, print each result as JSON",
+        description="Search posts and print each result as JSON. "
+                    "SIDE EFFECT, STATED BECAUSE IT IS ONE (ruling R16, 2026-09-09): a "
+                    "content-search card carries no post address anywhere in its DOM, so this "
+                    "verb takes each one the way a person does - it opens the card's control "
+                    "menu and presses 'Copy link to post', which writes to YOUR SYSTEM "
+                    "CLIPBOARD. Whatever was on the clipboard is read first and put back "
+                    "afterwards, and the RESULT line says whether that worked. Clipboard "
+                    "contents this tool cannot read as text - an image, a file - cannot be "
+                    "restored, and the run says so rather than pretending otherwise. The "
+                    "clipboard permission it grants the browser is a temporary override and is "
+                    "reset before the command exits.",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     sp.add_argument("query", help="what to search for")
     sp.add_argument("--limit", type=int, default=25, help="rows to return (hard cap 100)")
     sp.add_argument("--resolve", action="store_true",

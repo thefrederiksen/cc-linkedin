@@ -192,6 +192,48 @@ POSTS_JS = r"""
 """
 
 
+# ---------------------------------------------------------- the owner's clipboard
+#
+# RULING R16, 2026-09-09. "Copy link to post" is the ONLY route to a
+# content-search card's address - the card carries no permalink, no urn and no
+# href, which is measured above - so this verb has to use the system clipboard.
+# What it must not do is KEEP what it did to it. A command documented as
+# read-only was clearing whatever the owner had copied and leaving a permission
+# grant behind on his browser. "Read-only" is a promise about the user's world,
+# not only about LinkedIn.
+
+def _clipboard(br):
+    """What the clipboard holds now, as text, or None if it cannot be read.
+
+    None and "" are different answers and are kept apart on purpose: an empty
+    clipboard is restored as empty, an unreadable one is reported and left
+    alone. Non-text contents - an image, a file - read as None here and cannot
+    be restored by any route this tool has, which is said out loud rather than
+    quietly overwritten.
+    """
+    try:
+        got = br.page.evaluate(
+            "() => navigator.clipboard.readText().then(t => t).catch(e => null)")
+    except Exception:
+        return None
+    return got if isinstance(got, str) else None
+
+
+def _restore_clipboard(br, saved):
+    """Put back what was on the clipboard before this verb ran."""
+    if saved is None:
+        log("the clipboard held something this tool cannot read or restore (an image, a "
+            "file, or nothing readable); it now holds the last post link that was copied")
+        return False
+    try:
+        br.page.evaluate("(t) => navigator.clipboard.writeText(t)", saved)
+    except Exception as exc:
+        log("could not put the clipboard back: %s" % str(exc).splitlines()[0][:100])
+        return False
+    log("clipboard restored (%d characters)" % len(saved))
+    return True
+
+
 def _copy_link(br, index):
     """The short link for card `index`, taken the way a person takes it: open
     that card's control menu, press "Copy link to post", read the clipboard.
@@ -243,21 +285,45 @@ def search_posts(a):
         except Exception as exc:
             die("could not grant clipboard access, which is how a post's own 'Copy link to post' "
                 "hands over its link (%s)" % str(exc).splitlines()[0][:100])
+        try:
+            _search_posts(a, br, q, limit, pace)
+        finally:
+            # R16: the grant is a CDP OVERRIDE of the profile's own permission
+            # settings, and resetting it puts the owner's settings back. Leaving
+            # it in place would mean a read-only command changed how his browser
+            # behaves after it exited.
+            try:
+                root.send("Browser.resetPermissions", {})
+                log("clipboard permission override reset")
+            except Exception as exc:
+                log("could not reset the clipboard permission override: %s"
+                    % str(exc).splitlines()[0][:100])
 
-        pace.before_view("a content search")
-        final = br.read(CONTENT_URL % _quote(q), "the content search for %r" % q, settle=9)
-        pace.after_view()
-        if "/search/results/content" not in final:
-            die("asked for a content search and landed on %s" % final)
 
-        cards = br.page.evaluate(POSTS_JS, None)
-        if not cards:
-            die("no posts found for %r. Zero rows is a broken selector far more often than an "
-                "empty result set, so this is a failure and not an empty list. The page was %s"
-                % (q, final))
-        cards = cards[:limit]
+def _search_posts(a, br, q, limit, pace):
+    """The body of search-posts, so the caller can wrap it in the finally that
+    puts the owner's clipboard and permission settings back (ruling R16)."""
 
-        rows = []
+    pace.before_view("a content search")
+    final = br.read(CONTENT_URL % _quote(q), "the content search for %r" % q, settle=9)
+    pace.after_view()
+    if "/search/results/content" not in final:
+        die("asked for a content search and landed on %s" % final)
+
+    cards = br.page.evaluate(POSTS_JS, None)
+    if not cards:
+        die("no posts found for %r. Zero rows is a broken selector far more often than an "
+            "empty result set, so this is a failure and not an empty list. The page was %s"
+            % (q, final))
+    cards = cards[:limit]
+
+    # R16: what was on the clipboard before this read-only verb touched it.
+    # Read here rather than earlier because the grant is for linkedin.com and
+    # the tab was on about:blank until the navigation above.
+    was_on_clipboard = _clipboard(br)
+
+    rows = []
+    try:
         for rank, c in enumerate(cards, 1):
             share, err = _copy_link(br, c["index"])
             rows.append({"kind": "post_result", "rank": rank, "author": c["author"] or None,
@@ -265,47 +331,52 @@ def search_posts(a):
                          "share_url": share, "share_error": err,
                          "permalink": None, "resolve_error": None,
                          "stated_by_the_page": None})
-        missing = [r["rank"] for r in rows if not r["share_url"]]
-        if len(missing) == len(rows):
-            die("not one of the %d cards for %r gave up a link through 'Copy link to post'. "
-                "That control is how this verb gets a post's address, so this is a failed read."
-                % (len(rows), q))
+    finally:
+        # Restored HERE, before --resolve navigates away: the write needs the
+        # granted origin, and after a resolve the tab is somewhere else.
+        restored = _restore_clipboard(br, was_on_clipboard)
+    missing = [r["rank"] for r in rows if not r["share_url"]]
+    if len(missing) == len(rows):
+        die("not one of the %d cards for %r gave up a link through 'Copy link to post'. "
+            "That control is how this verb gets a post's address, so this is a failed read."
+            % (len(rows), q))
 
-        resolved = 0
-        if a.resolve:
-            for r in rows:
-                if not r["share_url"]:
-                    r["resolve_error"] = "no short link to resolve: " + (r["share_error"] or "")
-                    continue
-                # In the browser, never as an HTTP request made outside it. A post
-                # permalink is not a profile and notifies nobody, so this costs a
-                # navigation and NOT a view against the read cap.
-                #
-                # br.read, not br.goto (R1.5): the signed-in assertion runs on
-                # this navigation like every other read. An authwall carrying a
-                # post path in its redirect query used to be parsed as a post.
-                try:
-                    dest = br.read(r["share_url"], "the post behind %s" % r["share_url"], settle=5)
-                    page = br.page.evaluate(IDENTITY_JS, S.EMBER["card_any"])
-                except SystemExit:
-                    raise
-                except Exception as exc:
-                    r["resolve_error"] = str(exc).splitlines()[0][:120]
-                    continue
-                urn, err = ID.resolve_post_identity(dest, page["said"])
-                r["stated_by_the_page"] = page["said"] or None
-                if urn:
-                    r["permalink"] = ID.permalink(urn)
-                    resolved += 1
-                else:
-                    r["resolve_error"] = "%s. The page carried: %s" % (err, page["census"])
-
+    resolved = 0
+    if a.resolve:
         for r in rows:
-            print(json.dumps(r, ensure_ascii=True))
-        line = "RESULT search-posts query=%r rows=%d links=%d" % (q, len(rows), len(rows) - len(missing))
-        if a.resolve:
-            line += " resolved=%d/%d" % (resolved, len(rows))
-        print(line)
+            if not r["share_url"]:
+                r["resolve_error"] = "no short link to resolve: " + (r["share_error"] or "")
+                continue
+            # In the browser, never as an HTTP request made outside it. A post
+            # permalink is not a profile and notifies nobody, so this costs a
+            # navigation and NOT a view against the read cap.
+            #
+            # br.read, not br.goto (R1.5): the signed-in assertion runs on
+            # this navigation like every other read. An authwall carrying a
+            # post path in its redirect query used to be parsed as a post.
+            try:
+                dest = br.read(r["share_url"], "the post behind %s" % r["share_url"], settle=5)
+                page = br.page.evaluate(IDENTITY_JS, S.EMBER["card_any"])
+            except SystemExit:
+                raise
+            except Exception as exc:
+                r["resolve_error"] = str(exc).splitlines()[0][:120]
+                continue
+            urn, err = ID.resolve_post_identity(dest, page["said"])
+            r["stated_by_the_page"] = page["said"] or None
+            if urn:
+                r["permalink"] = ID.permalink(urn)
+                resolved += 1
+            else:
+                r["resolve_error"] = "%s. The page carried: %s" % (err, page["census"])
+
+    for r in rows:
+        print(json.dumps(r, ensure_ascii=True))
+    line = "RESULT search-posts query=%r rows=%d links=%d" % (q, len(rows), len(rows) - len(missing))
+    if a.resolve:
+        line += " resolved=%d/%d" % (resolved, len(rows))
+    line += " clipboard=%s" % ("restored" if restored else "NOT-RESTORED")
+    print(line)
 
 
 def _quote(s):
