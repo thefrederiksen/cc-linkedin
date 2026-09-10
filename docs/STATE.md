@@ -9,10 +9,12 @@ INSPECTION fix pass and everything after it, add
 `docs/inspection-fixes.md` (what was done and, in section 4, what is not
 proven).
 
-Last updated: 2026-09-09 night, by the Manager of the inspection fix pass
-(R1 to R18 built, tested offline and pushed; NOTHING proved on the live site -
-the daily view cap was exhausted for the whole pass and no LinkedIn page was
-opened).
+Last updated: 2026-09-10, by the Manager of the LIVE PROVING pass. Phase 2 is
+now PROVED ON THE LIVE SITE: three consecutive clean runs, both reverts watched
+failing, four defects found that no offline test could have found, and two
+rulings taken back to the Architect and amended because they were wrong about
+the world. The account is `docs/phase-2-live-proving.md` and its section 7 is
+what is NOT proven.
 
 ## Where the work is
 
@@ -41,7 +43,7 @@ rather than trusted.
 | Phase 2 fix pass | code done and pushed |
 | Independent inspection, four passes | done - Codex, 2026-09-09 night |
 | Inspection fix pass, R1 to R18 | **code done, tested offline, pushed. `docs/inspection-fixes.md`** |
-| Live proof of any of it | **NOT STARTED - this is the open work** |
+| Live proof of any of it | **DONE 2026-09-10 - `docs/phase-2-live-proving.md`** |
 | Pull request | not opened - the Architect lands it |
 
 ### The independent inspection has NOT been done - SUPERSEDED, kept for the record
@@ -124,54 +126,69 @@ Full detail, the evidence, the deviations from `phase-2-design.md` that need a
 ruling, and an explicit list of what is NOT proven: `docs/phase-2-fixes.md`.
 Read section 6 of that file before trusting any of it.
 
-### WHAT REMAINS - a fresh Manager can finish this from cold
+### WHAT REMAINS - DONE, 2026-09-10. Kept for the record.
 
-**Everything the inspection rulings called for is BUILT, committed and pushed.**
-R1 to R18 except R14, which is the owner's. The account is
-`docs/inspection-fixes.md` and its section 4 - what is NOT proven - is the part
-to read first. The fix Manager was told not to start the live runs even if the
-cap had rolled by the time it finished, so it did not.
+*Everything in the list that used to be here was completed on 2026-09-10. It is
+replaced by the section below rather than deleted, because what it asked for and
+what actually happened differ in ways the next seat should know.*
 
-WHAT IS LEFT IS PROVING IT ON THE LIVE SITE. Nothing has run against LinkedIn:
-not one verb, not one selftest row. In this order:
+### THE LIVE PROVING IS DONE - `docs/phase-2-live-proving.md`
 
-1. **Read `docs/inspection-fixes.md` section 4 first.** Three things in it will
-   change what a live run looks like and you should not discover them as
-   surprises:
-   * `search-posts --resolve` may come back 0-of-3 resolved with P2-6b RED. R1
-    asks for a survey of what identity a landed post page states, and that survey
-    needs the live site, so it was not done. The code REFUSES to infer a urn from
-    a URL and prints a census of what the page did carry. **That census is the
-    survey result.** Read it, take it to the Architect, and only then decide
-    whether the resolver needs another source.
-   * A clean run is no longer `passed=25`. Rows are renamed and reconciled: 29
-     declared rows, plus one per leftover Page post the sweep finds.
-     `RESULT selftest ... rows=N/M` carries the denominator now.
-   * `--page` and `--page-name` are now REQUIRED and an empty expectation value
-     (`headline=`) now fails the run.
-2. **Watch revert 2 fail** - unchanged from before, and still the one revert
-   never observed. In `kit/people.py`, put the OLD positional employer read back
-   (headline and employer as the first and second surviving visible paragraph of
-   the whole top card), run the suite against the `--menu-profile` fixture, and
-   confirm `current.company` comes back as the bare connections count and that
-   P2-10 and P2-2b go RED on `current.company is not a count` and on the
-   `company=none` correspondence. Then `git checkout -- kit/people.py` and
-   confirm the tree is clean. `docs/phase-2-fixes.md` section 5 is the model for
-   writing it up.
-3. **Re-observe revert 1's search controls.** That run crossed the view cap
-   mid-way, so P2-5, P2-6 and P2-9 failed on the cap rather than staying green.
-   The P2-10 half of the proof stands; this half does not.
-4. **Implement the `view` / `view_self` split** that
-   `docs/ruling-view-cap-2026-09-09.md` calls for. Do it BEFORE the runs that
-   count, so the runs that count are runs of the code that ships. **The warning
-   that used to sit here about retuning `EXPECTED_VIEWS` no longer applies:
-   ruling R7 DELETED that constant.** Every view registers itself by name and
-   P2-9 compares the pacing file's delta against that registry, so the split
-   changes what the registry records and nothing has to be re-derived by hand.
-   There is a test (`tests/test_selftest_rules.py`) asserting no module-level
-   integer has quietly taken the constant's place; do not add one.
-5. **Three consecutive clean runs**, `failed=0` and `rows=N/N`, nothing left
-   behind. Earlier clean runs do not count: they were runs of different code.
+```
+RESULT selftest passed=29 failed=0 rows=29/29      01:23
+RESULT selftest passed=29 failed=0 rows=29/29      01:31
+RESULT selftest passed=29 failed=0 rows=29/29      01:40
+```
+
+Three consecutive clean runs, nothing left behind, on the code that ships. Cost
+42 of the 80 daily views; **the cap was not raised and was never near**.
+
+What was built first, because a run only certifies the code it ran:
+
+* **The `view` / `view_self` split**, which the view-cap ruling called for. Own
+  profile and own Pages are counted and uncapped; everything else still counts
+  against the 80. `before_self_view` is a separate METHOD, not a flag, so the
+  uncapped path cannot be reached by a default argument.
+* **R19** - the leak check learns organisation paths, which the fifteen-digit
+  rule cannot see (organisation ids are six to nine digits).
+* **R3.3 AMENDED** - `FileLock` treated "I could not OPEN it" as "the record is
+  broken" and took locks off LIVE holders on Windows. Reproduces at HEAD.
+  Four verdicts now: held / broken / gone / unreadable. Fail closed.
+* **R20** - the selftest fixtures live in `%LOCALAPPDATA%/cc-linkedin/
+  selftest-fixtures.json`, outside the repository. THE VALUES ARE THERE NOW:
+  profile B, the menu profile, a pending-invitation profile, and `--post`.
+  **You do not have to hunt for them. That hunt cost 8 views and should never be
+  paid again.** The flags still win when passed; a value in neither place still
+  fails the run.
+* **The INVENTORY fencepost** - the row declared itself and reconciled before
+  reporting, so it named ITSELF as the row that never ran, on every run. A clean
+  run was arithmetically impossible on any code until this was fixed.
+* **R1.2 RETIRED** - as redundant and false-premised, NOT as relaxed. An
+  activity urn wraps a share or ugcPost and carries a DIFFERENT id, so "the page
+  and the path must agree" was a statement about what we assumed LinkedIn was.
+  Proved by LinkedIn's own routing: the SHARE permalink serves the page whose
+  single card states the ACTIVITY urn. R1.1's survey is taken - a landed post
+  page carries the post card's `data-urn` and NOTHING else, no canonical and no
+  og:url - so R1.1's preference order collapses to one item. `P2-6b` now
+  resolves 3 of 3 and `P2-6c` passes.
+
+**R2.2 met a real mismatch on its first live outing and refused by name.** That
+is the first live evidence of a Phase 2 guard doing its job on a situation it
+was not handed deliberately.
+
+### OPEN, and each one is the Architect's
+
+1. **Two profile views were taken outside the counter** - reading the fixture
+   top cards by eye through browser-harness, which `Pace` does not count. Either
+   a manual or survey read registers a view, or the counter stops implying it
+   counts every profile this machine opens.
+2. **`notifications` and `stats` count NO view at all**, not even `view_self`.
+   The ruling's own reason for counting self-views applies to them exactly, but
+   it names the owner's profile and his Pages, so widening it was not taken.
+3. **A pending invitation reports an uninformative reason** - "no invite control
+   ... and none in the More menu" when the card plainly says `Pending`.
+4. **R6.1's European measurement is still not made.** `1,2K` still fails by
+   design.
 
 ### Before you run anything, run the offline tests
 
