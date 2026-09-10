@@ -273,13 +273,31 @@ class TheRowsReadWhatTheVerbsActuallySay(unittest.TestCase):
         h = Harness(canned).run(Args())
         self.assertIn("P3-12", h.names(h.failed))
 
-    def test_a_page_already_followed_fails_the_row_rather_than_passing_quietly(self):
-        """A Page the account already follows presses nothing and reports
-        changed=false - correct behaviour for the verb, and the wrong FIXTURE
-        for this row. It must not read as a proven follow path."""
+    def test_a_page_that_starts_followed_goes_the_other_way_first(self):
+        """The round trip, from the other end. `follow` on an already-followed
+        Page correctly presses nothing, so the row unfollows and follows back -
+        and both of those must report a real flip, or nothing was exercised."""
         canned = dict(GOOD)
         canned["follow"] = (True, "RESULT follow company=acme following=True "
                                   "changed=false pressed=nothing")
+        canned["unfollow"] = (True, "RESULT unfollow company=acme following=False "
+                                    "was=True changed=true")
+        canned["follow-back"] = (True, "RESULT follow company=acme following=True "
+                                       "was=False changed=true")
+        h = Harness(canned).run(Args())
+        self.assertIn("P3-12", h.names(h.passed))
+
+    def test_a_page_that_starts_followed_and_never_flips_fails(self):
+        """The negative control for the branch above: if neither verb ever
+        changed anything, the follow path did not execute and the row must not
+        go green for having called it."""
+        canned = dict(GOOD)
+        canned["follow"] = (True, "RESULT follow company=acme following=True "
+                                  "changed=false pressed=nothing")
+        canned["unfollow"] = (True, "RESULT unfollow company=acme following=True "
+                                    "was=True changed=false pressed=nothing")
+        canned["follow-back"] = (True, "RESULT follow company=acme following=True "
+                                       "changed=false pressed=nothing")
         h = Harness(canned).run(Args())
         self.assertIn("P3-12", h.names(h.failed))
 

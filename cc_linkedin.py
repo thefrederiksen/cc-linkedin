@@ -1000,12 +1000,14 @@ def main():
                          "not been accepted, so its top card reads Pending. REQUIRED and never "
                          "committed. No other fixture reaches that state, and none of it can be "
                          "fabricated - an invitation has to have been sent to a real person.")
-    sp.add_argument("--follow-company",
-                    help="row P3-12: a company Page the account does NOT currently follow. "
-                         "The row follows it and unfollows it again, ending where it "
-                         "started. REQUIRED and never committed - it is a third party's "
-                         "Page - and without it the follow path never runs, which a green "
-                         "suite would not say.")
+    sp.add_argument("--follow-company", default="centerconsulting-inc",
+                    help="row P3-12: the company Page the follow round trip borrows. It is "
+                         "flipped away from whatever state it is in and then flipped BACK, "
+                         "so it ends exactly where it started whichever end it began at. "
+                         "Defaults to the owner's OWN Page, which costs nothing against the "
+                         "daily safety cap and borrows nobody else's; pass a third party's "
+                         "slug to exercise the same control on a Page we do not administer, "
+                         "and then it is capped like any other read.")
     sp.add_argument("--invite-name",
                     help="row P3-13: the full name of one of the owner's own connections, "
                          "exactly as the Page's invite dialog states it. The dialog picks a "

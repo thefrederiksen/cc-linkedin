@@ -758,30 +758,57 @@ def _phase3(a, rows, step, check, blocked, attempt, every, all_of):
     ]
     check("P3-11", every(subs), "invitations, %d rows" % len(invites))
 
-    # -- P3-12: follow then unfollow, ending where it started -----------------
+    # -- P3-12: follow and unfollow, ENDING WHERE IT STARTED ------------------
+    #
+    # THE ROW IS A ROUND TRIP AND NOT A FIXED STARTING STATE, and that is a
+    # deliberate change from design row P3-12's wording ("a Page not currently
+    # followed"). What the design ASSERTS is "final state equals the initial
+    # state, asserted after a reload", and a round trip proves that from either
+    # end while a fixed starting state does not survive its own first run - the
+    # row leaves the Page where it found it, so a fixture chosen as "not
+    # followed" is still not followed, but a fixture that drifts would silently
+    # stop exercising the flip.
+    #
+    # It also lets the default be the owner's OWN Page, which costs NOTHING
+    # against the safety cap (view_self) and borrows nobody else's. Four capped
+    # views a run, three times over, to flip a stranger's Page back and forth is
+    # a real price for no extra coverage: the control, its three signals and the
+    # top-card scoping are the same element on any organisation page. A third
+    # party's Page can still be passed and then it is capped like any other.
     if not a.follow_company:
-        blocked("P3-12", "no --follow-company: a Page the account does NOT currently "
-                         "follow, whose state this row flips and puts back. Without one "
-                         "the follow path never runs, and a path that never executes is "
-                         "not covered by a green suite however green.")
+        blocked("P3-12", "no --follow-company and no default: without one the follow path "
+                         "never runs, and a path that never executes is not covered by a "
+                         "green suite however green.")
     else:
         ok1, out1 = attempt("follow", N.follow, url=a.follow_company, dump=None)
-        ok2, out2 = attempt("unfollow", N.unfollow, url=a.follow_company, dump=None)
+        started_following = "changed=false" in (out1 or "")
+        if started_following:
+            # Already followed - `follow` correctly pressed nothing. Go the
+            # other way first, then come back.
+            ok2, out2 = attempt("unfollow", N.unfollow, url=a.follow_company, dump=None)
+            ok3, out3 = attempt("follow-back", N.follow, url=a.follow_company, dump=None)
+            flipped_away, flipped_back = out2, out3
+            want_end = "following=True"
+            ok_away, ok_back = ok2, ok3
+        else:
+            ok2, out2 = attempt("unfollow", N.unfollow, url=a.follow_company, dump=None)
+            flipped_away, flipped_back = out1, out2
+            want_end = "following=False"
+            ok_away, ok_back = ok1, ok2
         subs = [
-            ("follow returned cleanly", ok1, (out1 or "").strip().splitlines()[-1][:80]
-             if out1 else ""),
-            ("it says it changed the state", "changed=true" in (out1 or ""),
-             "a Page already followed would press nothing, and this row needs one that "
-             "is not"),
-            ("the page then read as followed", "following=True" in (out1 or ""), ""),
-            ("unfollow returned cleanly", ok2, (out2 or "").strip().splitlines()[-1][:80]
-             if out2 else ""),
-            ("it says it changed the state back", "changed=true" in (out2 or ""), ""),
-            ("THE FINAL STATE EQUALS THE INITIAL ONE",
-             "following=False" in (out2 or ""),
-             "this row borrows somebody's Page and gives it back"),
+            ("the first read of the control returned cleanly", ok1,
+             "started %s" % ("following" if started_following else "not following")),
+            ("one verb flipped the state away from where it started", ok_away
+             and "changed=true" in (flipped_away or ""),
+             (flipped_away or "").strip().splitlines()[-1][:80] if flipped_away else ""),
+            ("the other flipped it back", ok_back and "changed=true" in (flipped_back or ""),
+             (flipped_back or "").strip().splitlines()[-1][:80] if flipped_back else ""),
+            ("THE FINAL STATE EQUALS THE INITIAL ONE", want_end in (flipped_back or ""),
+             "this row borrows a Page and gives it back; it must not be the thing that "
+             "changes what the owner follows"),
         ]
-        check("P3-12", every(subs), "follow then unfollow, %d checks" % len(subs))
+        check("P3-12", every(subs), "follow round trip from %s, %d checks"
+              % ("following" if started_following else "not following", len(subs)))
 
     # -- P3-13: invite-to-follow, STAGED --------------------------------------
     if not (a.page and a.invite_name):
