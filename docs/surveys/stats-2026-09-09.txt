@@ -583,7 +583,7 @@
                           div.display-block
                             div.org-update-engagement-table__boost-bar-header-text.text-body-small  data-test-boost-action-bar__primary_text=  "<redacted len=33>"
                           div.ml3  data-test-boost-action-bar__primary_action=
-                            a.LuuMWfaYXrFozmEnAlksCThIJskvuhGBFaM.artdeco-button.artdeco-button--secondary.artdeco-button--2.artdeco-button--default.white-space-nowrap  aria-label="<redacted len=5>" href=https://www.linkedin.com/ad-beta/boost/campaigns/new/details?content=urn%3Ali%3AugcPost%3A7503499600608022528& data-test-boost-bar-button=analytics-table data-view-name=org-feed-update-card-boost-cta data-test-app-aware-link=  "<redacted len=5>"
+                            a.LuuMWfaYXrFozmEnAlksCThIJskvuhGBFaM.artdeco-button.artdeco-button--secondary.artdeco-button--2.artdeco-button--default.white-space-nowrap  aria-label="<redacted len=5>" href=https://www.linkedin.com/ad-beta/boost/campaigns/new/details?content=urn%3Ali%3AugcPost%3A<id>& data-test-boost-bar-button=analytics-table data-view-name=org-feed-update-card-boost-cta data-test-app-aware-link=  "<redacted len=5>"
                     td.org-update-engagement-table__table-cell
                       span.t-14  "<redacted len=5>"
                     td.org-update-engagement-table__table-cell  "All followers"

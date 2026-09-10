@@ -475,7 +475,7 @@
                                   span.dc0cb4c2.be9bc2bf._704ac4e0._25f92bae._6ec7d740.a67ed751
                                     svg#overflow-web-ios-small._95106a6a.c234c48b._4daf6ec6._2a907666._5a61b66c._8a2f3f8a  data-supported-dps=16x16 data-token-id=383
                               div._970c3eec._977e2c13._0e9f1760._47512947.a9b72b69._23bc1528
-                                div#translatable-commentary-FeTranslationUrn(contentUrnCommentUrn=null, contentUrnGroupPostUrn=null, contentUrnShareUrn=ContentUrnShareUrn(shareUrn=ShareUrn(shareId=7503446054340755456)), contentUrnUgcPostUrn=null, detectedLocale=, targetLocale=en)._80e7dc63._4301d873._93e2ccf0
+                                div#translatable-commentary-FeTranslationUrn(contentUrnCommentUrn=null, contentUrnGroupPostUrn=null, contentUrnShareUrn=ContentUrnShareUrn(shareUrn=ShareUrn(shareId=<id>)), contentUrnUgcPostUrn=null, detectedLocale=, targetLocale=en)._80e7dc63._4301d873._93e2ccf0
                                   p._9cb3f17d.af1ff144._84ce356b._7094a4ce._6eff3ba2._6b927fde
                                     span.f3e0add4._0cb5e7a0._320058e5.bb4c3e87.ea6b618d._0ddc677d  data-testid=expandable-text-box  "<redacted len=120>"
                                       span._4b00d036._93e2ccf0

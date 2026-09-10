@@ -123,6 +123,29 @@ SHORT_LINK = re.compile(r"lnkd(?:\.|%2E)in(?:/|%2F)[A-Za-z0-9_/%-]+", re.I)
 # A map or address URL. The one that was committed carried a postal code.
 MAP_URL = re.compile(r"https?://[^\"\s]*(?:maps|/maps/|geo/)[^\"\s]*", re.I)
 
+# RULING R17, 2026-09-09, and it is the rule that matters most here.
+#
+# Everything above is an ENUMERATION OF FORMS, and an enumeration always loses to
+# the next form. The rules above were written to take out `urn:li:share:<id>`, and
+# the Architect then found the same id still in a committed dump as
+# `shareId=<id>` inside a DOM element id - the identical defect, one level down.
+# Running the check that R18 asked for found seven more of the same shape that
+# nobody had looked for: the whole urn percent-encoded inside a notification
+# href, `li%3Aactivity%3A<id>`.
+#
+# So for identifiers of this class the rule is not a syntax, it is a SHAPE: every
+# run of fifteen or more consecutive digits, wherever it appears and whatever
+# surrounds it. A LinkedIn content id is nineteen digits, so this catches every
+# one of them in every wrapper there will ever be. The owner's Page id is nine
+# digits and his organisation ids are shorter, so they pass through - which is
+# exactly what ruling R13.3 asks for, and it is why the threshold is fifteen and
+# not ten.
+#
+# This runs LAST, deliberately. The named rules above carry meaning a selector
+# needs - which path, which urn kind, which parameter - and doing them first
+# keeps that shape in the dump. This one is the net underneath them.
+LONG_NUMBER = re.compile(r"\d{15,}")
+
 
 def _org(m):
     return m.group(1) + (m.group(2) if m.group(2).lower() in OWN else "<company>")
@@ -150,6 +173,7 @@ def redact_identifiers(value):
     v = JOB.sub(lambda m: m.group(1) + "<jobid>", v)
     v = ARTICLE.sub(lambda m: m.group(1) + "<article>", v)
     v = QUERY_VALUE.sub(lambda m: m.group(1) + "<value>", v)
+    v = LONG_NUMBER.sub("<id>", v)          # R17: the shape rule, under all of them
     return v
 
 

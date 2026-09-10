@@ -55,10 +55,10 @@ class ResolveFromTheLandedPage(unittest.TestCase):
 
     def test_the_page_and_the_path_must_agree(self):
         # R1.2: disagreement is a FAIL for the row, never a preference.
-        dest = "https://www.linkedin.com/posts/example_topic-share-222222222222222222-987654321"
+        dest = "https://www.linkedin.com/posts/example_topic-share-7000000000000000444-987654321"
         urn, err = I.resolve_post_identity(dest, [OTHER])
         self.assertIsNone(urn)
-        self.assertIn("urn:li:share:222222222222222222", err)
+        self.assertIn("urn:li:share:7000000000000000444", err)
         self.assertIn(OTHER, err)
 
     def test_two_stated_identities_are_ambiguity_not_a_first_match(self):

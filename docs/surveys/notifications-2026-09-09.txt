@@ -219,7 +219,7 @@
                                 div.presence-entity__indicator.presence-entity__indicator--size-3.presence-indicator.hidden.presence-indicator--size-3
                                   span.visually-hidden  "<redacted len=17>"
                       div.display-flex.flex-column.flex-grow-1.mr2
-                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/feed/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A7503496626544640000&highlightedUpdateType=SHARED_BY_YOUR_NET
+                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/feed/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A<id>&highlightedUpdateType=SHARED_BY_YOUR_NET
                           p.visually-hidden  "<redacted len=20>"
                           span.nt-card__text--3-line  "<redacted len=120>"
                             strong  "<redacted len=14>"
@@ -252,7 +252,7 @@
                                 div.presence-entity__indicator.presence-entity__indicator--size-3.presence-indicator.presence-indicator--is-online.presence-indicator--size-3
                                   span.visually-hidden  "<redacted len=16>"
                       div.display-flex.flex-column.flex-grow-1.mr2
-                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/feed/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A7503496460701716480&highlightedUpdateType=SHARED_BY_YOUR_NET
+                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/feed/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A<id>&highlightedUpdateType=SHARED_BY_YOUR_NET
                           p.visually-hidden  "<redacted len=20>"
                           span.nt-card__text--3-line  "<redacted len=120>"
                             strong  "<redacted len=12>"
@@ -283,7 +283,7 @@
                                 div.presence-entity__indicator.presence-entity__indicator--size-3.presence-indicator.hidden.presence-indicator--size-3
                                   span.visually-hidden  "<redacted len=17>"
                       div.display-flex.flex-column.flex-grow-1.mr2
-                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/feed/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A7503542446472065025&highlightedUpdateType=COMMENTED_ON_UPDAT
+                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/feed/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A<id>&highlightedUpdateType=COMMENTED_ON_UPDAT
                           span.nt-card__text--3-line  "<redacted len=49>"
                             strong  "<redacted len=15>"
                             span.white-space-pre
@@ -362,7 +362,7 @@
                                 div.presence-entity__indicator.presence-entity__indicator--size-3.presence-indicator.hidden.presence-indicator--size-3
                                   span.visually-hidden  "<redacted len=17>"
                       div.display-flex.flex-column.flex-grow-1.mr2
-                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/feed/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A7503531190457376768&highlightedUpdateType=SHARED_BY_YOUR_NET
+                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/feed/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A<id>&highlightedUpdateType=SHARED_BY_YOUR_NET
                           span.nt-card__text--3-line  "<redacted len=120>"
                             strong  "<redacted len=15>"
                             span.white-space-pre
@@ -392,7 +392,7 @@
                                 div.presence-entity__indicator.presence-entity__indicator--size-3.presence-indicator.hidden.presence-indicator--size-3
                                   span.visually-hidden  "<redacted len=17>"
                       div.display-flex.flex-column.flex-grow-1.mr2
-                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/feed/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A7503424878948241408&highlightedUpdateType=REACTED_TO_UPDATE_
+                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/feed/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A<id>&highlightedUpdateType=REACTED_TO_UPDATE_
                           span.nt-card__text--3-line  "<redacted len=47>"
                             strong  "<redacted len=15>"
                             span.white-space-pre
@@ -467,7 +467,7 @@
                                 div.presence-entity__indicator.presence-entity__indicator--size-3.presence-indicator.presence-indicator--is-reachable.presence-indicator--size-3
                                   span.visually-hidden  "<redacted len=19>"
                       div.display-flex.flex-column.flex-grow-1.mr2
-                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/feed/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A7503505124632207360&highlightedUpdateType=SHARED_BY_YOUR_NET
+                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/feed/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A<id>&highlightedUpdateType=SHARED_BY_YOUR_NET
                           span.nt-card__text--3-line  "<redacted len=120>"
                             strong  "<redacted len=24>"
                             span.white-space-pre
@@ -527,7 +527,7 @@
                                 div.presence-entity__indicator.presence-entity__indicator--size-3.presence-indicator.presence-indicator--is-reachable.presence-indicator--size-3
                                   span.visually-hidden  "<redacted len=19>"
                       div.display-flex.flex-column.flex-grow-1.mr2
-                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/feed/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A7503499468818821121&highlightedUpdateType=SHARED_BY_YOUR_NET
+                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/feed/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A<id>&highlightedUpdateType=SHARED_BY_YOUR_NET
                           span.nt-card__text--3-line  "<redacted len=120>"
                             strong  "<redacted len=24>"
                             span.white-space-pre
