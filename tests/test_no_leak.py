@@ -82,7 +82,7 @@ sys.path.insert(0, os.path.join(ROOT, "tools"))
 # there arms the check here in the same edit, and there is no second list to
 # forget. This is the fifth time this coupling defect has appeared here.
 from survey import (SENSITIVE_QUERY_PARAMS, QUERY_PLACEHOLDER, PATH_FORMS,
-                    ORG_PATH_NAMES, URN_FORMS)
+                    ORG_PATH_NAMES, URN_FORMS, JSON_ID_FORMS, SAFE_LINE_LIMIT)
 DUMPS = sorted(glob.glob(os.path.join(ROOT, "docs", "surveys", "*.txt")))
 
 LONG_NUMBER = re.compile(r"\d{15,}")
@@ -285,6 +285,56 @@ class TheCommittedDumpsCarryNoIdentifierTheRedactorKnows(unittest.TestCase):
                                               m.group(1), m.group(2)[:40]))
         self.assertEqual(bad, [], "an identifier is sitting on a path in a public "
                                   "repository:\n  " + "\n  ".join(bad[:10]))
+
+    def test_every_json_identifier_key_carries_only_its_placeholder(self):
+        """ONE rule over JSON_ID_FORMS - a bare numeric id on a JSON key.
+
+        2026-09-10, Phase 3. The custom-invite page embeds a block of LinkedIn's
+        own configuration JSON in the document, and a probe that swept the page's
+        leaf text captured it. Inside it, `"plainId":11950918` - the signed-in
+        member's own numeric id, on no path, inside no urn, carrying no parameter
+        name, and EIGHT digits long, so R17's fifteen-digit net sits above it by
+        construction.
+
+        This is the same coupling every rule in this class has: the shape lives
+        in tools/survey.py, this loops over it, and neither can be taught a form
+        the other does not learn in the same edit.
+        """
+        self.assertTrue(JSON_ID_FORMS, "JSON_ID_FORMS is empty, so this rule would examine "
+                                       "nothing")
+        bad = []
+        for prefix, tail, placeholder in JSON_ID_FORMS:
+            rule = re.compile("(%s)(%s)" % (prefix, tail))
+            for path in DUMPS:
+                with open(path, encoding="utf-8") as f:
+                    for n, line in enumerate(f, 1):
+                        for m in rule.finditer(line):
+                            bad.append("%s:%d %s%s" % (os.path.basename(path), n,
+                                                       m.group(1), m.group(2)[:20]))
+        self.assertEqual(bad, [], "a bare numeric identifier is sitting on a JSON key in a "
+                                  "public repository:\n  " + "\n  ".join(bad[:10]))
+
+    def test_no_committed_dump_line_is_too_long_to_be_read(self):
+        """The last guard the redaction rules rest on is a person reading the
+        dump before it is committed (R13.4). A 78,000-character line is not read,
+        so that guard silently stops being performed - and every identifier form
+        nothing here knows about rides in underneath it. This is not a style
+        rule: it is what keeps the human check performable.
+
+        The cap is tools/survey.py's own SAFE_LINE_LIMIT, plus the truncation
+        marker it appends, so there is no second number to drift.
+        """
+        limit = SAFE_LINE_LIMIT + 120
+        bad = []
+        for path in DUMPS:
+            with open(path, encoding="utf-8") as f:
+                for n, line in enumerate(f, 1):
+                    line = line.rstrip(chr(10))
+                    if len(line) > limit:
+                        bad.append("%s:%d is %d chars: %s"
+                                   % (os.path.basename(path), n, len(line), line[:70]))
+        self.assertEqual(bad, [], "a committed dump carries a line nobody will read, so "
+                                  "nobody read it:\n  " + "\n  ".join(bad[:10]))
 
     def test_every_organisation_path_carries_a_placeholder_or_an_allowed_key(self):
         """ONE rule over ORG_PATH_NAMES, in both spellings.

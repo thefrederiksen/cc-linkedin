@@ -1,0 +1,317 @@
+# survey custom-invite-add-a-note
+# taken   2026-09-10 07:26:45
+# request https://www.linkedin.com/preload/custom-invite/?vanityName=<value>
+# subject tokens redacted literally: 0
+# clicked 'Add a note' (reveal-only: on the custom-invite dialog, reveals the note textarea so its character limit can be read off the page. It sends nothing)
+# final   https://www.linkedin.com/preload/custom-invite/?vanityName=<value>
+# rendering react ([data-urn] count=0)
+# signed-in probes {".global-nav__me": 1, "button.global-nav__primary-link-me-menu-trigger": 1, "img.global-nav__me-photo": 1, "[data-test-global-nav-me]": 0, "nav.global-nav": 0, ".global-nav__nav": 1, "#global-nav": 1, "header.global-nav": 1, "[data-view-name=\"navigation-me\"]": 0}
+# 'Me' controls    []
+# title   "LinkedIn"
+# body    "<redacted len=300>"
+
+== ACCESSIBILITY (187 nodes in the tree) ==
+  region         "<redacted len=13>"
+  dialog         "<redacted len=29>"
+  heading        "0 notifications total"
+  StaticText     "<redacted len=21>"
+  button         "Dismiss"
+  StaticText     "<redacted len=19>"
+  StaticText     "0 notifications total"
+  heading        "<redacted len=29>"
+  button         "<redacted len=20>"
+  button         "<redacted len=15>"
+  StaticText     "<redacted len=29>"
+  StaticText     "<redacted len=45>"
+  textbox        "<redacted len=130>"
+  StaticText     "Cancel"
+  StaticText     "Send"
+  StaticText     "<redacted len=84>"
+  StaticText     "<redacted len=5>"
+
+== PROBES ==
+  [2] textarea
+  [1] #custom-message
+  [1] [role="dialog"]
+  [0] dialog[open]
+
+== JS PROBES ==
+  (() => [...document.querySelectorAll("dialog, [role=dialog], [aria-modal=true]")].map(d => ({tag:d.tagName, role:d.getAttribute("role"), labelledby:d.getAttribute("aria-labelledby"), text:(d.innerText||"").replace(/\s+/g," ").trim().slice(0,700), buttons:[...d.querySelectorAll("button, a[role=button]")].map(b=>({type:b.getAttribute("type"), aria:b.getAttribute("aria-label"), text:(b.innerText||"").replace(/\s+/g," ").trim().slice(0,80), disabled:b.disabled}))})))()
+    [
+     {
+      "tag": "DIV",
+      "role": "dialog",
+      "labelledby": "<redacted len=17>",
+      "text": "Dialog content start. Add a note to your invitation Please limit personal note to 300 characters. LinkedIn members are more likely to accept invitations that include a personal note. 0/300 Cancel Send Dialog content end.",
+      "buttons": [
+       {
+        "type": null,
+        "aria": "Dismiss",
+        "text": "",
+        "disabled": false
+       },
+       {
+        "type": null,
+        "aria": "<redacted len=20>",
+        "text": "Cancel",
+        "disabled": false
+       },
+       {
+        "type": null,
+        "aria": "<redacted len=15>",
+        "text": "Send",
+        "disabled": true
+       }
+      ]
+     }
+    ]
+  (() => [...document.querySelectorAll("textarea, [contenteditable=true]")].map(e => ({tag:e.tagName, id:e.id, name:e.getAttribute("name"), maxlength:e.getAttribute("maxlength"), aria:e.getAttribute("aria-label"), placeholder:e.getAttribute("placeholder"), describedby:e.getAttribute("aria-describedby"), describedbyText:(()=>{const i=e.getAttribute("aria-describedby");if(!i)return null;const n=document.getElementById(i);return n?(n.innerText||"").replace(/\s+/g," ").trim().slice(0,200):null;})(), value_len:(e.value||"").length})))()
+    [
+     {
+      "tag": "TEXTAREA",
+      "id": "custom-message",
+      "name": "message",
+      "maxlength": null,
+      "aria": null,
+      "placeholder": "<redacted len=28>",
+      "describedby": null,
+      "describedbyText": null,
+      "value_len": 0
+     },
+     {
+      "tag": "TEXTAREA",
+      "id": "g-recaptcha-response-100000",
+      "name": "<redacted len=20>",
+      "maxlength": null,
+      "aria": null,
+      "placeholder": null,
+      "describedby": null,
+      "describedbyText": null,
+      "value_len": 0
+     }
+    ]
+  (() => [...document.querySelectorAll("body *")].filter(e=>!e.children.length).map(e=>(e.innerText||"").replace(/\s+/g," ").trim()).filter(t=>/\d+\s*(characters?|\/)|remaining|limit|\d+\s*\/\s*\d+/i.test(t)).slice(0,20))()
+    [
+     "<redacted len=45>",
+     "0/300",
+     "{\"data\":{\"entityUrn\":\"urn:li:collectionResponse:<id>=\",\"elements\":[{\"lixTracking\":{\"urn\":\"urn:li:member:<id>\",\"segmentIndex\":2,\"experimentId\":<id>,\"treatmentIndex\":1,\"lixKey\":\"chameleon.PREMIUM:us.copy-definition.25969.child.27681\",\"$type\":\"com.linkedin.voyager.dash.segments.chameleon.ChameleonConfigLixTrackingInfo\"},\"data\":{\"namespace\":\"resume-builder-shared/templates/components/resume-list-modal\",\"locale\":\"en_US\",\"message\":\"See which skills to add to your profile, as well as keyword insights and formatting adjustments for your resume.\",\"key\":... <truncated 72673 chars; the whole line is in the unredacted dump>
+     "{\"data\":{\"plainId\":<id>,\"publicContactInfo\":{\"$type\":\"com.linkedin.voyager.identity.shared.PublicContactInfo\"},\"premiumSubscriber\":true,\"*miniProfile\":\"urn:li:fs_miniProfile:<memberid>\",\"$type\":\"com.linkedin.voyager.common.Me\"},\"included\":[{\"customPronoun\":null,\"memorialized\":false,\"lastName\":\"Frederiksen\",\"dashEntityUrn\":\"urn:li:fsd_profile:<memberid>\",\"standardizedPronoun\":null,\"occupation\":\"CTO & Co-Founder, mindzie | AI Training for Business Owners | Toronto\",\"objectUrn\":\"urn:li:member:<id>\",\"$anti_abuse_metadata\":{\"$anti_abuse_uuid\":\"... <truncated 2329 chars; the whole line is in the unredacted dump>
+     "{\"data\":{\"data\":{\"feedDashGlobalNavs\":{\"logo\":{\"controlName\":\"nav_inbug\",\"logo\":{\"attributes\":[{\"scalingType\":null,\"detailData\":{\"profilePictureWithoutFrame\":null,\"profilePictureWithRingStatus\":null,\"companyLogo\":null,\"icon\":\"IC_APP_LINKEDIN_BUG_COLOR_24DP\",\"systemImage\":null,\"nonEntityGroupLogo\":null,\"vectorImage\":null,\"nonEntityProfessionalEventLogo\":null,\"profilePicture\":null,\"imageUrl\":null,\"professionalEventLogo\":null,\"nonEntityCompanyLogo\":null,\"nonEntitySchoolLogo\":null,\"groupLogo\":null,\"schoolLogo\":null,\"ghostImage\":null,\"non... <truncated 77605 chars; the whole line is in the unredacted dump>
+     "<redacted len=137636>"
+    ]
+
+== DOM OUTLINE of main (213 nodes, depth<=8) ==
+  body.render-mode-BIGPIPE.nav-v2.ember-application.payment-failure-global-alert-lix-enabled-class.icons-loaded.boot-complete  data-t-link-to-event-attached=true
+    script  data-fastboot-src=/assets/retry.js
+      section#artdeco-toasts.artdeco-toasts  aria-label="<redacted len=13>"
+        header.artdeco-toasts__header
+          h2.artdeco-toasts__title  "0 notifications total"
+        div.artdeco-toasts_toasts  role=alert
+    div#app-boot-bg-loader.app-boot-bg-skeleton
+      div.top-bar
+      div.content
+        div.initial-load-animation.fade-load
+          div.linkedin-image.display-flex.justify-center
+            svg.loader__linkedin-logo
+          div.loading-bar
+            div.blue-bar
+        div.loading-animation-nile.loading-animation-games
+          div.skeleton-loader-spinner
+            div.skeleton-loader-spinner--bar
+            div.skeleton-loader-spinner--bar
+            div.skeleton-loader-spinner--bar
+            div.skeleton-loader-spinner--bar
+            div.skeleton-loader-spinner--bar
+            div.skeleton-loader-spinner--bar
+            div.skeleton-loader-spinner--bar
+            div.skeleton-loader-spinner--bar
+            div.skeleton-loader-spinner--bar
+            div.skeleton-loader-spinner--bar
+            div.skeleton-loader-spinner--bar
+            div.skeleton-loader-spinner--bar
+    script  data-fastboot-src=/assets/vendor-static.js
+    script  data-fastboot-src=/assets/vendor.js
+    script#support-locale-module  data-embroider-ignore= data-fastboot-src=/assets/i18n/support_en_US.js
+    script  data-fastboot-src=/assets/pdsc/register-metadata.js
+    script  data-fastboot-src=/assets/chunk.418.7af16740f982cc157a84.js
+    script  data-fastboot-src=/assets/chunk.143.1188d59ba490ebf48e72.js
+    script  data-fastboot-src=/assets/voyager-web.js
+      div#ember29.artdeco-modal-overlay.artdeco-modal-overlay--layer-default.artdeco-modal-overlay--is-top-layer.ember-view  data-test-modal-container= data-test-modal-id=send-invite-modal
+        div.artdeco-modal.artdeco-modal--layer-default.send-invite  role=dialog data-test-modal=
+          span.a11y-text  "<redacted len=21>"
+          button#ember30.artdeco-button.artdeco-button--circle.artdeco-button--muted.artdeco-button--2.artdeco-button--tertiary.ember-view  aria-label="Dismiss" data-test-modal-close-btn=
+            svg.artdeco-button__icon  role=none data-supported-dps=24x24 data-test-icon=close-medium
+            span.artdeco-button__text
+          div#ember53.artdeco-modal__header.ember-view
+            h2#send-invite-modal  "<redacted len=29>"
+          div#ember54.artdeco-modal__content.ember-view
+              span.visually-hidden  "<redacted len=45>"
+              p.t-14.pb2  "<redacted len=84>"
+            div.relative
+              textarea#custom-message.ember-text-area.ember-view.connect-button-send-invite__custom-message  data-artdeco-is-focused=true
+              div.display-flex.align-items-center
+                svg  role=img aria-label="Premium" data-supported-dps=78x8 data-test-icon=premium-badge-xxxsmall
+                span.t-14.t-black--light.flex-1.text-align-right.t-black--light  "<redacted len=5>"
+          div#ember56.artdeco-modal__actionbar.ember-view.text-align-right
+            button#ember57.artdeco-button.artdeco-button--muted.artdeco-button--2.artdeco-button--tertiary.ember-view.mr1  aria-label="<redacted len=20>"
+              span.artdeco-button__text  "Cancel"
+            button#ember58.artdeco-button.artdeco-button--2.artdeco-button--primary.artdeco-button--disabled.ember-view.ml1  aria-label="<redacted len=15>"
+              span.artdeco-button__text  "Send"
+          span.a11y-text  "<redacted len=19>"
+    code#bpr-guid-146745  "<redacted len=120>"
+    code#datalet-bpr-guid-146745  "<redacted len=120>"
+    img.datalet-bpr-guid-146745
+    code#bpr-guid-146746  "<redacted len=120>"
+    code#datalet-bpr-guid-146746  "<redacted len=120>"
+    img.datalet-bpr-guid-146746
+    code#bpr-guid-146747  "<redacted len=120>"
+    code#datalet-bpr-guid-146747  "<redacted len=120>"
+    img.datalet-bpr-guid-146747
+    code#bpr-guid-146748  "<redacted len=120>"
+    code#datalet-bpr-guid-146748  "<redacted len=120>"
+    img.datalet-bpr-guid-146748
+    code#bpr-guid-146749  "<redacted len=120>"
+    code#datalet-bpr-guid-146749  "<redacted len=120>"
+    img.datalet-bpr-guid-146749
+    code#bpr-guid-146750  "<redacted len=120>"
+    code#datalet-bpr-guid-146750  "<redacted len=120>"
+    img.datalet-bpr-guid-146750
+    code#bpr-guid-146751  "<redacted len=93>"
+    code#datalet-bpr-guid-146751  "<redacted len=120>"
+    img.datalet-bpr-guid-146751
+    code#bpr-guid-146752  "<redacted len=120>"
+    code#datalet-bpr-guid-146752  "<redacted len=120>"
+    img.datalet-bpr-guid-146752
+    code#bpr-guid-146753  "<redacted len=120>"
+    code#datalet-bpr-guid-146753  "<redacted len=120>"
+    img.datalet-bpr-guid-146753
+    svg#hue-web-icons-sprite  role=none
+      svg#close-medium  role=none data-supported-dps=24x24
+      svg#search-small  role=none data-supported-dps=16x16
+      svg#search-medium  role=none data-supported-dps=24x24
+      svg#caret-small  role=none data-supported-dps=16x16
+      svg#overflow-web-ios-medium  role=none data-supported-dps=24x24
+      svg#premium-chip-v2-small  role=none data-supported-dps=16x16
+      svg#overflow-web-ios-small  role=none data-supported-dps=16x16
+      svg#compose-small  role=none data-supported-dps=16x16
+      svg#chevron-up-small  role=none data-supported-dps=16x16
+    div.application-outlet
+      div.global-nav__a11y-menu.global-alert-offset-top
+        div.global-nav__a11y-menu-container
+          button#ember9.mr4.artdeco-button.artdeco-button--muted.artdeco-button--2.artdeco-button--secondary.ember-view
+            span.artdeco-button__text  "Skip to search"
+          button#ember10.artdeco-button.artdeco-button--muted.artdeco-button--2.artdeco-button--secondary.ember-view
+            span.artdeco-button__text  "Skip to main content"
+          div#ember11.ember-view
+          button#ember12.artdeco-button.artdeco-button--muted.artdeco-button--2.artdeco-button--secondary.ember-view.ml4  data-test-hotkey-modal-trigger=
+            span.artdeco-button__text  "<redacted len=18>"
+          button#ember13.global-nav__a11y-menu-close.artdeco-button.artdeco-button--circle.artdeco-button--muted.artdeco-button--2.artdeco-button--tertiary
+            svg.artdeco-button__icon  role=none data-supported-dps=24x24 data-test-icon=close-medium
+            span.artdeco-button__text  "<redacted len=15>"
+      header#global-nav.global-nav.global-alert-offset-top.global-nav--visible  aria-label="<redacted len=17>"
+        div.global-nav__content
+          a.iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM  href=https://www.linkedin.com/feed/?nis=true data-test-app-aware-link=
+            div.ivm-image-view-model.global-nav__branding-logo
+              div.ivm-view-attr__img-wrapper
+                li-icon.ivm-view-attr__icon  role=img aria-label="LinkedIn"
+                  svg.mercado-match  data-supported-dps=24x24
+          div#global-nav-search.global-nav__search
+            div.search-global-typeahead.search-global-typeahead--semantic-rounded-search-box.global-nav__search-typeahead
+              div#global-nav-typeahead.search-global-typeahead__typeahead
+                input.basic-input.search-global-typeahead__input.search-global-typeahead__input--nile-background.search-global-typeahead__input--ellipsis  role=combobox aria-label="Search" data-view-name=search-global-typeahead-input
+                div.search-global-typeahead__search-icon-container.search-global-typeahead__input--nile-background
+                  svg.search-global-typeahead__search-icon  role=none data-supported-dps=16x16 data-test-icon=search-small
+                div.search-global-typeahead__overlay.global-alert-offset-top
+              button.search-global-typeahead__collapsed-search-button  aria-label="Click to start a search"
+                span.search-global-typeahead__collapsed-search-button-icon.t-black--light
+                  svg  role=none data-supported-dps=24x24 data-test-icon=search-medium
+                div.search-global-typeahead__collapsed-search-button-text.t-black--light.t-12.t-normal  "Search"
+              div#ember15.ember-view
+          nav.global-nav__nav  aria-label="<redacted len=18>"
+            ul.global-nav__primary-items
+              li.global-nav__primary-item
+                a.iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM.global-nav__primary-link  href=https://www.linkedin.com/feed/?nis=true& data-view-name= data-test-app-aware-link=
+                  div#ember16.global-nav__primary-link-notif.artdeco-notification-badge.ember-view
+                  span.t-12.break-words.block.t-black--light.t-normal.global-nav__primary-link-text  "Home"
+              li.global-nav__primary-item
+                a.iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM.global-nav__primary-link  href=https://www.linkedin.com/mynetwork/? data-view-name= data-test-app-aware-link=
+                  div.ivm-image-view-model.global-nav__icon-ivm
+                  span.t-12.break-words.block.t-black--light.t-normal.global-nav__primary-link-text  "<redacted len=10>"
+              li.global-nav__primary-item
+                a.iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM.global-nav__primary-link  href=https://www.linkedin.com/jobs/? data-view-name= data-test-app-aware-link=
+                  div.ivm-image-view-model.global-nav__icon-ivm
+                  span.t-12.break-words.block.t-black--light.t-normal.global-nav__primary-link-text  "Jobs"
+              li.global-nav__primary-item
+                a.iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM.global-nav__primary-link  href=https://www.linkedin.com/messaging/? data-view-name= data-test-app-aware-link=
+                  div.ivm-image-view-model.global-nav__icon-ivm
+                  span.t-12.break-words.block.t-black--light.t-normal.global-nav__primary-link-text  "Messaging"
+              li.global-nav__primary-item
+                a.iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM.global-nav__primary-link  href=https://www.linkedin.com/notifications/? data-view-name= data-test-app-aware-link=
+                  div.ivm-image-view-model.global-nav__icon-ivm
+                  span.t-12.break-words.block.t-black--light.t-normal.global-nav__primary-link-text  "Notifications"
+              li.global-nav__primary-item
+                div#ember17.global-nav__me.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-left.ember-view
+                  button#ember18.global-nav__primary-link.global-nav__primary-link-me-menu-trigger.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-bottom.ember-view
+                  div#ember20.global-nav__me-content.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--justification-right.artdeco-dropdown__content--placement-bottom.ember-view
+              li.global-nav__primary-item
+                div#ember21.global-nav__primary-item--divider.pl3.global-nav__app-launcher-menu.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-left
+                  button#ember22.global-nav__primary-link.global-nav__primary-link-app-launcher-menu-trigger.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-bottom.ember-view
+                  div#ember23.global-nav__app-launcher-menu-content.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--justification-right.artdeco-dropdown__content--placement-bottom.ember-v
+              li.global-nav__primary-item
+                a.iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM.global-nav__primary-link  href=https://www.linkedin.com/campaignmanager/accounts? data-view-name= data-test-app-aware-link=
+                  div.ivm-image-view-model.global-nav__icon-ivm
+                  span.t-12.break-words.block.t-black--light.t-normal.global-nav__primary-link-text  "<redacted len=9>"
+      div.videoinappalert-inapp-alerts-manager.hidden
+      div.authentication-outlet
+        div.interop-navbar-offset
+        div#ember27.artdeco-loader.artdeco-loader--small.ember-view
+          span.artdeco-loader__bars
+          span.artdeco-loader__bars
+          span.artdeco-loader__bars
+          span.artdeco-loader__bars
+          span.artdeco-loader__bars
+          span.artdeco-loader__bars
+          span.artdeco-loader__bars
+          span.artdeco-loader__bars
+          span.artdeco-loader__bars
+          span.artdeco-loader__bars
+          span.artdeco-loader__bars
+          span.artdeco-loader__bars
+        div#ember28.ember-view  data-view-name=custom-invite-modal
+      div#ember6.ember-view
+        div.application-outlet__overlay-container
+          aside#msg-overlay.msg-overlay-container.msg-overlay-container-reflow
+            div.msg-overlay-list-bubble.msg-overlay-list-bubble--is-minimized.ml4.msg-overlay-list-bubble__tablet-height
+              header.mOiCHWqGjDLYGHAdWWJElEYnFSNYQioQk
+                div.msg-overlay-bubble-header__badge-container
+                div.msg-overlay-bubble-header__details.flex-row.align-items-center.ml1
+                  div.presence-entity.presence-entity--size-1
+                  button#msg-overlay-list-bubble-header__button.msg-overlay-bubble-header__button.truncate.ml2
+                div.msg-overlay-bubble-header__controls.display-flex
+                  div#ember41.artdeco-dropdown.artdeco-dropdown--placement-top.artdeco-dropdown--justification-right.ember-view
+                  div.entry-point
+                  button#ember45.msg-overlay-bubble-header__control.msg-overlay-bubble-header__control--new-convo-btn.artdeco-button.artdeco-button--circle.artdeco-button--muted.artdeco-button--1
+              div.msg-premium-mailboxes__pages-inboxes-header.text-heading-small  data-test-messaging-premium-mailboxes__affiliated-mailboxes-container=
+                div.msg-premium-mailboxes__pages-inboxes-header-title.ml1  data-test-messaging-premium-mailboxes__affiliated-mailboxes-header-title=
+                  h3.text-heading-small  "<redacted len=12>"
+                div#ember46.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-right.ember-view.msg-premium-mailboxes__pages-chevron
+                  span#affiliated-mailboxes-dropdown-trigger-description-id.visually-hidden  "<redacted len=31>"
+                  button#ember47.artdeco-dropdown__trigger.artdeco-button.artdeco-button--1.artdeco-button--circle.artdeco-button--tertiary.artdeco-button--muted  aria-label="<redacted len=12>" data-test-messaging-premium-mailboxes__affiliated-mailboxes-dropdown-trigger=
+                  div#ember48.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--has-arrow.artdeco-dropdown__content--arrow-right.artdeco-dropdown__content--justification-right.artdeco-dropd  data-test-messaging-premium-mailboxes__affiliated-mailboxes-dropdown-content=
+              div#ember49.ember-view  data-test-messaging-pages-inboxes-modal=
+          aside#coach-container.coach-container.coach-container--overlay  aria-label="<redacted len=59>"
+      div#ember36.ember-view
+    div#type-ahead-wormhole.type-ahead.type-ahead-wormhole
+    div#toast-wormhole.toast-wormhole
+    code#bpr-guid-146754  "<redacted len=120>"
+    code#datalet-bpr-guid-146754  "<redacted len=120>"
+    img.datalet-bpr-guid-146754
+    code#clientPageInstance  "<redacted len=86>"
+    img.terminatorlet
+    div#a11y-notification.visually-hidden  role=region
+      div.grecaptcha-badge  data-style=bottomright
+        div.grecaptcha-logo
+          iframe  role=presentation
+        div.grecaptcha-error
+        textarea#g-recaptcha-response-100000.g-recaptcha-response
+
