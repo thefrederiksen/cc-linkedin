@@ -26,7 +26,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from survey import redact_identifiers
+from survey import redact_identifiers, note_subject_tokens
 
 DEFAULT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                        "docs", "surveys", "*.txt")
@@ -36,10 +36,19 @@ def main():
     ap = argparse.ArgumentParser(prog="redact_surveys.py",
                                  description=__doc__.split("\n")[0])
     ap.add_argument("files", nargs="*", help="the dumps to redact (default: docs/surveys/*.txt)")
+    ap.add_argument("--token", action="append", default=[], metavar="TOKEN=REPLACEMENT",
+                    help="a LITERAL string to take out wherever it appears, e.g. a profile slug "
+                         "that the rendering wrote into a DOM element id. No shape rule can find "
+                         "one of those (see SUBJECT_TOKENS in survey.py), so a dump taken before "
+                         "that pass existed is cleaned by naming the token here. The token itself "
+                         "is a third-party identifier: pass it on the command line, never write "
+                         "it into a committed file.")
     ap.add_argument("--check", action="store_true",
                     help="change nothing; exit non-zero if any file would change")
     a = ap.parse_args()
 
+    note_subject_tokens([(t.split("=", 1)[0], t.split("=", 1)[1] if "=" in t else "<slug>")
+                         for t in a.token])
     paths = a.files or sorted(glob.glob(DEFAULT))
     if not paths:
         print("FAIL no survey dumps found at %s. A redaction pass that found nothing to read "

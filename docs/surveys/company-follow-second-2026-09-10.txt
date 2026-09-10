@@ -1,0 +1,815 @@
+# survey company-follow-second
+# taken   2026-09-10 02:59:25
+# request https://www.linkedin.com/company/<company>/
+# subject tokens redacted literally: 9
+# final   https://www.linkedin.com/company/<company>/
+# rendering ember ([data-urn] count=3)
+# signed-in probes {".global-nav__me": 1, "button.global-nav__primary-link-me-menu-trigger": 1, "img.global-nav__me-photo": 1, "[data-test-global-nav-me]": 0, "nav.global-nav": 0, ".global-nav__nav": 1, "#global-nav": 1, "header.global-nav": 1, "[data-view-name=\"navigation-me\"]": 0}
+# 'Me' controls    []
+# title   "<redacted len=33>"
+# body    "<redacted len=300>"
+
+== ACCESSIBILITY (1387 nodes in the tree) ==
+  region         "<redacted len=13>"
+  button         "Skip to search"
+  button         "Skip to main content"
+  button         "<redacted len=18>"
+  button         "<redacted len=15>"
+  link           "LinkedIn"
+  navigation     "<redacted len=18>"
+  main           "<redacted len=30>"
+  heading        "0 notifications total"
+  StaticText     "Skip to search"
+  StaticText     "Skip to main content"
+  StaticText     "<redacted len=18>"
+  StaticText     "<redacted len=15>"
+  StaticText     "0 notifications total"
+  combobox       "Search"
+  link           "new feed updates notifications Home"
+  link           "<redacted len=44>"
+  link           "Jobs"
+  link           "Messaging"
+  link           "Notifications"
+  link           "<redacted len=9>"
+  heading        "<redacted len=12>"
+  button         "<redacted len=20>"
+  button         "<redacted len=12>"
+  heading        "<redacted len=8>"
+  link           "Verified"
+  heading        "<redacted len=24>"
+  region         "<redacted len=36>"
+  heading        "<redacted len=13>"
+  StaticText     "<redacted len=22>"
+  heading        "<redacted len=12>"
+  StaticText     "<redacted len=16>"
+  StaticText     "<redacted len=12>"
+  button         "<redacted len=12>"
+  StaticText     "new feed updates notifications"
+  StaticText     "Home"
+  StaticText     "<redacted len=33>"
+  StaticText     "<redacted len=10>"
+  StaticText     "Jobs"
+  StaticText     "Messaging"
+  StaticText     "Notifications"
+  StaticText     "Me"
+  StaticText     "<redacted len=9>"
+  StaticText     "<redacted len=8>"
+  StaticText     "<redacted len=87>"
+  link           "<redacted len=61>"
+  navigation     "<redacted len=30>"
+  heading        "<redacted len=18>"
+  link           "Show all posts"
+  link           "Show all jobs"
+  link           "View company photo 1"
+  link           "View company photo 2"
+  link           "View company photo 3"
+  link           "View company photo 4"
+  link           "View company photo 5"
+  link           "<redacted len=27>"
+  link           "<redacted len=20>"
+  StaticText     "<redacted len=24>"
+  region         "<redacted len=32>"
+  StaticText     "<redacted len=13>"
+  StaticText     "<redacted len=2>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=12>"
+  link           "<redacted len=24>"
+  button         "<redacted len=80>"
+  button         "<redacted len=80>"
+  StaticText     "<redacted len=31>"
+  StaticText     "<redacted len=12>"
+  StaticText     "<redacted len=1>"
+  StaticText     "<redacted len=14>"
+  link           "<redacted len=17>"
+  heading        "<redacted len=46>"
+  link           "<redacted len=30>"
+  StaticText     "<redacted len=18>"
+  StaticText     "Show all posts"
+  heading        "<redacted len=19>"
+  link           "<redacted len=51>"
+  link           "<redacted len=53>"
+  link           "<redacted len=51>"
+  link           "<redacted len=49>"
+  StaticText     "Show all jobs"
+  heading        "<redacted len=16>"
+  StaticText     "<redacted len=20>"
+  heading        "<redacted len=30>"
+  StaticText     "<redacted len=24>"
+  combobox       "<redacted len=15>"
+  heading        "<redacted len=16>"
+  heading        "<redacted len=24>"
+  button         "<redacted len=22>"
+  StaticText     "<redacted len=80>"
+  button         "<redacted len=28>"
+  button         "<redacted len=15>"
+  StaticText     "<redacted len=80>"
+  StaticText     "<redacted len=1>"
+  StaticText     "<redacted len=19>"
+  StaticText     "<redacted len=1>"
+  StaticText     "<redacted len=14>"
+  StaticText     "<redacted len=1>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=46>"
+  button         "Follow"
+  link           "<redacted len=13>"
+  heading        "Overview"
+  StaticText     "<redacted len=105>"
+  StaticText     "<redacted len=98>"
+  StaticText     "<redacted len=95>"
+  StaticText     "..."
+  button         "<redacted len=31>"
+  StaticText     "<redacted len=16>"
+  StaticText     "<redacted len=19>"
+  StaticText     "<redacted len=16>"
+  StaticText     "<redacted len=9>"
+  StaticText     "<redacted len=30>"
+  heading        "Chart"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=27>"
+  StaticText     "<redacted len=16>"
+  StaticText     "<redacted len=24>"
+  StaticText     "Show all"
+  heading        "<redacted len=18>"
+  button         "<redacted len=26>"
+  StaticText     "<redacted len=16>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=13>"
+  button         "<redacted len=16>"
+  link           "Home"
+  link           "About"
+  link           "Posts"
+  link           "Jobs"
+  link           "<redacted len=4>"
+  link           "People"
+  link           "<redacted len=8>"
+  StaticText     "Overview"
+  StaticText     "see more"
+  button         "Previous"
+  button         "Next"
+  StaticText     "<redacted len=41>"
+  StaticText     "<redacted len=11>"
+  StaticText     "<redacted len=37>"
+  StaticText     "<redacted len=11>"
+  StaticText     "Chart"
+  StaticText     "<redacted len=26>"
+  StaticText     "<redacted len=80>"
+  StaticText     "<redacted len=60>"
+  StaticText     "<redacted len=25>"
+  link           "<redacted len=33>"
+  link           "<redacted len=52>"
+  link           "<redacted len=65>"
+  option         "<redacted len=16>"
+  option         "<redacted len=14>"
+  option         "<redacted len=15>"
+  option         "<redacted len=14>"
+  option         "<redacted len=16>"
+  option         "<redacted len=16>"
+  option         "<redacted len=17>"
+  option         "<redacted len=17>"
+  option         "<redacted len=15>"
+  option         "<redacted len=15>"
+  option         "<redacted len=17>"
+  option         "<redacted len=13>"
+  option         "<redacted len=18>"
+  option         "<redacted len=29>"
+  option         "<redacted len=18>"
+  option         "<redacted len=14>"
+  option         "<redacted len=14>"
+  option         "<redacted len=12>"
+  option         "<redacted len=15>"
+  option         "<redacted len=23>"
+  option         "<redacted len=18>"
+  option         "<redacted len=17>"
+  option         "<redacted len=16>"
+  option         "<redacted len=15>"
+  option         "<redacted len=22>"
+  option         "<redacted len=17>"
+  option         "<redacted len=17>"
+  option         "<redacted len=17>"
+  option         "<redacted len=15>"
+  option         "<redacted len=14>"
+  option         "<redacted len=17>"
+  option         "<redacted len=16>"
+  option         "<redacted len=22>"
+  option         "<redacted len=23>"
+  option         "<redacted len=27>"
+  option         "<redacted len=28>"
+  button         "<redacted len=35>"
+  button         "<redacted len=40>"
+  button         "<redacted len=17>"
+  button         "<redacted len=27>"
+  StaticText     "<redacted len=18>"
+  StaticText     "Show all"
+  StaticText     "Home"
+  StaticText     "About"
+  StaticText     "Posts"
+  StaticText     "Jobs"
+  StaticText     "<redacted len=4>"
+  StaticText     "People"
+  StaticText     "<redacted len=8>"
+  heading        "Page posts"
+  StaticText     "Page 1 of 2"
+  StaticText     "Previous"
+  StaticText     "Next"
+  link           "About"
+  link           "<redacted len=13>"
+  link           "<redacted len=16>"
+  link           "<redacted len=31>"
+  link           "<redacted len=7>"
+  link           "<redacted len=19>"
+  link           "<redacted len=10>"
+  link           "<redacted len=11>"
+  link           "<redacted len=15>"
+  link           "<redacted len=6>"
+  link           "<redacted len=14>"
+  link           "<redacted len=13>"
+  StaticText     "<redacted len=10>"
+  StaticText     "<redacted len=22>"
+  StaticText     "<redacted len=31>"
+  StaticText     "<redacted len=20>"
+  StaticText     "<redacted len=27>"
+  StaticText     "<redacted len=37>"
+  link           "<redacted len=38>"
+  link           "<redacted len=54>"
+  StaticText     "Follow"
+  link           "<redacted len=43>"
+  link           "<redacted len=75>"
+  StaticText     "Follow"
+  link           "<redacted len=20>"
+  link           "<redacted len=45>"
+  StaticText     "Follow"
+  link           "<redacted len=30>"
+  link           "<redacted len=64>"
+  StaticText     "Follow"
+  button         "<redacted len=56>"
+  button         "<redacted len=13>"
+  button         "<redacted len=17>"
+  StaticText     "Page posts"
+  link           "<redacted len=18>"
+  link           "<redacted len=18>"
+  button         "Page 1"
+  button         "Page 2"
+  StaticText     "About"
+  StaticText     "<redacted len=13>"
+  StaticText     "<redacted len=16>"
+  StaticText     "<redacted len=31>"
+  StaticText     "<redacted len=7>"
+  StaticText     "<redacted len=19>"
+  button         "<redacted len=15>"
+  StaticText     "<redacted len=10>"
+  StaticText     "<redacted len=11>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=6>"
+  StaticText     "<redacted len=14>"
+  StaticText     "<redacted len=13>"
+  link           "<redacted len=47>"
+  link           "<redacted len=66>"
+  link           "<redacted len=67>"
+  link           "<redacted len=75>"
+  link           "<redacted len=59>"
+  link           "<redacted len=93>"
+  StaticText     "Follow"
+  link           "<redacted len=16>"
+  link           "<redacted len=63>"
+  StaticText     "Follow"
+  link           "<redacted len=20>"
+  link           "<redacted len=51>"
+  StaticText     "Follow"
+  link           "<redacted len=32>"
+  StaticText     "<redacted len=4>"
+  link           "<redacted len=535>"
+  button         "React Like"
+  button         "Open reactions menu"
+  link           "<redacted len=32>"
+  StaticText     "<redacted len=5>"
+  link           "<redacted len=633>"
+  button         "React Like"
+  button         "Open reactions menu"
+  StaticText     "1"
+  StaticText     "2"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=28>"
+  StaticText     "<redacted len=14>"
+  StaticText     "<redacted len=10>"
+  StaticText     "<redacted len=26>"
+  StaticText     "<redacted len=33>"
+  StaticText     "<redacted len=23>"
+  StaticText     "353,653 followers"
+  StaticText     "<redacted len=45>"
+  StaticText     "<redacted len=10>"
+  StaticText     "<redacted len=14>"
+  StaticText     "1,534,765 followers"
+  StaticText     "<redacted len=46>"
+  StaticText     "<redacted len=20>"
+  StaticText     "<redacted len=23>"
+  StaticText     "1,627,668 followers"
+  StaticText     "<redacted len=54>"
+  link           "<redacted len=55>"
+  link           "<redacted len=63>"
+  link           "<redacted len=46>"
+  StaticText     "<redacted len=8>"
+  StaticText     "888,204 followers"
+  button         "<redacted len=38>"
+  button         "<redacted len=41>"
+  link           "Comment"
+  button         "Repost"
+  StaticText     "<redacted len=8>"
+  StaticText     "888,204 followers"
+  button         "<redacted len=38>"
+  button         "<redacted len=41>"
+  link           "Comment"
+  button         "Repost"
+  StaticText     "<redacted len=49>"
+  StaticText     "<redacted len=25>"
+  StaticText     "408,358 followers"
+  StaticText     "<redacted len=44>"
+  StaticText     "<redacted len=6>"
+  StaticText     "<redacted len=36>"
+  StaticText     "3,455,453 followers"
+  StaticText     "<redacted len=48>"
+  StaticText     "<redacted len=10>"
+  StaticText     "<redacted len=20>"
+  StaticText     "1,369,445 followers"
+  StaticText     "<redacted len=34>"
+  link           "<redacted len=78>"
+  StaticText     "<redacted len=30>"
+  button         "<redacted len=25>"
+  link           "<redacted len=78>"
+  StaticText     "<redacted len=30>"
+  button         "<redacted len=25>"
+  StaticText     "<redacted len=412>"
+  link           "<redacted len=26>"
+  link           "<redacted len=16>"
+  StaticText     "<redacted len=5>"
+  button         "2,014 reactions"
+  StaticText     "<redacted len=28>"
+  StaticText     "<redacted len=151>"
+  StaticText     "<redacted len=119>"
+  StaticText     "<redacted len=125>"
+  StaticText     "<redacted len=26>"
+  link           "<redacted len=20>"
+  link           "<redacted len=15>"
+  link           "<redacted len=20>"
+  link           "<redacted len=25>"
+  link           "<redacted len=16>"
+  StaticText     "<redacted len=5>"
+  button         "1,392 reactions"
+  StaticText     "<redacted len=7>"
+  StaticText     "<redacted len=18>"
+  StaticText     "<redacted len=7>"
+  StaticText     "<redacted len=8>"
+  StaticText     "<redacted len=1>"
+  StaticText     "<redacted len=7>"
+  StaticText     "<redacted len=12>"
+  StaticText     "<redacted len=7>"
+  StaticText     "<redacted len=7>"
+  StaticText     "<redacted len=7>"
+  StaticText     "<redacted len=12>"
+  StaticText     "<redacted len=7>"
+  StaticText     "<redacted len=17>"
+  StaticText     "<redacted len=7>"
+  StaticText     "<redacted len=8>"
+  StaticText     "<redacted len=1>"
+  link           "<redacted len=30>"
+  link           "<redacted len=29>"
+  link           "<redacted len=30>"
+  link           "<redacted len=29>"
+  StaticText     "<redacted len=1>"
+  StaticText     "<redacted len=1>"
+
+== JS PROBES ==
+  () => [...document.querySelectorAll('button,a')].filter(e=>/follow/i.test((e.innerText||'')+(e.getAttribute('aria-label')||''))).slice(0,14).map(e=>({tag:e.tagName,name:(e.getAttribute('aria-label')||'').slice(0,60),text:(e.innerText||'').replace(/\s+/g,' ').trim().slice(0,30),cls:(e.getAttribute('class')||'').slice(0,60),pressed:e.getAttribute('aria-pressed')||'',href:(e.getAttribute('href')||'').slice(0,80)}))
+    [
+     {
+      "tag": "A",
+      "name": "",
+      "text": "<redacted len=29>",
+      "cls": "iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM  org-top-card-secondary-",
+      "pressed": "",
+      "href": "http://www.linkedin.com/company/<company>/?showInNetworkFollowers=true"
+     },
+     {
+      "tag": "BUTTON",
+      "name": "Follow",
+      "text": "Follow",
+      "cls": "follow   org-company-follow-button org-top-card-primary-acti",
+      "pressed": "false",
+      "href": ""
+     },
+     {
+      "tag": "A",
+      "name": "<redacted len=32>",
+      "text": "<redacted len=26>",
+      "cls": "iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM  update-components-actor",
+      "pressed": "",
+      "href": "https://www.linkedin.com/company/<company>/posts"
+     },
+     {
+      "tag": "A",
+      "name": "<redacted len=32>",
+      "text": "<redacted len=26>",
+      "cls": "iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM  update-components-actor",
+      "pressed": "",
+      "href": "https://www.linkedin.com/company/<company>/posts"
+     },
+     {
+      "tag": "A",
+      "name": "",
+      "text": "<redacted len=26>",
+      "cls": "iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM  org-view-insight t-blac",
+      "pressed": "",
+      "href": "http://www.linkedin.com/in/<slug>"
+     },
+     {
+      "tag": "BUTTON",
+      "name": "<redacted len=35>",
+      "text": "Follow",
+      "cls": "artdeco-button artdeco-button--muted artdeco-button--2 artde",
+      "pressed": "false",
+      "href": ""
+     },
+     {
+      "tag": "A",
+      "name": "",
+      "text": "<redacted len=30>",
+      "cls": "iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM ",
+      "pressed": "",
+      "href": "https://www.linkedin.com/company/<company>/"
+     },
+     {
+      "tag": "A",
+      "name": "",
+      "text": "<redacted len=30>",
+      "cls": "iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM  org-view-insight t-blac",
+      "pressed": "",
+      "href": "http://www.linkedin.com/company/<company>/?showInNetworkFollowers=true"
+     },
+     {
+      "tag": "BUTTON",
+      "name": "<redacted len=40>",
+      "text": "Follow",
+      "cls": "artdeco-button artdeco-button--muted artdeco-button--2 artde",
+      "pressed": "false",
+      "href": ""
+     },
+     {
+      "tag": "A",
+      "name": "",
+      "text": "<redacted len=30>",
+      "cls": "iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM ",
+      "pressed": "",
+      "href": "https://www.linkedin.com/company/<company>/"
+     },
+     {
+      "tag": "A",
+      "name": "",
+      "text": "<redacted len=29>",
+      "cls": "iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM  org-view-insight t-blac",
+      "pressed": "",
+      "href": "http://www.linkedin.com/company/<company>/?showInNetworkFollowers=true"
+     },
+     {
+      "tag": "BUTTON",
+      "name": "<redacted len=17>",
+      "text": "Follow",
+      "cls": "artdeco-button artdeco-button--muted artdeco-button--2 artde",
+      "pressed": "false",
+      "href": ""
+     },
+     {
+      "tag": "A",
+      "name": "",
+      "text": "<redacted len=30>",
+      "cls": "iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM ",
+      "pressed": "",
+      "href": "https://www.linkedin.com/company/<company>/"
+     },
+     {
+      "tag": "A",
+      "name": "",
+      "text": "<redacted len=30>",
+      "cls": "iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM  org-view-insight t-blac",
+      "pressed": "",
+      "href": "http://www.linkedin.com/company/<company>/?showInNetworkFollowers=true"
+     }
+    ]
+  () => ({path:location.pathname, controls:[...document.querySelectorAll('main button, main a')].slice(0,24).map(e=>({tag:e.tagName,name:(e.getAttribute('aria-label')||'').slice(0,50),text:(e.innerText||'').replace(/\s+/g,' ').trim().slice(0,34),href:(e.getAttribute('href')||'').slice(0,80)}))})
+    {
+     "path": "/company/<company>/",
+     "controls": [
+      {
+       "tag": "A",
+       "name": "Verified",
+       "text": "",
+       "href": "/company/<company>/about/"
+      },
+      {
+       "tag": "A",
+       "name": "",
+       "text": "<redacted len=15>",
+       "href": "/search/results/people/?currentCompany=%5B%225591%22%5D&origin=COMPANY_PAGE_CANN"
+      },
+      {
+       "tag": "A",
+       "name": "",
+       "text": "<redacted len=34>",
+       "href": "http://www.linkedin.com/company/<company>/?showInNetworkFollowers=true"
+      },
+      {
+       "tag": "BUTTON",
+       "name": "Follow",
+       "text": "Follow",
+       "href": ""
+      },
+      {
+       "tag": "A",
+       "name": "",
+       "text": "<redacted len=13>",
+       "href": "http://www.<company>.com"
+      },
+      {
+       "tag": "BUTTON",
+       "name": "",
+       "text": "",
+       "href": ""
+      },
+      {
+       "tag": "A",
+       "name": "",
+       "text": "Home",
+       "href": "/company/<company>/"
+      },
+      {
+       "tag": "A",
+       "name": "",
+       "text": "About",
+       "href": "/company/<company>/about/"
+      },
+      {
+       "tag": "A",
+       "name": "",
+       "text": "Posts",
+       "href": "/company/<company>/posts/"
+      },
+      {
+       "tag": "A",
+       "name": "",
+       "text": "Jobs",
+       "href": "/company/<company>/jobs/"
+      },
+      {
+       "tag": "A",
+       "name": "",
+       "text": "<redacted len=4>",
+       "href": "/company/<company>/life/"
+      },
+      {
+       "tag": "A",
+       "name": "",
+       "text": "People",
+       "href": "/company/<company>/people/"
+      },
+      {
+       "tag": "A",
+       "name": "",
+       "text": "<redacted len=8>",
+       "href": "/company/<company>/insights/"
+      },
+      {
+       "tag": "A",
+       "name": "<redacted len=31>",
+       "text": "see more",
+       "href": "#"
+      },
+      {
+       "tag": "A",
+       "name": "",
+       "text": "",
+       "href": "#"
+      },
+      {
+       "tag": "A",
+       "name": "<redacted len=30>",
+       "text": "<redacted len=16>",
+       "href": "/company/<company>/about/"
+      },
+      {
+       "tag": "BUTTON",
+       "name": "Previous",
+       "text": "Previous",
+       "href": ""
+      },
+      {
+       "tag": "BUTTON",
+       "name": "Next",
+       "text": "Next",
+       "href": ""
+      },
+      {
+       "tag": "A",
+       "name": "<redacted len=18>",
+       "text": "",
+       "href": "https://www.linkedin.com/company/<company>/posts"
+      },
+      {
+       "tag": "A",
+       "name": "<redacted len=32>",
+       "text": "<redacted len=26>",
+       "href": "https://www.linkedin.com/company/<company>/posts"
+      },
+      {
+       "tag": "BUTTON",
+       "name": "<redacted len=38>",
+       "text": "",
+       "href": ""
+      },
+      {
+       "tag": "A",
+       "name": "",
+       "text": "<redacted len=34>",
+       "href": "/feed/update/urn:li:activity:<id>/"
+      },
+      {
+       "tag": "A",
+       "name": "",
+       "text": "<redacted len=27>",
+       "href": "https://www.linkedin.com/search/results/all/?keywords=<value>&orig"
+      },
+      {
+       "tag": "A",
+       "name": "",
+       "text": "<redacted len=17>",
+       "href": "https://www.linkedin.com/search/results/all/?keywords=<value>&origin=HASH_TA"
+      }
+     ]
+    }
+
+== DOM OUTLINE of main (167 nodes, depth<=10) ==
+  main.PBkYAWHwqwRDMPwNxwgRzhSyBGHlUDASmw  aria-label="<redacted len=30>"
+    div.org-module-card__margin-bottom
+      section.org-top-card.artdeco-card
+        div#ember32.ember-view
+          div.top-card-background-hero-image
+            div.top-card-background-hero-image__bg-image
+              figure.company-hero-image-container.company-hero-image-figure.org-top-card__hero-image  role=button
+                div#organization-cover-single-photo-target-image.bg-img.picture-cropper.company-hero-image
+                  div.bg-img__zero-height-container
+                    div.bg-img__visible-content
+                      div.bg-img__cropper
+                      img.photo-cropper__original-image.hidden  role=none
+          div.relative
+            div.absolute.position-right.mr1
+              div.org-top-card__badges
+              div.ph5.pb5
+                div.org-top-card__primary-content.org-top-card-primary-content--zero-height-logo.org-top-card__improved-primary-content--ia
+                  div.org-top-card-primary-content__logo-container
+                    img#ember34.evi-image.lazy-image.evi-image--standard-dynamic-range.ember-view.org-top-card-primary-content__logo
+                  div.block.mt4
+                      h1#ember35.ember-view.org-top-card-summary__title.oozLHgTmSAYvDBxVVtkePLJhowDQrzxtxBpIA.full-width.inline  "<redacted len=8>"
+                      a#ember36.ember-view  aria-label="Verified" href=/company/<company>/about/
+                      p.org-top-card-summary__tagline  "<redacted len=87>"
+                      div.org-top-card-summary-info-list
+                  div.inline-block.org-top-card-secondary-content__insights.text-body-medium-bold.t-black--light
+                    div.org-top-card-secondary-content__social-proof.flex-column
+                      a.iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM.org-top-card-secondary-content__insight.link-without-visited-state.t-black--light  href=http://www.linkedin.com/company/<company>/?showInNetworkFollowers=true data-test-app-aware-link=
+                div.inline-block.full-width
+                    div.org-top-card-primary-actions.org-top-card__primary-actions
+                      div.org-top-card-primary-actions__inner  role=region
+                      div#ember40.ember-view
+                    div#ember42.org-top-card-overflow.org-top-card__top-card-overflow
+                      div.org-overflow-menu
+            div#ember46.ember-view
+              nav.org-page-navigation.org-page-navigation--is-scrollable.org-page-navigation--horizontal.org-page-navigation--48dp.org-top-card__horizontal-nav-bar.artdeco-card  aria-label="<redacted len=30>"
+                ul.org-page-navigation__items
+                  li.org-page-navigation__item.m0.ml1
+                    a#ember65.ember-view.active.pv3.ph4.t-16.t-bold  href=/company/<company>/  "Home"
+                  li.org-page-navigation__item.m0
+                    a#ember66.ember-view.pv3.ph4.t-16.t-bold.t-black--light  href=/company/<company>/about/  "About"
+                  li.org-page-navigation__item.m0
+                    a#ember67.ember-view.pv3.ph4.t-16.t-bold.t-black--light  href=/company/<company>/posts/  "Posts"
+                  li.org-page-navigation__item.m0
+                    a#ember68.ember-view.pv3.ph4.t-16.t-bold.t-black--light  href=/company/<company>/jobs/  "Jobs"
+                  li.org-page-navigation__item.m0
+                    a#ember69.ember-view.pv3.ph4.t-16.t-bold.t-black--light  href=/company/<company>/life/  "<redacted len=4>"
+                  li.org-page-navigation__item.m0
+                    a#ember70.ember-view.pv3.ph4.t-16.t-bold.t-black--light  href=/company/<company>/people/  "People"
+                  li.org-page-navigation__item.m0.mr1
+                    a#ember71.ember-view.pv3.ph4.t-16.t-bold.t-black--light  href=/company/<company>/insights/  "<redacted len=8>"
+    div.org-grid__content-height-enforcer
+      div.org-transition-scroll
+          div#ember57.ember-view.org-module-card__margin-bottom
+            section.artdeco-card
+              div.org-about-module-wrapper.org-about-module__card-spacing
+                  h2.organization-about-module__content-consistant-cards-header  "Overview"
+                  div.org-about-module__description
+                    div#ember59.ember-view.organization-about-module__content-consistant-cards-description
+                      span.lt-line-clamp__line  "<redacted len=105>"
+                      span.lt-line-clamp__line  "<redacted len=98>"
+                      span.lt-line-clamp__line.lt-line-clamp__line--last  "<redacted len=95>"
+                      span.lt-line-clamp__ellipsis.lt-line-clamp__ellipsis--dummy  "..."
+              footer.artdeco-card__actions
+                a#ember60.ember-view.full-width.text-align-center.link-without-hover-visited.org-module-card__footer-hoverable.pv4  aria-label="<redacted len=30>" href=/company/<company>/about/
+                  span.t-black--light.text-body-medium-bold  "<redacted len=16>"
+                  span.org-module-see-all-link-icon
+                    svg  role=none data-supported-dps=16x16 data-test-icon=arrow-right-small data-rtl=true
+            section.artdeco-card.mb3.org-view-section
+                div.org-view-updates-carousel
+                  div.full-height  data-view-name=feed-full-update data-view-tracking-scope=[{"topicName":"FeedUpdateServedEvent","contentTrackingId":"f
+                    div.full-height
+                      div#ember181.feed-shared-update-v2.feed-shared-update-v2--minimal-padding.full-height.feed-shared-update-v2--with-carousel-fix.relative  role=article data-urn=urn:li:activity:<id>
+                  footer.org-view-updates-carousel__footer.artdeco-card__actions
+                    div.org-view-button-bar.org-view-button-bar--align-center
+                      a.artdeco-button.org-view-button.artdeco-button--tertiary.artdeco-button--2.artdeco-button--standard.artdeco-button--muted  aria-label="Show all posts" href=https://www.linkedin.com/company/<company>/posts?viewAsMember=true
+            section.artdeco-card.mb3.org-view-section
+              header.artdeco-card__header.bb0.pv0.mv4
+                div.org-view-header
+                  div.org-view-header__container
+              div.ph5.pb5
+                div.org-view-horizontal-list.org-view-horizontal-list--wrap
+                  div.org-view-entity-card__container.flex-1
+                    div#ember197.artdeco-entity-lockup.artdeco-entity-lockup--size-3.ember-view.full-width  data-view-name=premium-pages-browsemap
+                      div.flex-shrink-zero
+                      div#ember200.artdeco-entity-lockup__content.ember-view.full-width
+                  div.org-view-entity-card__container.flex-1
+                    div#ember203.artdeco-entity-lockup.artdeco-entity-lockup--size-3.ember-view.full-width  data-view-name=premium-pages-browsemap
+                      div.flex-shrink-zero
+                      div#ember206.artdeco-entity-lockup__content.ember-view.full-width
+              footer.artdeco-card__actions
+                div.org-view-button-bar.org-view-button-bar--align-center
+                  a.artdeco-button.org-view-button.artdeco-button--tertiary.artdeco-button--2.artdeco-button--standard.artdeco-button--muted  aria-label="Show all jobs" href=https://www.linkedin.com/company/<company>/jobs?viewAsMember=true
+                    svg.artdeco-button__icon  role=none data-supported-dps=16x16 data-test-icon=arrow-right-small data-rtl=true
+                    span.artdeco-button__text  "Show all jobs"
+            section.artdeco-card.mb3.org-view-section
+              header.artdeco-card__header.bb0.pv0.mv4
+                div.org-view-header
+                  div.org-view-header__container
+              div.ph5.pb5
+                div.display-flex
+                  div.flex-1.org-life-photo-grid__content-with-group-sibling
+                    a#ember210.ember-view.link-without-visited-state  aria-label="View company photo 1" href=/company/<company>/life/?photoIndex=0&scrollTo=photos
+                      div.ivm-image-view-model
+                  div.flex-1.org-life-photo-grid__content-with-group-sibling.ml3
+                    a#ember212.ember-view.link-without-visited-state  aria-label="View company photo 2" href=/company/<company>/life/?photoIndex=1&scrollTo=photos
+                      div.ivm-image-view-model
+                  div.flex-1.display-flex.flex-wrap.ml3
+                    div.org-life-photo-grid__grouped-photo
+                      a#ember214.ember-view.link-without-visited-state  aria-label="View company photo 3" href=/company/<company>/life/?photoIndex=2&scrollTo=photos
+                    div.org-life-photo-grid__grouped-photo
+                      a#ember216.ember-view.link-without-visited-state  aria-label="View company photo 4" href=/company/<company>/life/?photoIndex=3&scrollTo=photos
+                    div.org-life-photo-grid__grouped-photo
+                      a#ember218.ember-view.link-without-visited-state  aria-label="View company photo 5" href=/company/<company>/life/?photoIndex=4&scrollTo=photos
+                    div.org-life-photo-grid__grouped-photo
+                      a#ember220.ember-view.link-without-hover-visited  aria-label="<redacted len=27>" href=/company/<company>/life/?scrollTo=photos
+              footer.artdeco-card__actions
+                div.org-view-button-bar.org-view-button-bar--align-center
+                  a.artdeco-button.org-view-button.artdeco-button--tertiary.artdeco-button--2.artdeco-button--standard.artdeco-button--muted  aria-label="<redacted len=20>" href=https://www.linkedin.com/company/<company>/life?viewAsMember=true
+                    svg.artdeco-button__icon  role=none data-supported-dps=16x16 data-test-icon=arrow-right-small data-rtl=true
+                    span.artdeco-button__text  "<redacted len=20>"
+            section.artdeco-card.mb3.org-view-section
+              header.artdeco-card__header.bb0.pv0.mv4
+                div.org-view-header
+                  div.org-view-header__container
+                      div.display-flex.align-items-center.mb1
+              div.ph5.pb5
+                  div.aiq-premium-insights-module-card__container--with-highchart-data
+                    div.aiq-premium-insights-module-card--with-highchart-data
+                      h3.t-16.t-black.t-bold  "<redacted len=24>"
+                      div.flex-1
+                    div.aiq-premium-insights-module-card--with-highchart-data
+                      h3.t-16.t-black.t-bold.pb3  "<redacted len=13>"
+                      div.aiq-premium-insights-module-card__statistics-container
+                      span.aiq-pages-premium-insight__competitve-landscape-company-entity-insight--text.t-14.text-color-text-secondary  "<redacted len=22>"
+                    div.aiq-premium-insights-module-card--with-highchart-data
+                      h3.t-16.t-black.t-bold.pb3  "<redacted len=12>"
+                      div.pb3
+                      span.aiq-pages-premium-insight__competitve-landscape-company-entity-insight--text.t-14.text-color-text-secondary  "<redacted len=16>"
+              footer.artdeco-card__actions
+                div.org-view-button-bar.org-view-button-bar--align-center
+                  a.artdeco-button.org-view-button.artdeco-button--tertiary.artdeco-button--2.artdeco-button--standard.artdeco-button--muted  aria-label="<redacted len=24>" href=https://www.linkedin.com/company/<company>/insights?viewAsMember=true
+                    svg.artdeco-button__icon  role=none data-supported-dps=16x16 data-test-icon=arrow-right-small data-rtl=true
+                    span.artdeco-button__text  "<redacted len=24>"
+          footer.global-footer.global-footer--static
+            div#ember62.ember-view
+              div#expanded-footer.global-footer__container
+                div.grid.grid--is-nested.grid--no-gutters.mv3
+                  nav.grid__col.grid__col--12
+                    ul.grid.grid--no-gutters.grid--is-nested
+                      li.global-footer__link-container.grid__col.grid__col--8
+                      li.global-footer__link-container.grid__col.grid__col--8
+                      li.global-footer__link-container.grid__col.grid__col--8
+                      li.global-footer__link-container.grid__col.grid__col--8
+                      li.global-footer__link-container.grid__col.grid__col--8
+                      li.global-footer__link-container.grid__col.grid__col--8
+                      li.global-footer__link-container.grid__col.grid__col--8
+                      li.global-footer__link-container.grid__col.grid__col--8
+                      li.global-footer__link-container.grid__col.grid__col--8
+                      li.global-footer__link-container.grid__col.grid__col--8
+                      li.global-footer__link-container.grid__col.grid__col--8
+                      li.global-footer__link-container.grid__col.grid__col--8
+                      li.global-footer__link-container.grid__col.grid__col--8
+                  div.grid__col.grid__col--12
+                    div.grid.grid--no-gutters.grid--is-nested
+                      ul#footer-action-list.global-footer__action-list.grid__col.grid__col--12
+                      div.grid__col.grid__col--12
+                p#globalfooter-copyright.t-12.t-black--light.t-normal.text-align-left.clear-both  "<redacted len=27>"
+

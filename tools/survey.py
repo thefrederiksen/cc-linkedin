@@ -39,9 +39,17 @@ TWO DUMPS, ON PURPOSE. This repository is PUBLIC.
   is not covered, and a new surface deserves a fresh look before its dump is
   committed.
 
-Nothing here clicks, types, or submits. The only interaction is expanding a
-"see more" control when --expand is given, because a collapsed About section
-cannot be measured.
+NOTHING HERE TYPES OR SUBMITS. It clicks in exactly two bounded ways, and both
+are about REVEALING something that no URL reaches:
+
+  * --expand clicks one "see more", because a collapsed About section cannot be
+    measured;
+  * --click NAME opens a menu, a composer or a dialog, and ONLY for a name on the
+    REVEAL_ONLY allowlist below. Any other name is refused before the browser is
+    touched. See that list for why an allowlist rather than a denylist, and for
+    the rule that keeps a submitting control off it forever.
+
+After a --click the survey presses Escape, so the page is left as it was found.
 
 A SURVEY IS STILL A VIEW - F1, 2026-09-10. It opens a real page in the real
 signed-in browser, and from LinkedIn's side it is indistinguishable from
@@ -60,7 +68,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from kit.browser import Browser, Pace, log, surface_kind
+from kit.browser import Browser, Pace, log, surface_kind, _URL_PROFILE
 
 # Words that are LinkedIn's own furniture rather than anybody's data. A name or
 # a run of text is printed as-is only when EVERY word in it is one of these.
@@ -86,7 +94,14 @@ GENERIC = re.compile(
     r"k|m|b|no|yes|ok|done|loading|skip|main|navigation|footer|header|"
     r"linkedin|corporation|inc|llc|ltd|status|is|was|are|were|has|have|your|you|"
     r"profile|pages?|feed|grow|start|end|total|last|first|"
-    r"sign|log|out|verified|verify|hiring|providing|services)$",
+    r"sign|log|out|verified|verify|hiring|providing|services|"
+    # ARIA roles and HTML tag names. A probe that reports role and tag is
+    # reporting STRUCTURE, and structure is not anybody's data - without these
+    # a probe result reads as a column of "<redacted len=8>". Added 2026-09-10.
+    r"menuitem|menuitemcheckbox|menuitemradio|textbox|combobox|listitem|presentation|"
+    r"generic|listbox|option|slider|toolbar|tooltip|separator|banner|contentinfo|"
+    r"complementary|figure|div|span|ul|ol|li|input|p|h1|h2|h3|h4|section|nav|"
+    r"aside|label|select|textarea|svg|use|path|body|html|iframe|true|false|null)$",
     re.I)
 
 ACTIONABLE = set("""
@@ -111,18 +126,101 @@ paragraph StaticText time definition term group
 # is has lost the thing it was taken for.
 OWN = ("107519091", "centerconsulting-inc")
 
-SLUG = re.compile(r"(/in/)[^/?\"\s]+")
+# A profile slug. TWO THINGS THIS HAS TO SURVIVE, both measured 2026-09-10 in a
+# dump that had already been through every other rule here:
+#   * PERCENT-ENCODING. The More menu's "send profile in a message" href carries
+#     the profile as `...%2Fin%2F<slug>` inside a query value, so a rule that
+#     only knows the literal "/in/" walks straight past it.
+#   * TRUNCATION. A probe that slices an href to 110 characters can cut a slug in
+#     half, and half a slug is still a searchable prefix of a real person - but it
+#     is no longer the literal string the subject-token pass is looking for. A
+#     literal-match rule cannot see a truncated identifier; only a shape can. So
+#     the tail is `*` and not `+`: this matches `/in/` with nothing after it too.
+#     The (?!<) is not decoration: with a `*` tail this rule happily matches the
+#     `<slug>` it wrote last time and produces `/in/<slug><slug>`, growing by one
+#     placeholder per run. tools/redact_surveys.py is idempotent BY CONTRACT -
+#     that is how its --check proves a dump is clean - so a rule that is not
+#     idempotent silently turns that check into a permanent failure. Measured the
+#     first time this rule was written, 2026-09-10.
+#
+# PATH_FORMS is the second shared list, for the same reason SENSITIVE_QUERY_PARAMS
+# is the first: the redactor builds its rules from it and tests/test_no_leak.py
+# builds ONE artefact check from it. Each entry is (the path prefix, the tail the
+# identifier is made of, the placeholder that must be there instead). Adding a
+# path here teaches the redactor and arms the check in one edit.
+#
+# The tails are `+` and not `*`, and that distinction was measured too. `*` also
+# matches a bare path prefix with NOTHING after it - and a bare `/messaging/thread/`
+# is not an identifier, it is what a CSS selector in a probe expression looks
+# like. The first `*` version rewrote a probe's own recorded source. A TRUNCATED
+# identifier still has a non-empty tail, so `+` catches the case that mattered
+# and leaves the case that never carried anybody's data alone.
+PATH_FORMS = {
+    # Both spellings of the profile path. `%2Fin%2F` is how it arrives inside a
+    # query value, and the literal-only rule walked straight past it.
+    "profile": (r"(?:/|%2F)in(?:/|%2F)", r"[A-Za-z0-9._~%-]+", "<slug>"),
+    # A conversation. The messaging list gives its rows no href at all, so a
+    # thread id only ever appears once a thread is open - in the URL, and in
+    # whatever the page writes it into. It is a stable key to a private
+    # conversation between named people, which makes it the most sensitive
+    # identifier this toolkit has met.
+    "thread": (r"/messaging/thread/", r"[A-Za-z0-9%_=.:,-]+", "<threadid>"),
+    "job": (r"/jobs/view/", r"[A-Za-z0-9._%-]+", "<jobid>"),
+}
+
+
+def _path_rule(name):
+    prefix, tail, _ = PATH_FORMS[name]
+    return re.compile("(%s)(?!<)%s" % (prefix, tail), re.I)
+
+
+SLUG = _path_rule("profile")
+THREAD = _path_rule("thread")
+JOB = _path_rule("job")
 MEMBER_ID = re.compile(r"ACoA[A-Za-z0-9_-]{8,}")
+# THE SHARED LISTS - RULING: the redactor and the artefact check read the SAME
+# ones. 2026-09-10.
+#
+# When `vanityName` was added here, tests/test_no_leak.py did not learn it, and
+# that is R18's gap reopening exactly: the redactor knows a form and the check
+# that inspects the committed files cannot see it, so the next dump leaks and the
+# suite stays green. Six assertions in the test file, one per parameter, would
+# have the same defect one layer up - the seventh parameter gets taught to the
+# redactor and the test keeps passing without it.
+#
+# So the names live HERE, once, and tests/test_no_leak.py imports them. Adding a
+# parameter to this tuple teaches the redactor AND arms the check in the same
+# edit, and there is no second list to forget. This is the fifth time this shape
+# has appeared in this repository; the coupling is the fix, not the list.
+SENSITIVE_QUERY_PARAMS = (
+    "profileUrn", "recipient", "keywords", "fsd_profile", "trackingId", "urlhash",
+    "mt", "url", "vanityName", "connectionOf", "facetConnectionOf", "threadId",
+    "conversationId", "miniProfileUrn",
+)
+QUERY_PLACEHOLDER = "<value>"
 QUERY_VALUE = re.compile(
-    r"([?&](?:profileUrn|recipient|keywords|fsd_profile|trackingId|urlhash|mt|url)=)[^&\"\s]+",
-    re.I)
+    r"([?&](?:%s)=)[^&\"\s]+" % "|".join(SENSITIVE_QUERY_PARAMS), re.I)
 # An organisation, by slug or by numeric id, on any of the paths that carry one.
-ORG_PATH = re.compile(r"(/(?:company|school|showcase|organization)/)([A-Za-z0-9._%-]+)", re.I)
+ORG_PATH_NAMES = ("company", "school", "showcase", "organization")
+ORG_PATH = re.compile(
+    r"((?:/|%%2F)(?:%s)(?:/|%%2F))(?!<)([A-Za-z0-9._%%-]+)" % "|".join(ORG_PATH_NAMES), re.I)
 # Any urn that names a thing: a post, a share, an event, a comment, an org, a
 # profile. The KIND stays - a selector is written against urn:li:activity - and
 # the id goes.
-URN = re.compile(r"(urn:li:[A-Za-z_]+:)\(?[A-Za-z0-9%_,:.()-]+\)?")
-JOB = re.compile(r"(/jobs/view/)[A-Za-z0-9._%-]+", re.I)
+# Both spellings. A urn inside a query value arrives percent-encoded -
+# `urn%3Ali%3Afsd_profile%3A<id>` - and the literal form walks past it. The id
+# itself is usually also caught by MEMBER_ID or by the fifteen-digit shape rule,
+# so this is the belt to those braces rather than the only guard; measured
+# 2026-09-10 on a profile href that a probe had truncated before the id.
+# The third shared list. Both spellings: a urn inside a query value arrives
+# percent-encoded, `urn%3Ali%3Afsd_profile%3A<id>`, and the literal form walks
+# past it. tests/test_no_leak.py loops over this.
+URN_FORMS = (
+    (r"urn:li:[A-Za-z_]+:", r"\(?[A-Za-z0-9%_,:.()-]+\)?", "<id>"),
+    (r"urn%3Ali%3A[A-Za-z_]+%3A", r"[A-Za-z0-9%_,.()-]+", "<id>"),
+)
+URN = re.compile("(%s)(?!<)%s" % (URN_FORMS[0][0], URN_FORMS[0][1]))
+URN_ENC = re.compile("(%s)(?!<)%s" % (URN_FORMS[1][0], URN_FORMS[1][1]), re.I)
 ARTICLE = re.compile(r"(/pulse/|/newsletters/|/events/|/groups/|/posts/)[^\"\s?&]+", re.I)
 # A shortened post link, plain or percent-encoded inside another URL. Following
 # one recovers the post and its author, which is exactly what a short link is
@@ -155,6 +253,72 @@ MAP_URL = re.compile(r"https?://[^\"\s]*(?:maps|/maps/|geo/)[^\"\s]*", re.I)
 LONG_NUMBER = re.compile(r"\d{15,}")
 
 
+# ---------------------------------------------------- THE SUBJECT'S OWN TOKENS
+#
+# 2026-09-10, Phase 3 survey. The R17 defect again, one level down and in a place
+# nobody had outlined before. Every rule above is written against a URL SHAPE -
+# `/in/<slug>`, `urn:li:...`, `/company/<key>` - and the profile rendering also
+# writes the slug into DOM ELEMENT IDS, with no path and no urn around it:
+#
+#     div#ProfilePostConnectDrawer_<slug>
+#     div#profileCardsAboveActivityTopcardOnly<slug>
+#     div#com.linkedin.sdui.profile.card.ref<slug>Activity
+#
+# The first committed Phase 3 dump carried four of those. No shape separates a
+# slug in an element id from an ordinary identifier - it is arbitrary text - so
+# a syntax rule cannot ever catch this class, and enumerating the SDUI prefixes
+# is the same losing game R17 is about.
+#
+# So this is not a shape rule. It is a rule about the SUBJECT: whatever slugs and
+# organisation keys this page actually names, redact those literal strings
+# WHEREVER they appear in the dump. They are collected from two places - the URL
+# the survey was pointed at, and every /in/ and /company/ href in the live DOM,
+# which is how a "people also viewed" card's slug gets covered as well as the
+# subject's own. The owner's own slug and Page keys are deliberately left alone,
+# for the reason ruling R13.3 gives.
+#
+# WHAT THIS DOES NOT COVER, said plainly: a third party whose slug is in an
+# element id but who is named by NO link anywhere on the page. Nothing here would
+# see that, tests/test_no_leak.py has no shape to test it by, and the only
+# remaining guard is a person reading the dump before committing it.
+SUBJECT_TOKENS = {}
+
+
+def note_subject_tokens(pairs):
+    """Record (token, replacement) for literal redaction. Call before dumping."""
+    for token, repl in pairs:
+        t = (token or "").strip()
+        if len(t) >= 4 and t.lower() not in OWN and t.lower() not in OWN_SLUGS:
+            SUBJECT_TOKENS[t] = repl
+
+
+def _subject(value):
+    for token in sorted(SUBJECT_TOKENS, key=len, reverse=True):
+        if token in value:
+            value = value.replace(token, SUBJECT_TOKENS[token])
+    return value
+
+
+# The owner's own profile slug, kept for the same reason his Page id is kept.
+OWN_SLUGS = ("sorenfrederiksen",)
+
+COLLECT_TOKENS_JS = r"""
+() => {
+  const out = {slugs: [], orgs: []};
+  for (const a of document.querySelectorAll('a[href]')) {
+    const h = a.getAttribute('href') || '';
+    let m = h.match(/\/in\/([^\/?#"]+)/);
+    if (m) out.slugs.push(decodeURIComponent(m[1]));
+    m = h.match(/\/(?:company|school|showcase|organization)\/([^\/?#"]+)/);
+    if (m) out.orgs.push(decodeURIComponent(m[1]));
+  }
+  out.slugs = [...new Set(out.slugs)];
+  out.orgs = [...new Set(out.orgs)];
+  return out;
+}
+"""
+
+
 def _org(m):
     return m.group(1) + (m.group(2) if m.group(2).lower() in OWN else "<company>")
 
@@ -169,18 +333,21 @@ def redact_identifiers(value):
     """
     if not value:
         return value
-    v = MAP_URL.sub("<map url>", value)
+    v = _subject(value)
+    v = MAP_URL.sub("<map url>", v)
     # BEFORE the short-link rule, so a short link nested inside a url= parameter
     # is taken out with the parameter rather than half-redacted inside it.
-    v = QUERY_VALUE.sub(lambda m: m.group(1) + "<value>", v)
+    v = QUERY_VALUE.sub(lambda m: m.group(1) + QUERY_PLACEHOLDER, v)
     v = SHORT_LINK.sub("lnkd.in/<shortlink>", v)
-    v = SLUG.sub(lambda m: m.group(1) + "<slug>", v)
+    v = SLUG.sub(lambda m: m.group(1) + PATH_FORMS["profile"][2], v)
     v = MEMBER_ID.sub("<memberid>", v)
     v = ORG_PATH.sub(_org, v)
-    v = URN.sub(lambda m: m.group(1) + "<id>", v)
-    v = JOB.sub(lambda m: m.group(1) + "<jobid>", v)
+    v = URN.sub(lambda m: m.group(1) + URN_FORMS[0][2], v)
+    v = URN_ENC.sub(lambda m: m.group(1) + URN_FORMS[1][2], v)
+    v = JOB.sub(lambda m: m.group(1) + PATH_FORMS["job"][2], v)
+    v = THREAD.sub(lambda m: m.group(1) + PATH_FORMS["thread"][2], v)
     v = ARTICLE.sub(lambda m: m.group(1) + "<article>", v)
-    v = QUERY_VALUE.sub(lambda m: m.group(1) + "<value>", v)
+    v = QUERY_VALUE.sub(lambda m: m.group(1) + QUERY_PLACEHOLDER, v)
     v = LONG_NUMBER.sub("<id>", v)          # R17: the shape rule, under all of them
     return v
 
@@ -203,6 +370,95 @@ def redact(text):
     if words and all(GENERIC.match(w) for w in words):
         return t
     return "<redacted len=%d>" % len(t)
+
+
+# ------------------------------------------------------------- REVEAL-ONLY
+#
+# 2026-09-10, Phase 3 survey. Three of the surfaces Phase 3 must measure are not
+# reachable by a URL: the invitation behind the More menu, the message composer,
+# and the Page's Invite-connections dialog. They have to be OPENED to be seen.
+#
+# This is an ALLOWLIST and not a denylist, deliberately, and it is the same
+# reasoning as everywhere else in this repository: a denylist of dangerous names
+# certifies every name it has not met, and the one it has not met is the one that
+# sends something to a real person. So a survey may click ONLY a name written
+# here, each with the reason it commits nothing, and every other name is refused
+# before the browser is touched.
+#
+# NONE of these submits, spends, or notifies. Opening a composer does not send;
+# opening the invite dialog does not spend a credit; opening a menu does not
+# accept an invitation. Anything that DOES is not eligible for this list at any
+# point in the future - if a verb needs to press it, that is the verb's job and
+# the verb carries the --submit gate for it.
+REVEAL_ONLY = {
+    "more": "opens the profile's overflow menu so its items can be read",
+    "message": "opens the message composer. Typing and sending are separate acts "
+               "and this survey does neither",
+    "invite connections": "opens the Page's invite dialog so the credit count can "
+                          "be read. A credit is spent by Invite, not by opening",
+    "sent": "the invitation manager's Sent tab - a tab, not an action",
+    "received": "the invitation manager's Received tab - a tab, not an action",
+    "write a message": "the messaging list's compose control; opens an empty draft",
+    "compose": "as above, the other name the same control has worn",
+}
+
+
+# ------------------------------------------------- OPENING AN ALREADY-READ THREAD
+#
+# 2026-09-10, Phase 3 survey. OPENING A THREAD MARKS IT READ, and that cannot be
+# undone invisibly - it is a write wearing a read's clothes. The messaging list
+# does not give its rows hrefs, so a thread cannot be reached by URL and cannot be
+# surveyed without clicking a row.
+#
+# So this step does not take a row number, a name, or a selector: a caller cannot
+# aim it. It finds the conversation cards, keeps only the ones it can POSITIVELY
+# PROVE are already read, and clicks the first of those. The proof is the row's
+# own unread marker being absent AND the list containing at least one row that
+# HAS that marker - because a marker that is absent from every row is a marker
+# that has been renamed, and "no row looks unread" would then be a broken
+# instrument reading as a clean result. With no positive control it refuses.
+UNREAD_MARK = "msg-conversation-card__convo-item-container--unread"
+
+OPEN_READ_THREAD_JS = """
+(mark) => {
+  const cards = [...document.querySelectorAll('.msg-conversation-card')];
+  const unread = cards.filter(c => c.className.includes(mark));
+  const read = cards.filter(c => !c.className.includes(mark));
+  return {cards: cards.length, unread: unread.length, read: read.length};
+}
+"""
+
+
+HREF_KEYS = ("href", "url", "link", "action", "src")
+# Keys whose value is STRUCTURE, not content: a role, a tag, a hashed class, a
+# data-view-name. These carry the whole engineering value of a probe and none of
+# anybody's data, so they get the identifier rules and not the vocabulary rule -
+# which would otherwise print "profile_topcard_connect" as "<redacted len=23>".
+# `name` is deliberately NOT here: an accessible name is usually a person's.
+STRUCT_KEYS = ("role", "tag", "dv", "data-view-name", "testid", "data-testid",
+               "cls", "class", "id", "type", "component", "kind", "state")
+
+
+def redact_json(value, key=""):
+    """Redact a JS-probe RESULT structurally, not line by line.
+
+    2026-09-10. `dump.text` redacts a whole line unless every word in it is
+    LinkedIn's own vocabulary, and a line of JSON never is - so the first Phase 3
+    dump recorded a menu of seven items as seven runs of "<redacted len=N>" and
+    the committed artefact said nothing at all. The engineering content of a probe
+    is the KEYS and the SHAPE; only the values are anybody's data. So each string
+    is redacted on its own, hrefs by the identifier rules and everything else by
+    the generic-vocabulary rule, and the structure around them survives.
+    """
+    if isinstance(value, dict):
+        return {k: redact_json(v, k) for k, v in value.items()}
+    if isinstance(value, list):
+        return [redact_json(v, key) for v in value]
+    if isinstance(value, str):
+        if key.lower() in HREF_KEYS or key.lower() in STRUCT_KEYS                 or "/" in value or value.startswith("urn:"):
+            return redact_attr(value)
+        return redact(value)
+    return value
 
 
 class Dump(object):
@@ -283,7 +539,8 @@ def both_redacted(dump, line):
         dump.full.write(line + chr(10))
 
 
-def survey(br, label, url, dump, probes, depth, settle, expand, scope=None, js_exprs=()):
+def survey(br, label, url, dump, probes, depth, settle, expand, scope=None, js_exprs=(),
+           clicks=(), open_read_thread=False):
     dump.both("# survey %s" % label)
     dump.both("# taken   %s" % time.strftime("%Y-%m-%d %H:%M:%S"))
     both_redacted(dump, "# request %s" % url)
@@ -309,6 +566,58 @@ def survey(br, label, url, dump, probes, depth, settle, expand, scope=None, js_e
 
     br.goto(url, settle=settle)
     pace.after_view()
+
+    # Collect the identifiers this page actually names, BEFORE anything is
+    # written, so the literal-token pass above can take them out of element ids
+    # as well as out of hrefs. See SUBJECT_TOKENS for why a shape rule cannot.
+    try:
+        found = br.page.evaluate(COLLECT_TOKENS_JS)
+    except Exception as exc:
+        found = {"slugs": [], "orgs": []}
+        dump.both("# NOTE could not collect subject tokens: %s" % str(exc).splitlines()[0][:80])
+    m = _URL_PROFILE.search(url)
+    if m:
+        found["slugs"].append(m.group(1))
+    note_subject_tokens([(t, "<slug>") for t in found["slugs"]]
+                        + [(t, "<company>") for t in found["orgs"]])
+    dump.both("# subject tokens redacted literally: %d" % len(SUBJECT_TOKENS))
+    for name in clicks:
+        allowed = REVEAL_ONLY.get(name.lower())
+        if not allowed:
+            raise SystemExit("FAIL --click %r is not on the reveal-only list in tools/survey.py. "
+                             "A survey opens things to LOOK at them; it never presses a control "
+                             "that could commit an action." % name)
+        b = br.page.get_by_role("button", name=re.compile(r"^%s$" % re.escape(name), re.I)).first
+        if not b.count():
+            b = br.page.get_by_role("link", name=re.compile(r"^%s$" % re.escape(name), re.I)).first
+        if not b.count():
+            dump.both("# CLICK %r NOT FOUND - nothing was revealed and the dump below is the "
+                      "page without it" % name)
+            continue
+        b.click(timeout=8000)
+        time.sleep(3)
+        dump.both("# clicked %r (reveal-only: %s)" % (name, allowed))
+    if open_read_thread:
+        counts = br.page.evaluate(OPEN_READ_THREAD_JS, UNREAD_MARK)
+        dump.both("# conversation cards: %d, of which unread %d, read %d"
+                  % (counts["cards"], counts["unread"], counts["read"]))
+        if not counts["cards"]:
+            raise SystemExit("FAIL --open-read-thread found no .msg-conversation-card. The class "
+                             "has moved and nothing here can tell a read row from an unread one.")
+        if not counts["unread"]:
+            raise SystemExit("FAIL --open-read-thread found %d cards and NOT ONE carrying %r. "
+                             "That is the positive control missing: either every conversation is "
+                             "read, or the marker has been renamed and 'this row is read' is "
+                             "being read off an instrument that can no longer say otherwise. It "
+                             "refuses rather than guess." % (counts["cards"], UNREAD_MARK))
+        if not counts["read"]:
+            raise SystemExit("FAIL --open-read-thread found no already-read conversation to open. "
+                             "Opening an unread one marks it read and cannot be undone.")
+        card = br.page.locator(".msg-conversation-card:not(.%s)" % UNREAD_MARK).first
+        card.click(timeout=8000)
+        time.sleep(4)
+        dump.both("# opened an already-read conversation (proved read: it lacks %r, and %d row(s) "
+                  "on the same list carry it)" % (UNREAD_MARK, counts["unread"]))
     if expand:
         for name in (r"^see more$", r"^…see more$", r"^Show all", r"^more$"):
             try:
@@ -372,8 +681,12 @@ def survey(br, label, url, dump, probes, depth, settle, expand, scope=None, js_e
             except Exception as exc:
                 val = "ERR " + str(exc).splitlines()[0][:120]
             dump.both("  " + redact_attr(expr))
-            for line in json.dumps(val, indent=1, ensure_ascii=True).splitlines():
-                dump.text("    ", line)
+            if dump.safe:
+                for line in json.dumps(redact_json(val), indent=1, ensure_ascii=True).splitlines():
+                    dump.safe.write("    " + line + chr(10))
+            if dump.full:
+                for line in json.dumps(val, indent=1, ensure_ascii=True).splitlines():
+                    dump.full.write("    " + line + chr(10))
         dump.both("")
 
     outline = br.page.evaluate(OUTLINE_JS, [depth, scope])
@@ -409,6 +722,14 @@ def survey(br, label, url, dump, probes, depth, settle, expand, scope=None, js_e
                 dump.safe.write(line_safe + "\n")
             if dump.full:
                 dump.full.write(line_full + "\n")
+    if clicks:
+        # Leave the page as it was found. A revealed menu or dialog holds focus
+        # and a stray keystroke inside one is the thing this whole survey is
+        # being careful about.
+        try:
+            br.page.keyboard.press("Escape")
+        except Exception:
+            pass
     dump.both("")
     return final
 
@@ -425,6 +746,14 @@ def main():
     ap.add_argument("--expand", action="store_true", help="click one 'see more' before measuring")
     ap.add_argument("--scope", help="outline this subtree instead of main, so a deeper depth stays readable")
     ap.add_argument("--js", action="append", default=[], help="a read-only JS expression; its JSON result is dumped")
+    ap.add_argument("--click", action="append", default=[],
+                    help="an accessible name to click BEFORE measuring, to reveal a menu, a "
+                         "composer or a dialog. Only the names on REVEAL_ONLY are permitted and "
+                         "anything else is refused - the list is an ALLOWLIST on purpose.")
+    ap.add_argument("--open-read-thread", action="store_true",
+                    help="on the messaging list, open a conversation this can PROVE is already "
+                         "read. It cannot be aimed at a particular row and it refuses unless the "
+                         "list also contains an unread one to prove the marker still works.")
     ap.add_argument("--port", type=int, default=9224)
     a = ap.parse_args()
 
@@ -435,7 +764,8 @@ def main():
     final = "(not reached)"
     try:
         with Browser(a.port) as br:
-            final = survey(br, a.label, a.url, dump, a.probe, a.depth, a.settle, a.expand, a.scope, a.js)
+            final = survey(br, a.label, a.url, dump, a.probe, a.depth, a.settle, a.expand,
+                           a.scope, a.js, a.click, a.open_read_thread)
     finally:
         dump.close()
     # The counter this survey was charged to is on the RESULT line, so a run that

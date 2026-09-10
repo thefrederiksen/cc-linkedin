@@ -1,0 +1,583 @@
+# survey page-invite-connections
+# taken   2026-09-10 02:58:00
+# request https://www.linkedin.com/company/107519091/admin/page-posts/published/
+# subject tokens redacted literally: 2
+# clicked 'Invite connections' (reveal-only: opens the Page's invite dialog so the credit count can be read. A credit is spent by Invite, not by opening)
+# final   https://www.linkedin.com/company/107519091/admin/page-posts/published/?invite=true
+# NOTE the URL changed - a redirect, or an authwall
+# rendering ember ([data-urn] count=5)
+# signed-in probes {".global-nav__me": 1, "button.global-nav__primary-link-me-menu-trigger": 1, "img.global-nav__me-photo": 1, "[data-test-global-nav-me]": 0, "nav.global-nav": 0, ".global-nav__nav": 1, "#global-nav": 1, "header.global-nav": 1, "[data-view-name=\"navigation-me\"]": 0}
+# 'Me' controls    []
+# title   "<redacted len=57>"
+# body    "<redacted len=300>"
+
+== ACCESSIBILITY (1339 nodes in the tree) ==
+  region         "<redacted len=13>"
+  dialog         "Invite to follow"
+  heading        "0 notifications total"
+  StaticText     "<redacted len=21>"
+  button         "Dismiss"
+  StaticText     "<redacted len=19>"
+  StaticText     "0 notifications total"
+  heading        "Invite to follow"
+  StaticText     "Invite to follow"
+  StaticText     "<redacted len=57>"
+  link           "<redacted len=57>"
+  StaticText     "<redacted len=5>"
+  StaticText     "<redacted len=50>"
+  StaticText     "<redacted len=10>"
+  button         "<redacted len=12>"
+  StaticText     "<redacted len=10>"
+  button         "<redacted len=24>"
+  button         "<redacted len=17>"
+  listbox        "Select connections to invite"
+  button         "Show more results"
+  StaticText     "<redacted len=12>"
+  button         "Invite"
+  option         "<redacted len=158>"
+  option         "<redacted len=249>"
+  option         "<redacted len=186>"
+  option         "<redacted len=76>"
+  option         "<redacted len=189>"
+  option         "<redacted len=141>"
+  option         "<redacted len=110>"
+  option         "<redacted len=222>"
+  option         "<redacted len=54>"
+  option         "<redacted len=53>"
+  option         "<redacted len=76>"
+  option         "<redacted len=85>"
+  option         "<redacted len=168>"
+  option         "<redacted len=214>"
+  option         "<redacted len=78>"
+  option         "<redacted len=215>"
+  option         "<redacted len=266>"
+  option         "<redacted len=49>"
+  option         "<redacted len=235>"
+  option         "<redacted len=67>"
+  StaticText     "Show more results"
+  StaticText     "Invite"
+  combobox       "<redacted len=14>"
+  heading        "<redacted len=36>"
+  link           "Try Premium Page"
+  checkbox       "<redacted len=21>"
+  checkbox       "<redacted len=19>"
+  StaticText     "<redacted len=36>"
+  StaticText     "<redacted len=96>"
+  StaticText     "Try Premium Page"
+  StaticText     "<redacted len=31>"
+  checkbox       "<redacted len=25>"
+  checkbox       "<redacted len=18>"
+  checkbox       "<redacted len=22>"
+  checkbox       "<redacted len=17>"
+  checkbox       "<redacted len=22>"
+  checkbox       "<redacted len=17>"
+  checkbox       "<redacted len=20>"
+  checkbox       "<redacted len=14>"
+  checkbox       "<redacted len=15>"
+  checkbox       "<redacted len=21>"
+  checkbox       "<redacted len=21>"
+  checkbox       "<redacted len=18>"
+  checkbox       "<redacted len=26>"
+  checkbox       "<redacted len=24>"
+  checkbox       "<redacted len=26>"
+  checkbox       "<redacted len=18>"
+  checkbox       "<redacted len=28>"
+  checkbox       "<redacted len=17>"
+  StaticText     "<redacted len=14>"
+  StaticText     "<redacted len=121>"
+  StaticText     "<redacted len=12>"
+  StaticText     "<redacted len=33>"
+  StaticText     "<redacted len=18>"
+  StaticText     "<redacted len=141>"
+  StaticText     "<redacted len=11>"
+  StaticText     "<redacted len=45>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=150>"
+  StaticText     "<redacted len=10>"
+  StaticText     "<redacted len=112>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=71>"
+  StaticText     "<redacted len=10>"
+  StaticText     "<redacted len=193>"
+  StaticText     "<redacted len=13>"
+  StaticText     "<redacted len=19>"
+  StaticText     "<redacted len=7>"
+  StaticText     "<redacted len=30>"
+  StaticText     "<redacted len=8>"
+  StaticText     "<redacted len=51>"
+  StaticText     "<redacted len=14>"
+  StaticText     "<redacted len=48>"
+  StaticText     "<redacted len=14>"
+  StaticText     "<redacted len=131>"
+  StaticText     "<redacted len=11>"
+  StaticText     "<redacted len=183>"
+  StaticText     "<redacted len=19>"
+  StaticText     "<redacted len=31>"
+  StaticText     "<redacted len=17>"
+  StaticText     "<redacted len=172>"
+  StaticText     "<redacted len=19>"
+  StaticText     "<redacted len=219>"
+  StaticText     "<redacted len=11>"
+  StaticText     "<redacted len=18>"
+  StaticText     "<redacted len=21>"
+  StaticText     "<redacted len=184>"
+  StaticText     "<redacted len=10>"
+  StaticText     "<redacted len=38>"
+  button         "<redacted len=77>"
+  button         "<redacted len=89>"
+  button         "<redacted len=71>"
+  button         "<redacted len=75>"
+  StaticText     "<redacted len=9>"
+  StaticText     "Current company"
+  StaticText     "School"
+  StaticText     "Industry"
+
+== JS PROBES ==
+  () => { const d=document.querySelector('[role="dialog"]'); const body=((d||document.body).innerText||'').replace(/\s+/g,' '); return {hasDialog:!!d, dialogLabel:d?(d.getAttribute('aria-label')||''):'', creditPhrase:(body.match(/[^|]{0,70}credit[^|]{0,70}/i)||[''])[0], remainingPhrase:(body.match(/[^|]{0,70}remaining[^|]{0,70}/i)||[''])[0], leftPhrase:(body.match(/[^|]{0,70}left[^|]{0,70}/i)||[''])[0], len:body.length}; }
+    {
+     "hasDialog": true,
+     "dialogLabel": "",
+     "creditPhrase": "d your reach by inviting others to follow your page. Learn more 50/50 credits available \u00b7 Credit refill: October 1, 2026 Locations Current company",
+     "remainingPhrase": "",
+     "leftPhrase": "",
+     "len": 3192
+    }
+  () => [...document.querySelectorAll('[role="dialog"] button,[role="dialog"] input,[role="dialog"] a')].slice(0,30).map(e=>({tag:e.tagName,role:e.getAttribute('role')||'',name:(e.getAttribute('aria-label')||'').slice(0,50),text:(e.innerText||'').replace(/\s+/g,' ').trim().slice(0,36),cls:(e.getAttribute('class')||'').slice(0,50),disabled:e.disabled===true}))
+    [
+     {
+      "tag": "BUTTON",
+      "role": "",
+      "name": "Dismiss",
+      "text": "",
+      "cls": "artdeco-button artdeco-button--circle artdeco-butt",
+      "disabled": false
+     },
+     {
+      "tag": "BUTTON",
+      "role": "",
+      "name": "Dismiss",
+      "text": "",
+      "cls": "artdeco-hoverable-content__close-btn",
+      "disabled": false
+     },
+     {
+      "tag": "A",
+      "role": "",
+      "name": "<redacted len=50>",
+      "text": "<redacted len=10>",
+      "cls": "",
+      "disabled": false
+     },
+     {
+      "tag": "BUTTON",
+      "role": "",
+      "name": "<redacted len=24>",
+      "text": "",
+      "cls": "artdeco-button artdeco-button--circle artdeco-butt",
+      "disabled": false
+     },
+     {
+      "tag": "INPUT",
+      "role": "combobox",
+      "name": "<redacted len=14>",
+      "text": "",
+      "cls": "artdeco-typeahead__input ",
+      "disabled": false
+     },
+     {
+      "tag": "BUTTON",
+      "role": "",
+      "name": "",
+      "text": "",
+      "cls": "peek-carousel-controls__button invitee-picker-filt",
+      "disabled": false
+     },
+     {
+      "tag": "BUTTON",
+      "role": "",
+      "name": "<redacted len=50>",
+      "text": "<redacted len=9>",
+      "cls": "artdeco-pill artdeco-pill--slate artdeco-pill--cho",
+      "disabled": false
+     },
+     {
+      "tag": "BUTTON",
+      "role": "",
+      "name": "<redacted len=50>",
+      "text": "Current company",
+      "cls": "artdeco-pill artdeco-pill--slate artdeco-pill--cho",
+      "disabled": false
+     },
+     {
+      "tag": "BUTTON",
+      "role": "",
+      "name": "<redacted len=50>",
+      "text": "School",
+      "cls": "artdeco-pill artdeco-pill--slate artdeco-pill--cho",
+      "disabled": false
+     },
+     {
+      "tag": "BUTTON",
+      "role": "",
+      "name": "<redacted len=50>",
+      "text": "Industry",
+      "cls": "artdeco-pill artdeco-pill--slate artdeco-pill--cho",
+      "disabled": false
+     },
+     {
+      "tag": "BUTTON",
+      "role": "",
+      "name": "",
+      "text": "",
+      "cls": "peek-carousel-controls__button invitee-picker-filt",
+      "disabled": false
+     },
+     {
+      "tag": "INPUT",
+      "role": "",
+      "name": "",
+      "text": "",
+      "cls": "ember-checkbox ember-view",
+      "disabled": false
+     },
+     {
+      "tag": "INPUT",
+      "role": "",
+      "name": "",
+      "text": "",
+      "cls": "ember-checkbox ember-view",
+      "disabled": false
+     },
+     {
+      "tag": "A",
+      "role": "",
+      "name": "",
+      "text": "Try Premium Page",
+      "cls": "iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM  artdeco-butto",
+      "disabled": false
+     },
+     {
+      "tag": "INPUT",
+      "role": "",
+      "name": "",
+      "text": "",
+      "cls": "ember-checkbox ember-view",
+      "disabled": false
+     },
+     {
+      "tag": "INPUT",
+      "role": "",
+      "name": "",
+      "text": "",
+      "cls": "ember-checkbox ember-view",
+      "disabled": false
+     },
+     {
+      "tag": "INPUT",
+      "role": "",
+      "name": "",
+      "text": "",
+      "cls": "ember-checkbox ember-view",
+      "disabled": false
+     },
+     {
+      "tag": "INPUT",
+      "role": "",
+      "name": "",
+      "text": "",
+      "cls": "ember-checkbox ember-view",
+      "disabled": false
+     },
+     {
+      "tag": "INPUT",
+      "role": "",
+      "name": "",
+      "text": "",
+      "cls": "ember-checkbox ember-view",
+      "disabled": false
+     },
+     {
+      "tag": "INPUT",
+      "role": "",
+      "name": "",
+      "text": "",
+      "cls": "ember-checkbox ember-view",
+      "disabled": false
+     },
+     {
+      "tag": "INPUT",
+      "role": "",
+      "name": "",
+      "text": "",
+      "cls": "ember-checkbox ember-view",
+      "disabled": false
+     },
+     {
+      "tag": "INPUT",
+      "role": "",
+      "name": "",
+      "text": "",
+      "cls": "ember-checkbox ember-view",
+      "disabled": false
+     },
+     {
+      "tag": "INPUT",
+      "role": "",
+      "name": "",
+      "text": "",
+      "cls": "ember-checkbox ember-view",
+      "disabled": false
+     },
+     {
+      "tag": "INPUT",
+      "role": "",
+      "name": "",
+      "text": "",
+      "cls": "ember-checkbox ember-view",
+      "disabled": false
+     },
+     {
+      "tag": "INPUT",
+      "role": "",
+      "name": "",
+      "text": "",
+      "cls": "ember-checkbox ember-view",
+      "disabled": false
+     },
+     {
+      "tag": "INPUT",
+      "role": "",
+      "name": "",
+      "text": "",
+      "cls": "ember-checkbox ember-view",
+      "disabled": false
+     },
+     {
+      "tag": "INPUT",
+      "role": "",
+      "name": "",
+      "text": "",
+      "cls": "ember-checkbox ember-view",
+      "disabled": false
+     },
+     {
+      "tag": "INPUT",
+      "role": "",
+      "name": "",
+      "text": "",
+      "cls": "ember-checkbox ember-view",
+      "disabled": false
+     },
+     {
+      "tag": "INPUT",
+      "role": "",
+      "name": "",
+      "text": "",
+      "cls": "ember-checkbox ember-view",
+      "disabled": false
+     },
+     {
+      "tag": "INPUT",
+      "role": "",
+      "name": "",
+      "text": "",
+      "cls": "ember-checkbox ember-view",
+      "disabled": false
+     }
+    ]
+  () => [...document.querySelectorAll('button,a')].filter(e=>/invite/i.test((e.innerText||'')+(e.getAttribute('aria-label')||''))).slice(0,10).map(e=>({tag:e.tagName,name:(e.getAttribute('aria-label')||'').slice(0,50),text:(e.innerText||'').replace(/\s+/g,' ').trim().slice(0,36),href:(e.getAttribute('href')||'').slice(0,70)}))
+    [
+     {
+      "tag": "BUTTON",
+      "name": "",
+      "text": "Invite",
+      "href": ""
+     },
+     {
+      "tag": "A",
+      "name": "",
+      "text": "Invite to follow",
+      "href": "https://www.linkedin.com/company/107519091/admin/page-posts/published?"
+     },
+     {
+      "tag": "BUTTON",
+      "name": "",
+      "text": "Invite connections",
+      "href": ""
+     }
+    ]
+
+== DOM OUTLINE of main (172 nodes, depth<=11) ==
+  main.PBkYAWHwqwRDMPwNxwgRzhSyBGHlUDASmw
+    section.artdeco-card.org-feed__page-header.org-feed__page-header--collab
+      div.org-page-header__top
+        div.display-flex
+            h2.text-heading-large.flex-1  "Page posts"
+            p.org-page-header__subtitle  "<redacted len=120>"
+              a  aria-label="<redacted len=36>" href=https://www.linkedin.com/help/linkedin/answer/a10950023  "<redacted len=10>"
+      ul.org-menu.org-menu--horizontal.org-page-header__menu  data-test-org-menu=
+        li.org-menu__item  data-test-org-menu__item=horizontal
+          a#org-menu-PUBLISHED.iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM.org-menu-item.org-menu-item--horizontal.org-menu-item--selected  role=link href=https://www.linkedin.com/company/107519091/admin/page-posts/published data-test-org-menu-item=PUBLISHED data-test-org-menu__menu-item=0 data-view-name= data-test-app-aware-link=
+            span.display-flex
+                span.display-flex.align-items-center
+                  span.org-menu-item__title.org-menu-item__stateful-content.text-body-medium-bold  data-test-org-menu-item__title=  "<redacted len=9>"
+        li.org-menu__item  data-test-org-menu__item=horizontal
+          a#org-menu-PAGE_ADS.iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM.org-menu-item.org-menu-item--horizontal  role=link href=https://www.linkedin.com/company/107519091/admin/page-posts/page-ads data-test-org-menu-item=PAGE_ADS data-test-org-menu__menu-item=1 data-view-name= data-test-app-aware-link=
+            span.display-flex
+                span.display-flex.align-items-center
+                  span.org-menu-item__title.org-menu-item__stateful-content.text-body-medium-bold  data-test-org-menu-item__title=  "<redacted len=8>"
+    div.org-updates__core-rail
+      div.mb3
+          div.share-box-feed-entry__closed-share-box.artdeco-card
+            div.media-modifiers-drag-and-drop__dropzone
+              svg.media-modifiers-drag-and-drop__dropzone-icon  role=none data-supported-dps=24x24 data-test-icon=add-medium
+              span.media-modifiers-drag-and-drop__dropzone-drop  "<redacted len=20>"
+              span.media-modifiers-drag-and-drop__dropzone-drag  "<redacted len=20>"
+            div.share-box-feed-entry__top-bar
+              img#ember40.share-box-feed-entry__organization-logo.evi-image.lazy-image.evi-image--standard-dynamic-range.ember-view  role=img
+              button#ember41.artdeco-button.artdeco-button--muted.artdeco-button--4.artdeco-button--tertiary.ember-view.cYPQMBCEuaRKOOulfJtWemnUkuQyBKqKbNUHDI
+                span.artdeco-button__text
+                  span.truncate.block.text-align-left  "Start a post"
+            div.share-box-feed-entry-toolbar__wrapper.share-box-feed-entry__tool-bar
+              button.artdeco-button.artdeco-button--muted.artdeco-button--4.artdeco-button--tertiary.share-box-feed-entry-toolbar__item.video-detour-btn  aria-label="<redacted len=11>"
+                svg  role=none data-supported-dps=24x24 data-test-icon=video-medium
+                span.artdeco-button__text  "<redacted len=5>"
+              button.artdeco-button.artdeco-button--muted.artdeco-button--4.artdeco-button--tertiary.share-box-feed-entry-toolbar__item.image-detour-btn  aria-label="<redacted len=11>"
+                svg  role=none data-supported-dps=24x24 data-test-icon=image-medium
+                span.artdeco-button__text  "Photo"
+              a#ember43.ember-view.share-box-feed-entry-toolbar__item.artdeco-button.artdeco-button--muted.artdeco-button--tertiary.artdeco-button--4  aria-label="<redacted len=28>" href=/article/new/?author=urn%3Ali%3Afs_normalized_company%3A<id>
+                svg  role=none data-supported-dps=24x24 data-test-icon=content-align-left-medium
+                span.share-box-feed-entry-toolbar__item-text  "<redacted len=13>"
+      div.entity-list.separate-entities.feed-container-theme
+        div.scaffold-finite-scroll.scaffold-finite-scroll--infinite
+          div.scaffold-finite-scroll__content
+              div#ember91.artdeco-card.mb2
+                div.org-company-admin-update__boost-header-container
+                  div.org-company-admin-update__boost-bar.org-company-admin-update__boost-bar--tinted.m0  data-test-boost-action-bar=
+                    div.display-block
+                      div.text-body-small.inline-block  data-test-boost-action-bar__primary_text=  "<redacted len=33>"
+                    div.ml3.flex-shrink-zero  data-test-boost-action-bar__primary_action=
+                      a.iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM.artdeco-button.artdeco-button--secondary.artdeco-button--2.artdeco-button--default.white-space-nowrap  aria-label="<redacted len=5>" href=https://www.linkedin.com/ad-beta/boost/campaigns/new/details?content=urn%3Ali%3AugcPost%3A<id>&organization=10 data-test-boost-bar-button=feed-update data-view-name=org-feed-update-card-boost-cta data-test-app-aware-link=  "<redacted len=5>"
+                div.org-update-posted-by-selector.pt3.pb0
+                  p.text-body-small.t-black--light
+                    span.org-light-update-header__member-name  "By"
+                      a#ember92.ember-view.link-without-visited-state.t-black--light.t-bold  href=/in/<slug>/  "<redacted len=17>"
+                    span.org-light-update-header__date  "<redacted len=8>"
+                  span.display-flex.align-items-center
+                    div#ember93.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-right.ember-view.org-update-actions-dropdown__control-menu.fr
+                      button#org-update-actions-dropdown-trigger.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-bottom.ember-view.artdeco-button.artdeco-button--1.artdeco-button--tertiary
+                        svg  role=img aria-label="<redacted len=106>" data-supported-dps=24x24 data-test-icon=overflow-web-ios-medium
+                      div#ember95.org-update-actions-dropdown__dropdown-content.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--has-arrow.artdeco-dropdown__content--arrow-right.artdeco-dropdo
+                div.ph4
+                  hr.org-hr.artdeco-divider.mb0
+                div.org-company-admin-update--in-middle
+                  div.full-height  data-view-name=feed-full-update data-view-tracking-scope=[{"topicName":"FeedUpdateServedEvent","contentTrackingId":"U
+                    div.full-height
+                      div#ember97.feed-shared-update-v2.feed-shared-update-v2--minimal-padding.full-height.feed-shared-update-v2--with-carousel-fix.relative.feed-shared-u  role=article data-urn=urn:li:activity:<id>
+                div.org-update-analytics.overflow-auto
+                  div.org-update-analytics__container.pt2
+                    div.org-update-analytics__title
+                      div.update-analytics-title.text-body-xsmall.t-black--light.t-normal  "<redacted len=12>"
+                        div.inline-block.text-body-xsmall.t-black--light  "3"
+                    button.org-update-analytics__toggle-details-btn.t-14.t-black--light.t-bold  "<redacted len=15>"
+                      svg.org-update-analytics__toggle-button-icon  role=none data-supported-dps=16x16 data-test-icon=chevron-down-small
+              div#ember124.artdeco-card.mb2
+                  div.full-height  data-view-name=feed-full-update data-view-tracking-scope=[{"topicName":"FeedUpdateServedEvent","contentTrackingId":"q
+                    div.full-height
+                      div#ember126.feed-shared-update-v2.feed-shared-update-v2--minimal-padding.full-height.feed-shared-update-v2--with-carousel-fix.relative.feed-shared-u  role=article data-urn=urn:li:inAppPromotedContent:<id>
+              div#ember128.artdeco-card.mb2
+                div.org-company-admin-update__boost-header-container
+                  div.org-company-admin-update__boost-bar.org-company-admin-update__boost-bar--tinted.m0  data-test-boost-action-bar=
+                    div.display-block
+                      div.text-body-small.inline-block  data-test-boost-action-bar__primary_text=  "<redacted len=33>"
+                    div.ml3.flex-shrink-zero  data-test-boost-action-bar__primary_action=
+                      a.iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM.artdeco-button.artdeco-button--secondary.artdeco-button--2.artdeco-button--default.white-space-nowrap  aria-label="<redacted len=5>" href=https://www.linkedin.com/ad-beta/boost/campaigns/new/details?content=urn%3Ali%3Ashare%3A<id>&organization=1075 data-test-boost-bar-button=feed-update data-view-name=org-feed-update-card-boost-cta data-test-app-aware-link=  "<redacted len=5>"
+                div.org-update-posted-by-selector.pt3.pb0
+                  p.text-body-small.t-black--light
+                    span.org-light-update-header__member-name  "By"
+                      a#ember129.ember-view.link-without-visited-state.t-black--light.t-bold  href=/in/<slug>/  "<redacted len=17>"
+                    span.org-light-update-header__date  "<redacted len=9>"
+                  span.display-flex.align-items-center
+                    div#ember130.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-right.ember-view.org-update-actions-dropdown__control-menu.fr
+                      button#org-update-actions-dropdown-trigger.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-bottom.ember-view.artdeco-button.artdeco-button--1.artdeco-button--tertiary
+                        svg  role=img aria-label="<redacted len=106>" data-supported-dps=24x24 data-test-icon=overflow-web-ios-medium
+                      div#ember132.org-update-actions-dropdown__dropdown-content.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--has-arrow.artdeco-dropdown__content--arrow-right.artdeco-dropdo
+                div.ph4
+                  hr.org-hr.artdeco-divider.mb0
+                div.org-company-admin-update--in-middle
+                  div.full-height  data-view-name=feed-full-update data-view-tracking-scope=[{"topicName":"FeedUpdateServedEvent","contentTrackingId":"M
+                    div.full-height
+                      div#ember134.feed-shared-update-v2.feed-shared-update-v2--minimal-padding.full-height.feed-shared-update-v2--with-carousel-fix.relative.feed-shared-update-v2--e2e  role=article data-urn=urn:li:activity:<id>
+                div.org-update-analytics.overflow-auto
+                  div.org-update-analytics__container.pt2
+                    div.org-update-analytics__title
+                      div.update-analytics-title.text-body-xsmall.t-black--light.t-normal  "<redacted len=20>"
+                        div.inline-block.text-body-xsmall.t-black--light  "45"
+                    button.org-update-analytics__toggle-details-btn.t-14.t-black--light.t-bold  "<redacted len=15>"
+                      svg.org-update-analytics__toggle-button-icon  role=none data-supported-dps=16x16 data-test-icon=chevron-down-small
+              div#ember161.artdeco-card.mb2
+                div.org-company-admin-update__boost-header-container
+                  div.org-company-admin-update__boost-bar.org-company-admin-update__boost-bar--tinted.m0  data-test-boost-action-bar=
+                    div.display-block
+                      div.text-body-small.inline-block  data-test-boost-action-bar__primary_text=  "<redacted len=33>"
+                    div.ml3.flex-shrink-zero  data-test-boost-action-bar__primary_action=
+                      a.iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM.artdeco-button.artdeco-button--secondary.artdeco-button--2.artdeco-button--default.white-space-nowrap  aria-label="<redacted len=5>" href=https://www.linkedin.com/ad-beta/boost/campaigns/new/details?content=urn%3Ali%3Ashare%3A<id>&organization=1075 data-test-boost-bar-button=feed-update data-view-name=org-feed-update-card-boost-cta data-test-app-aware-link=  "<redacted len=5>"
+                div.org-update-posted-by-selector.pt3.pb0
+                  p.text-body-small.t-black--light
+                    span.org-light-update-header__member-name  "By"
+                      a#ember162.ember-view.link-without-visited-state.t-black--light.t-bold  href=/in/<slug>/  "<redacted len=17>"
+                    span.org-light-update-header__date  "<redacted len=8>"
+                  span.display-flex.align-items-center
+                    div#ember163.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-right.ember-view.org-update-actions-dropdown__control-menu.fr
+                      button#org-update-actions-dropdown-trigger.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-bottom.ember-view.artdeco-button.artdeco-button--1.artdeco-button--tertiary
+                        svg  role=img aria-label="<redacted len=106>" data-supported-dps=24x24 data-test-icon=overflow-web-ios-medium
+                      div#ember165.org-update-actions-dropdown__dropdown-content.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--has-arrow.artdeco-dropdown__content--arrow-right.artdeco-dropdo
+                div.ph4
+                  hr.org-hr.artdeco-divider.mb0
+                div.org-company-admin-update--in-middle
+                  div.full-height  data-view-name=feed-full-update data-view-tracking-scope=[{"topicName":"FeedUpdateServedEvent","contentTrackingId":"L
+                    div.full-height
+                      div#ember167.feed-shared-update-v2.feed-shared-update-v2--minimal-padding.full-height.feed-shared-update-v2--with-carousel-fix.relative.feed-shared-update-v2--e2e  role=article data-urn=urn:li:activity:<id>
+                div.org-update-analytics.overflow-auto
+                  div.org-update-analytics__container.pt2
+                    div.org-update-analytics__title
+                      div.update-analytics-title.text-body-xsmall.t-black--light.t-normal  "<redacted len=20>"
+                        div.inline-block.text-body-xsmall.t-black--light  "75"
+                    button.org-update-analytics__toggle-details-btn.t-14.t-black--light.t-bold  "<redacted len=15>"
+                      svg.org-update-analytics__toggle-button-icon  role=none data-supported-dps=16x16 data-test-icon=chevron-down-small
+              div#ember192.artdeco-card.mb2
+                div.org-company-admin-update__boost-header-container
+                  div.org-company-admin-update__boost-bar.org-company-admin-update__boost-bar--tinted.m0  data-test-boost-action-bar=
+                    div.display-block
+                      div.text-body-small.inline-block  data-test-boost-action-bar__primary_text=  "<redacted len=33>"
+                    div.ml3.flex-shrink-zero  data-test-boost-action-bar__primary_action=
+                      a.iufxJiHlMivbACJhQsVicjbcpbUIHXgnvjM.artdeco-button.artdeco-button--secondary.artdeco-button--2.artdeco-button--default.white-space-nowrap  aria-label="<redacted len=5>" href=https://www.linkedin.com/ad-beta/boost/campaigns/new/details?content=urn%3Ali%3Ashare%3A<id>&organization=1075 data-test-boost-bar-button=feed-update data-view-name=org-feed-update-card-boost-cta data-test-app-aware-link=  "<redacted len=5>"
+                div.org-update-posted-by-selector.pt3.pb0
+                  p.text-body-small.t-black--light
+                    span.org-light-update-header__member-name  "By"
+                      a#ember193.ember-view.link-without-visited-state.t-black--light.t-bold  href=/in/<slug>/  "<redacted len=17>"
+                    span.org-light-update-header__date  "<redacted len=8>"
+                  span.display-flex.align-items-center
+                    div#ember194.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-right.ember-view.org-update-actions-dropdown__control-menu.fr
+                      button#org-update-actions-dropdown-trigger.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-bottom.ember-view.artdeco-button.artdeco-button--1.artdeco-button--tertiary
+                        svg  role=img aria-label="<redacted len=106>" data-supported-dps=24x24 data-test-icon=overflow-web-ios-medium
+                      div#ember196.org-update-actions-dropdown__dropdown-content.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--has-arrow.artdeco-dropdown__content--arrow-right.artdeco-dropdo
+                div.ph4
+                  hr.org-hr.artdeco-divider.mb0
+                div.org-company-admin-update--in-middle
+                  div.full-height  data-view-name=feed-full-update data-view-tracking-scope=[{"topicName":"FeedUpdateServedEvent","contentTrackingId":"m
+                    div.full-height
+                      div#ember198.feed-shared-update-v2.feed-shared-update-v2--minimal-padding.full-height.feed-shared-update-v2--with-carousel-fix.relative.feed-shared-update-v2--e2e  role=article data-urn=urn:li:activity:<id>
+                div.org-update-analytics.overflow-auto
+                  div.org-update-analytics__container.pt2
+                    div.org-update-analytics__title
+                      div.update-analytics-title.text-body-xsmall.t-black--light.t-normal  "<redacted len=20>"
+                        div.inline-block.text-body-xsmall.t-black--light  "9"
+                    button.org-update-analytics__toggle-details-btn.t-14.t-black--light.t-bold  "<redacted len=15>"
+                      svg.org-update-analytics__toggle-button-icon  role=none data-supported-dps=16x16 data-test-icon=chevron-down-small
+      div#ember44.ember-view
+        div#ember45.ember-view
+      div#ember46.ember-view
+        div#ember47.ember-view
+      div#ember48.ember-view
+
