@@ -426,3 +426,62 @@ instruction. It is therefore no longer usable for `can_connect: true`, and it is
 now the only known fixture for a state nothing else reaches - a pending
 invitation, where `can_connect` must be false with a reason and with no invite
 URL. The URL is in the local fixtures file where it belongs.
+
+---
+
+## R1.2 RETIRED, 2026-09-10 - redundant and false-premised, NOT relaxed because it failed
+
+R1.2 said the URL path's candidate must AGREE with what the page states, and
+that disagreement fails the row. On the first live run all three rows failed, and
+the live-proving Manager stopped rather than soften it. It was right to, and the
+rule was wrong.
+
+**Why the premise was false.** I assumed the two sources would name ONE id under
+two kind labels. LinkedIn does not work that way: an `activity` urn WRAPS a
+`share` or `ugcPost`, and the two carry genuinely different ids for the same
+post. So "the page and the path must agree" was never a statement about
+LinkedIn. It was a statement about what I assumed LinkedIn was.
+
+**How it was proved, and it is better than the test that was asked for.** The
+Architect asked for a text comparison across both permalinks. LinkedIn answered
+by ROUTING instead: opening the `share` permalink serves the *activity* page -
+one post card, stating the activity urn the resolver had read. Server behaviour,
+not our inference, and not explicable by two posts that happen to look alike.
+The shared numeric prefix between the two ids was explicitly DISCARDED as
+evidence: LinkedIn ids carry a timestamp in their high bits, so ids minted
+seconds apart share a prefix whether or not they are related.
+
+**What replaces it.** The page's `data-urn` is the sole identity source, read on
+a page proven to hold exactly one post card. The path is no longer consulted for
+identity at all. The guard that carries the weight is the one that was always
+stronger: P2-6c comparing the resolved post's AUTHOR AND TEXT against the search
+row it came from.
+
+**Retired, not relaxed, and the distinction is the whole of it.** A guard
+removed because a better one subsumes it, on a premise measured false, is
+engineering. A guard removed because it went red is how a suite comes to certify
+nothing. This is the first; it must never be cited as licence for the second.
+
+**R1.1's survey answer, now measured rather than assumed:** a landed post page
+carries the post card's `data-urn` and nothing else - `canonical` and `og:url`
+were absent on all three pages measured. R1.1's three-way preference order
+collapses to one item. This is the survey R1.1 demanded and could not have
+before the live site was touched.
+
+## The first live evidence that any of this works
+
+Worth recording separately from the ruling it came from: **R2.2's `card_any`
+guard met a real mismatch on its first outing and refused.** The inspector found
+that the old code would silently fall back to whatever post card was on the
+page; the guard was written against a hypothetical. Then LinkedIn's own routing
+handed it exactly that situation - asked for a `share` urn, served an `activity`
+page - and it named the urn it wanted and stopped instead of acting.
+
+That is worth more than three clean runs, because it is the difference between a
+guard that is present and a guard that works, and only one of those was ever in
+doubt.
+
+**Identifiers, per R20:** the author and text of the measured post are in the
+machine's fixtures file. They are not here and not in any committed file. The
+repository records the shape and the routing behaviour, which is what carries
+the meaning; the person carries none of it.
