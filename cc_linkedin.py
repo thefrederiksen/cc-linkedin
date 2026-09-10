@@ -713,11 +713,98 @@ def main():
     post_verb("unreact", C.unreact, "remove our reaction", expect=False)
     post_verb("delete-post", C.delete_post, "delete one of our posts")
 
+    # -- Phase 2: reading people, companies, search, notifications, stats ----
+    from kit import people as P
+
+    sp = sub.add_parser("read-profile", help="print one person's profile as JSON")
+    sp.add_argument("url", help="a /in/ profile URL, or just the slug")
+    sp.add_argument("--expect", help="a phrase that must appear in the top card, or the verb refuses")
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=P.read_profile)
+
+    sp = sub.add_parser("read-company", help="print one company page as JSON")
+    sp.add_argument("url", help="a /company/ URL, or just the slug")
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=P.read_company)
+
+    from kit import search as Q
+
+    sp = sub.add_parser("search-people", help="search people, print each result as JSON")
+    sp.add_argument("query", help="what to search for")
+    sp.add_argument("--company", help="narrow to a current company")
+    sp.add_argument("--title", help="narrow to a job title")
+    sp.add_argument("--location", help="narrow to a location")
+    sp.add_argument("--limit", type=int, default=25, help="rows to return (hard cap 100)")
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=Q.search_people)
+
+    sp = sub.add_parser(
+        "search-posts", help="search posts, print each result as JSON",
+        description="Search posts and print each result as JSON. "
+                    "SIDE EFFECT, STATED BECAUSE IT IS ONE (ruling R16, 2026-09-09): a "
+                    "content-search card carries no post address anywhere in its DOM, so this "
+                    "verb takes each one the way a person does - it opens the card's control "
+                    "menu and presses 'Copy link to post', which writes to YOUR SYSTEM "
+                    "CLIPBOARD. Whatever was on the clipboard is read first and put back "
+                    "afterwards, and the RESULT line says whether that worked. Clipboard "
+                    "contents this tool cannot read as text - an image, a file - cannot be "
+                    "restored, and the run says so rather than pretending otherwise. The "
+                    "clipboard permission it grants the browser is a temporary override and is "
+                    "reset before the command exits.",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    sp.add_argument("query", help="what to search for")
+    sp.add_argument("--limit", type=int, default=25, help="rows to return (hard cap 100)")
+    sp.add_argument("--resolve", action="store_true",
+                    help="follow each short link in the browser to fill permalink (capped at 10 rows)")
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=Q.search_posts)
+
+    from kit import account as A
+
+    sp = sub.add_parser("notifications", help="print the notifications page as JSON, one row per line")
+    sp.add_argument("--limit", type=int, default=25)
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=A.notifications)
+
+    sp = sub.add_parser("stats", help="print a Page's own analytics as JSON")
+    sp.add_argument("--page", required=True, help="LinkedIn Page (organization) numeric id")
+    sp.add_argument("--page-name", help="exact Page name the analytics screen must show")
+    sp.add_argument("--days", type=int, default=30,
+                    help="window to drive the control to: 7, 15 or 30. 0 reports the window on screen.")
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=A.stats)
+
     from kit import selftest as T
-    sp = sub.add_parser("selftest", help="run every Phase 1 verb on our own post and Page, leaving nothing behind")
-    sp.add_argument("--post", required=True, help="permalink of a post WE authored (comments go here)")
-    sp.add_argument("--page", help="Page id for the publish + delete-post round trip")
+    sp = sub.add_parser("selftest",
+                        help="run every verb on things we own, leaving nothing behind")
+    sp.add_argument("--post", help="permalink of a post WE authored (comments go here). REQUIRED: pass it here, or record it in the machine's selftest fixtures file (R20). The run FAILS without it either way.")
+    sp.add_argument("--page", help="Page id for the publish + delete-post round trip, and for stats")
     sp.add_argument("--page-name", help="exact Page name")
+    sp.add_argument("--profile", default="https://www.linkedin.com/in/sorenfrederiksen/",
+                    help="the owner's own profile (row P2-1)")
+    sp.add_argument("--profile-expect", default=T.SOREN_EXPECT,
+                    help="what the owner's own profile says, field by field, for row P2-1: "
+                         + T.EXPECT_SYNTAX)
+    sp.add_argument("--other-profile",
+                    help="a 1st- or 2nd-degree profile URL for rows P2-2 and P2-2b. REQUIRED "
+                         "and never committed: this repository is public. Without it the run "
+                         "fails.")
+    sp.add_argument("--other-expect",
+                    help="what THAT profile says, read off the screen by a person, for row "
+                         "P2-2. REQUIRED and never committed. " + T.EXPECT_SYNTAX)
+    sp.add_argument("--menu-profile",
+                    help="row P2-10, and the shape both defects of 2026-09-09 appeared on: a "
+                         "profile whose invitation is a MENU ITEM behind More rather than a "
+                         "control on the top card, AND whose top card states no current employer. "
+                         "REQUIRED and never committed. Without it the More-menu path never runs "
+                         "and the empty-employer guard is never exercised.")
+    sp.add_argument("--menu-expect",
+                    help="what THAT profile says, for row P2-10. REQUIRED, never committed, and "
+                         "its company must be none. " + T.EXPECT_SYNTAX)
+    sp.add_argument("--company", default="centerconsulting-inc", help="company slug (row P2-4)")
+    sp.add_argument("--query-people", default="Soren Frederiksen mindzie",
+                    help="people search whose first row is the owner (row P2-5)")
+    sp.add_argument("--query-posts", default="mindzie", help="content search (row P2-6)")
     sp.add_argument("--port", type=int, default=9224)
     sp.set_defaults(fn=T.run)
 

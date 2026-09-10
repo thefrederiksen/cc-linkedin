@@ -1,0 +1,24 @@
+R15, watched failing against kit/browser.py at 47d836b (before the fix), driven
+directly so the symptom shows rather than only the assertion:
+
+OLD Pace: 40 concurrent views were counted as 2 - 38 increments lost to the read-modify-write race
+OLD Pace: with ONE slot left under a cap of 80, 8 of 8 runs were allowed past it
+
+The first line is the lost update the inspection described: before() loads and
+checks, after() separately reloads and increments, and forty writers overwrite
+each other down to two. The second is the cap failing to be a cap: with one slot
+left, every one of eight concurrent runs was allowed through, because each read
+the count before any of them wrote it.
+
+AND THE TEST FOUND A SECOND DEFECT, IN THE R3 FIX I HAD JUST WRITTEN. Six
+concurrent writers wedged permanently on the new lock. On Windows, Python's
+open() does not ask for FILE_SHARE_DELETE, so while any waiter has the lock file
+open to read who holds it, os.remove raises a sharing violation - and the
+release path swallowed that as `except OSError: pass`. The lock then stayed
+behind carrying a LIVE pid, which no reclaim rule will ever touch. That is the
+R3 defect exactly, reintroduced one layer down by an error handler that treated
+"I could not do it" as "it is done". _discard now retries for a bounded three
+seconds and logs loudly if it still cannot.
+
+That second defect was not in any inspection. It was found because the fix was
+given a test that could fail.

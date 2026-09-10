@@ -1,0 +1,25 @@
+R5, watched against kit/people.py at 47d836b (before the fix):
+
+OLD: a DISABLED invite control -> _invite returns it (True), and _connect then returned
+     can_connect=True with an invite url, because the enabled state was never read.
+OLD: _decide exists? False
+OLD: the menu wait was a flat sleep: 'time.sleep(1.5)' present? True
+OLD: MENU_JS queried the whole document? True
+
+Four things, three of them decisions and one a DOM scope:
+
+  * A control the page has disabled was reported as can_connect: true with an
+    invite URL a caller would act on. The enabled state was never checked at
+    all. It is now null WITH a reason - a disabled control is neither a yes nor
+    a no, and it is explicitly not the same answer as no invite control.
+  * The More menu was given a flat 1.5 seconds and read once. A menu that
+    renders "About this member" at 1.5 seconds and its Connect item at 1.8
+    passed the proof, and the verb then believed an absence it had read too
+    early - can_connect: false about somebody it could in fact invite. It is now
+    read until two consecutive reads agree, and a menu still changing at eight
+    seconds is a failure rather than a conclusion.
+  * MENU_JS queried the WHOLE DOCUMENT for [role=menuitem], so an unrelated open
+    menu could supply the item that proves this menu rendered. It now reads
+    inside the one visible [role=menu] and refuses when there is not exactly one.
+    THIS ONE IS NOT COVERED BY AN OFFLINE TEST - proving it needs a page with two
+    open menus. The test file says so rather than leaving it looking covered.

@@ -56,7 +56,7 @@ cc-linkedin react <permalink> --expect "phrase" [--kind like|celebrate|support|l
 cc-linkedin unreact <permalink>
 cc-linkedin delete-comment <permalink> --match "words in exactly one of OUR comments"
 cc-linkedin delete-post <permalink> --expect "phrase"                  (our own post only)
-cc-linkedin selftest --post <one of Soren's posts> --page 107519091 --page-name "CenterConsulting, Inc."
+cc-linkedin selftest --post <one of Soren's posts> --page 107519091 --page-name "CenterConsulting, Inc." --other-profile <a 1st- or 2nd-degree /in/ URL>
 ```
 
 Rules the tool enforces, so you do not have to: one run per browser at a time
@@ -71,6 +71,43 @@ guard stops the wrong-post mistake, the pacing stops the burst. Run the
 selftest before changing the tool and whenever a verb fails in real use; it
 comments on Soren's own post and posts/deletes a throwaway on the Page, and
 ends with `RESULT selftest passed=N failed=0`.
+
+## Reading: profiles, companies, search, notifications, Page stats (Phase 2, live since 2026-09-09)
+
+Read-only, JSON out, one record per line then a RESULT line. Use these instead
+of improvising browser automation for a one-off read.
+
+```
+cc-linkedin read-profile <profile URL or slug> [--expect "phrase"]
+cc-linkedin read-company <company URL or slug>
+cc-linkedin search-people "query" [--company X] [--title X] [--location X] [--limit N]
+cc-linkedin search-posts "query" [--limit N] [--resolve]
+cc-linkedin notifications [--limit N]
+cc-linkedin stats --page 107519091 --page-name "CenterConsulting, Inc." [--days 30]
+```
+
+**An empty read is a FAILURE, never a result.** Every verb checks it is signed
+in, checks it landed on the entity asked for, and fails loudly rather than
+printing an empty record with a zero exit. If one of these prints FAIL, believe
+it - do not go and do the same thing by hand and assume the tool was wrong.
+
+**Reads have their own budget: 80 a day, 3-8 seconds apart.** A profile read
+leaves the ordinary "viewed your profile" trace, and high-volume profile viewing
+is one of the top triggers for an account warning. `notifications` and `stats`
+cost nothing - they are Soren's own screens. Over the cap the verb stops and
+says "tomorrow".
+
+**`search-posts` does not give you a permalink by default.** A content-search
+card carries none - this was measured, not assumed. You get `share_url` (a
+`lnkd.in` link) and `permalink: null`. Add `--resolve` (capped at 10 rows) to
+follow each short link in the browser and fill `permalink`, which is what you
+need before passing a result to `comment`, `react` or `read-post`.
+
+**`stats` numbers come from the Page's Content engagement table.** `sum_of_posts`
+is the sum of those rows, NOT LinkedIn's own aggregate - do not report it to
+anyone as "the Page's impressions". `--days` defaults to 30 and drives the
+window control; LinkedIn's own default is 15, so a screenshot taken by hand may
+not be comparable.
 
 ## Pages this machine posts to
 

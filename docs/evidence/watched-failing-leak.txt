@@ -1,0 +1,27 @@
+FAIL: test_no_run_of_fifteen_or_more_digits (tests.test_no_leak.TheCommittedDumpsCarryNoIdentifiers.test_no_run_of_fifteen_or_more_digits)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\ReposFred\cc-linkedin.mission\tests\test_no_leak.py", line 75, in test_no_run_of_fifteen_or_more_digits
+    self.assertEqual(bad, [], "a LinkedIn content id is 19 digits and resolves to a real "
+AssertionError: Lists differ: ['notifications-2026-09-09.txt:222 li%3Aac[967 chars]dat'] != []
+
+First list contains 9 additional elements.
+First extra element 0:
+'notifications-2026-09-09.txt:222 li%3Aactivity%3A<a 19-digit content id>&highlightedUpdateType=SHARED_BY_YOUR_NET'
+
+Diff is 1100 characters long. Set self.maxDiff to None to see it. : a LinkedIn content id is 19 digits and resolves to a real person's content:
+  notifications-2026-09-09.txt:222 li%3Aactivity%3A<a 19-digit content id>&highlightedUpdateType=SHARED_BY_YOUR_NET
+  notifications-2026-09-09.txt:255 li%3Aactivity%3A<a 19-digit content id>&highlightedUpdateType=SHARED_BY_YOUR_NET
+  notifications-2026-09-09.txt:286 li%3Aactivity%3A<a 19-digit content id>&highlightedUpdateType=COMMENTED_ON_UPDAT
+  notifications-2026-09-09.txt:365 li%3Aactivity%3A<a 19-digit content id>&highlightedUpdateType=SHARED_BY_YOUR_NET
+  notifications-2026-09-09.txt:395 li%3Aactivity%3A<a 19-digit content id>&highlightedUpdateType=REACTED_TO_UPDATE_
+  notifications-2026-09-09.txt:470 li%3Aactivity%3A<a 19-digit content id>&highlightedUpdateType=SHARED_BY_YOUR_NET
+  notifications-2026-09-09.txt:530 li%3Aactivity%3A<a 19-digit content id>&highlightedUpdateType=SHARED_BY_YOUR_NET
+  search-posts-2026-09-09.txt:478 shareId=<a 19-digit content id>)), contentUrnUgcPostUrn=null, detectedLocale=, targ
+  stats-2026-09-09.txt:586 3AugcPost%3A<a 19-digit content id>& data-test-boost-bar-button=analytics-table dat
+
+======================================================================
+
+Recorded before ruling R17 was implemented. The ids themselves are masked HERE
+and only here - the point of the evidence is that the check found them, not what
+they were.

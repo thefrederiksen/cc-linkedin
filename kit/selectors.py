@@ -59,3 +59,178 @@ REACT = {
 }
 
 CONFIRM_DELETE = re.compile(r"^Delete$")
+
+
+# ============================================================================
+# PHASE 2: reading people, companies, search, notifications, Page analytics.
+# Every line below was measured on the live page on 2026-09-09 and the dump it
+# came from is committed under docs/surveys/. A LinkedIn change is a one-line
+# fix here.
+#
+# WHICH RENDERING EACH SURFACE SERVES (measured 2026-09-09, each twice)
+#   /in/<slug>/                       new React (SDUI) ONLY - [data-urn] 0, and
+#                                     .global-nav__me does not exist
+#   /company/<slug>/about/            classic org page, org-top-card-* classes
+#   /company/<id>/admin/analytics/    classic
+#   /search/results/people/           new React (SDUI) ONLY
+#   /search/results/content/          new React (SDUI) ONLY
+#   /notifications/                   classic, nt-card classes
+# Unlike the post permalink Phase 1 met, none of these was ever seen in a second
+# rendering, so there is no reload-until-classic dance here. If one day a dump
+# disagrees with another taken minutes later, that surface has gained a second
+# rendering and BOTH belong in this file.
+# ============================================================================
+
+# -- profile, the SDUI rendering --------------------------------- 2026-09-09
+# The class names are hashed and change without notice; the element IDs are
+# generated from the server-driven component names and are the only stable
+# handle on the page. The top card's id is
+# "com.linkedin.sdui.profile.card.ref<memberid>Topcard", so it is matched on the
+# SUFFIX; an id selector cannot be used directly because the id contains dots.
+PROFILE_TOPCARD = 'div[id$="Topcard"]'
+PROFILE_ABOUT_CARD = 'div[id$="About"]'
+PROFILE_ACTIVITY_CARD = 'div[id$="Activity"]'
+PROFILE_CONTACT_INFO = 'a[href*="/overlay/contact-info/"]'
+# The About card's expander reads "... more", not "see more" (measured
+# 2026-09-09: the collapsed text ends "… more"). Both spellings match.
+PROFILE_SEE_MORE = re.compile(u"^\s*(?:\u2026\s*)?(?:see\s+)?more\s*$", re.I)
+# The degree badge is a paragraph of its own reading "- 1st". It is rendered
+# TWICE on the same card, inside different responsive wrappers, and the two can
+# hold DIFFERENT values (measured: a 1st-degree profile carried both "- 1st" and
+# a hidden "- 2nd"). Only the visible one is read, and two visible ones that
+# disagree are a FAIL, never a first-in-document-order guess.
+DEGREE_TEXT = re.compile(u"^[\u00b7\u2022\s]*(1st|2nd|3rd\+?|You)\s*$", re.I)
+DEGREES = ("self", "1st", "2nd", "3rd", "3rd+")
+
+# THE FIELD THAT WAS REMOVED, AND WHY -------------------------- 2026-09-09
+# There used to be a CONNECTION_STATES tuple here - ("Connect", "Pending",
+# "Message", "Follow", "Following") - and read-profile reported the first of
+# those words it could find among the top card's controls, as
+# `connection_state`. DO NOT PUT IT BACK. Measured on
+# a 3rd-degree profile on 2026-09-09: the action row reads
+# "Message Follow More", there is no Connect control on the top card at all,
+# and the invitation lives in the More menu. The old field answered "what does
+# a button here say" while every caller reads it as "can I connect with this
+# person" - so it answered Message, and a caller deciding whether to send an
+# invitation concluded wrongly. It is replaced by two fields read from the two
+# different controls they actually come from: `primary_button` (the filled
+# control, below) and `can_connect` (the invite control, wherever it lives).
+
+# THE PRIMARY CONTROL IS IDENTIFIED BY ITS FILL, NOT BY ITS POSITION AND NOT BY
+# ITS WORDS. Measured 2026-09-09 on five profiles: every top card paints
+# exactly one action in LinkedIn blue and outlines the rest, and the filled one
+# is NOT always the leftmost - on one of them the row reads
+# "Message Follow More" left to right and the filled control is Message. The
+# colour sits on an inner <span>, never on the <a>/<button> itself, so the whole
+# subtree is searched. Class names on this surface are hashed and meaningless;
+# this colour is not. If LinkedIn restyles, read-profile FAILS naming this
+# constant and the fix is this one line.
+PROFILE_PRIMARY_FILL = "rgb(10, 102, 194)"
+# The action row is then every visible control sitting on the same line as that
+# one, within this many pixels of its top edge.
+PROFILE_ROW_TOLERANCE = 6
+
+# THE INVITE CONTROL, WHEREVER IT LIVES. Measured 2026-09-09, three shapes on
+# five profiles, and the tool must not care which shape it got:
+#   * two of them - on the top card: an <a>
+#     reading "Connect", aria-label "Invite <name> to connect", href
+#     /preload/custom-invite/?vanityName=<slug>
+#   * two more - NOT on the top card at
+#     all; a More-menu item reading "Connect", same custom-invite href, and no
+#     aria-label
+#   * one already connected - no invite control anywhere, and
+#     the More menu offers "Remove connection" instead
+# The href is the reliable marker and the aria-label is the second; the word
+# "Connect" alone is not, because it appears all over a profile page (the
+# right-hand rail's suggestion cards are full of it).
+INVITE_HREF = "custom-invite"
+INVITE_ARIA = re.compile(r"^Invite .+ to connect$", re.I)
+# The More button on somebody else's top card: text "More" on the wide layout,
+# aria-label "More" on the narrow one. The owner's OWN top card has neither -
+# its row reads Open to / Add section / Add custom button / Resources - which is
+# one more reason read-profile never opens a menu on its own profile.
+# Matched on the ACCESSIBLE NAME, not on a CSS text selector: the word sits in
+# a nested <span>, so button:text-is("More") returns 0 on a button a person
+# plainly reads as "More" (measured 2026-09-09 on a 3rd-degree profile).
+PROFILE_MORE_NAME = re.compile(r"^More$")
+PROFILE_MENU_ITEM = '[role="menuitem"]'
+# PROOF THE MENU ACTUALLY OPENED. A menu read that comes back empty is
+# indistinguishable from a menu with no invite in it, and the second reading is
+# the one that quietly reports can_connect=false forever. So the menu is
+# believed only when this item is in it - measured present in every one of the
+# four other-profile menus read on 2026-09-09, connected and unconnected alike.
+PROFILE_MENU_PROOF = "About this member"
+
+# Counts are read from the WHOLE top card's text, not from one paragraph.
+# Measured 2026-09-09: the connections count is ONE paragraph ("500+
+# connections" on the owner's own profile and on one other) on some profiles
+# and TWO adjacent paragraphs ("500+", then "connections") on three others.
+# A per-paragraph matcher sees the second shape as
+# a bare "500+" with no word attached - which is exactly how "500+" came to be
+# reported as an employer - so the card's text is normalised first and matched
+# as a whole. "N other mutual connections" cannot match it: the number is not
+# adjacent to the word.
+COUNT_LINE = re.compile(r"^\s*([\d][\d,\.]*\+?|\d+(?:\.\d+)?[KMB])\s+(connections?|followers?)\s*$", re.I)
+CONNECTIONS_IN_CARD = re.compile(r"([\d][\d,\.]*\+?|\d+(?:\.\d+)?[KMB])\s+connections?\b", re.I)
+# Anything that is only a number, with or without a K/M/B or a trailing plus.
+# A value that matches this is a COUNT, and a count must never be reported as a
+# company, a headline or a location.
+BARE_COUNT = re.compile(r"^\s*(?:[\d][\d,\.]*|\d+(?:\.\d+)?\s*[KMB])\+?\s*$", re.I)
+
+# -- company, the classic org page ------------------------------- 2026-09-09
+# A Page ADMIN is redirected from /company/<id>/ and /company/<slug>/about/ to
+# /admin/dashboard/. ?viewAsMember=true serves the ordinary member page and was
+# measured NOT to redirect.
+COMPANY_MEMBER_VIEW = "https://www.linkedin.com/company/%s/about/?viewAsMember=true"
+COMPANY = {
+    "name": "h1.org-top-card-summary__title, .org-top-card-summary__title, h1",
+    "tagline": "p.org-top-card-summary__tagline, .org-top-card-summary__tagline",
+    "info_item": ".org-top-card-summary-info-list__info-item",
+    "about": "section.org-about-module__margin-bottom p.break-words, .org-about-module__margin-bottom p.break-words",
+    "details": "dl",
+    "term": "dt",
+    "definition": "dd",
+}
+FOLLOWERS_ITEM = re.compile(r"^\s*([\d][\d,\.]*|\d+(?:\.\d+)?[KMB])\s+followers?\s*$", re.I)
+
+# -- people search, the SDUI rendering --------------------------- 2026-09-09
+# A result is a div[role=listitem]; the person's name is the text of the FIRST
+# anchor to /in/ that sits inside a <p>, and that <p>'s parent holds two further
+# div > p pairs, the headline then the location. The outer anchor wrapping the
+# whole card also points at /in/ - matching on "p a" is what separates the name
+# from the card.
+SEARCH_ITEM = 'div[role="listitem"]'
+SEARCH_PERSON_NAME = 'p a[href*="/in/"]'
+SEARCH_PERSON_LINES = ':scope > div > p'
+# A content-search card carries NO permalink and no activity urn anywhere in its
+# DOM (measured: a[href*="urn:li:activity"] 0, [data-urn] 0, [data-id] 0, on
+# four consecutive loads). Its "Copy link to post" is a menu item with no href
+# that writes a shortened lnkd.in link to the clipboard.
+SEARCH_POST_MENU = re.compile(r"^Open control menu for post by (.+)$")
+COPY_LINK_ITEM = "Copy link to post"
+SHORT_LINK = re.compile(r"https://lnkd\.in/\S+")
+
+# -- notifications, the classic rendering ------------------------ 2026-09-09
+NOTIFICATION = {
+    "card": "article.nt-card",
+    "unread": "nt-card--unread",
+    "headline": "a.nt-card__headline",
+    "text": ".nt-card__text--3-line",
+    "actor_link": 'a[data-view-name="notification-card-image"]',
+    "when": "p.nt-card__time-ago",
+}
+NOTIFICATION_ACTOR = re.compile(u"^View (.+)[\u2019']s profile\.$")
+HIGHLIGHTED_URN = re.compile(r"highlightedUpdateUrn=([^&]+)")
+
+# -- Page analytics, the classic rendering ----------------------- 2026-09-09
+# THE TRAP ON THIS SURFACE. The only four-number headline card on
+# /admin/analytics/updates/ is titled "Your profile view highlights" and holds
+# the signed-in MEMBER's own profile-view numbers, not the Page's:
+# .member-analytics-addon-summary__list-item has four hits, the right shape and
+# the right four labels (Impressions / Reactions / Comments / Reposts), and
+# reading it returns the wrong entity's data with no error. It is named here so
+# that nobody reaches for it again.
+STATS_MEMBER_ADDON_DO_NOT_USE = ".member-analytics-addon-summary__list-item"
+STATS_ADMIN_HEADER_FOLLOWERS = re.compile(r"([\d][\d,\.]*)\s+followers?", re.I)
+STATS_TABLE = "table"
+STATS_TIME_RANGE = re.compile(r"Time range:\s*(.+?)\s*-\s*(.{4,25}?\d{4})", re.I)

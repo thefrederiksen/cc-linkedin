@@ -1,0 +1,101 @@
+R19: the company-path rule, watched failing first
+=================================================
+2026-09-10, the live-proving Manager. A test that has never been watched
+failing is decoration. Both new rules were run against a tree carrying a
+planted organisation id BEFORE the rule was believed.
+
+THE PLANT. Two fabricated ids - 77777777 and 66666666 - made up at the
+keyboard, not lifted from any page, and deliberately not on ALLOWED_ORG_IDS.
+One appended to a committed dump, one written into kit/selectors.py as a
+comment, which is the exact shape of the leak that started all of this:
+three short links handwritten into a module docstring.
+
+--- 1. THE OLD RULES ARE BLIND TO BOTH. Fifteen-digit shape rule and the
+---    short-link rule, dumps and source, with both plants in the tree:
+test_no_run_of_fifteen_or_more_digits (tests.test_no_leak.TheCommittedDumpsCarryNoIdentifiers.test_no_run_of_fifteen_or_more_digits) ... ok
+test_no_short_link_with_a_real_code (tests.test_no_leak.TheCommittedDumpsCarryNoIdentifiers.test_no_short_link_with_a_real_code) ... ok
+test_no_run_of_fifteen_or_more_digits_in_the_source (tests.test_no_leak.TheSourceTreeCarriesNoShortLinks.test_no_run_of_fifteen_or_more_digits_in_the_source) ... ok
+test_no_short_link_with_a_real_code_in_the_source (tests.test_no_leak.TheSourceTreeCarriesNoShortLinks.test_no_short_link_with_a_real_code_in_the_source) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.023s
+
+OK
+
+--- 2. THE NEW RULES SEE BOTH, and name the file, the line and the path:
+FF
+======================================================================
+FAIL: test_no_third_party_organisation_id_on_an_organisation_path (tests.test_no_leak.TheCommittedDumpsCarryNoIdentifiers.test_no_third_party_organisation_id_on_an_organisation_path)
+R19. An organisation id is six to nine digits, so the fifteen-digit
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\ReposFred\cc-linkedin.mission\tests\test_no_leak.py", line 150, in test_no_third_party_organisation_id_on_an_organisation_path
+    self.assertEqual(bad, [], "an organisation id names a real company page and is a stable "
+AssertionError: Lists differ: ['stats-2026-09-09.txt:643 /company/77777777'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'stats-2026-09-09.txt:643 /company/77777777'
+
+- ['stats-2026-09-09.txt:643 /company/77777777']
++ [] : an organisation id names a real company page and is a stable key to it; put it on ALLOWED_ORG_IDS only if it is the owner's own or was made up:
+  stats-2026-09-09.txt:643 /company/77777777
+
+======================================================================
+FAIL: test_no_third_party_organisation_id_on_an_organisation_path_in_the_source (tests.test_no_leak.TheSourceTreeCarriesNoShortLinks.test_no_third_party_organisation_id_on_an_organisation_path_in_the_source)
+R19, on the source tree. The leak that started all of this was three
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\ReposFred\cc-linkedin.mission\tests\test_no_leak.py", line 231, in test_no_third_party_organisation_id_on_an_organisation_path_in_the_source
+    self.assertEqual(bad, [], "\n  ".join(bad[:10]))
+AssertionError: Lists differ: ['kit\\selectors.py:238 /school/66666666'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'kit\\selectors.py:238 /school/66666666'
+
+- ['kit\\selectors.py:238 /school/66666666']
++ [] : kit\selectors.py:238 /school/66666666
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.019s
+
+FAILED (failures=2)
+
+--- 3. THE PLANTS REMOVED (git checkout), the tree clean, the suite green:
+ M tests/test_no_leak.py
+?? docs/evidence/watched-failing-company-id.txt
+(git status --short above: only the two files this pass wrote)
+----------------------------------------------------------------------
+Ran 124 tests in 2.330s
+
+OK
+RESULT redact-surveys files=8 changed=0
+
+--- 4. WHAT THIS RULE ADDS, AND WHAT IT DOES NOT
+
+Said plainly, because half of it was already covered and a proof that overstates
+its reach is worse than none.
+
+The redactor already knew this form. `tools/survey.py` has ORG_PATH with its own
+OWN allowlist, and `tools/redact_surveys.py --check` FAILED on the planted dump
+in step 1 while every test in tests/test_no_leak.py passed:
+
+    REDACT  docs/surveys/stats-2026-09-09.txt: 1 line(s)
+              643: href="https://www.linkedin.com/company/77777777/admin/..."
+    FAIL 1 dump(s) still carry identifiers the redactor knows how to remove.
+
+So on the DUMPS this is a second, independent net over ground `--check` already
+covers - worth having, because that check tests the artefact THROUGH the
+redactor's rule list and this one does not, but not a hole that was open.
+
+On the SOURCE TREE the hole was open and this closes it. `--check` never looks
+at a .py file, and the fifteen-digit rule cannot see a nine-digit id. An
+organisation path written into a selector, a fixture or a docstring was
+undetected by anything in this repository until now - which is exactly how the
+original leak got in.
+
+STILL NOT DETECTED, by this rule or any other here: an organisation id that is
+not on one of these four paths. `urn:li:organization:<id>` is redacted by shape
+when a dump is written but is not checked for afterwards; a `fsd_company`
+parameter and a bare number in prose are covered by nothing.

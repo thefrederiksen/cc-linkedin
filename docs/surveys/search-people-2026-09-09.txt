@@ -1,0 +1,623 @@
+# survey search-people
+# taken   2026-09-09 17:06:09
+# request https://www.linkedin.com/search/results/people/?keywords=<value>
+# final   https://www.linkedin.com/search/results/people/?keywords=<value>
+# rendering react ([data-urn] count=0)
+# signed-in probes {".global-nav__me": 0, "button.global-nav__primary-link-me-menu-trigger": 0, "img.global-nav__me-photo": 0, "[data-test-global-nav-me]": 0, "nav.global-nav": 0, ".global-nav__nav": 0, "#global-nav": 0, "header.global-nav": 0, "[data-view-name=\"navigation-me\"]": 0}
+# 'Me' controls    []
+# title   "Search | LinkedIn"
+# body    "<redacted len=300>"
+
+== ACCESSIBILITY (863 nodes in the tree) ==
+  heading        "0 notifications"
+  button         "LinkedIn"
+  StaticText     "0 notifications"
+  button         "Skip to search"
+  button         "Skip to main content"
+  button         "<redacted len=23>"
+  button         "<redacted len=13>"
+  region         "<redacted len=15>"
+  StaticText     "Skip to search"
+  StaticText     "Skip to main content"
+  StaticText     "<redacted len=23>"
+  StaticText     "<redacted len=13>"
+  button         "<redacted len=15>"
+  radio          "Filter by 1st connections"
+  radio          "Filter by 2nd connections"
+  radio          "Filter by 3rd+ connections"
+  button         "<redacted len=23>"
+  button         "<redacted len=19>"
+  button         "Filter by Current companies"
+  button         "All filters"
+  textbox        "Search"
+  button         "<redacted len=12>"
+  link           "<redacted len=30>"
+  radio          "Filter by People"
+  StaticText     "All filters"
+  button         "<redacted len=64>"
+  button         "<redacted len=67>"
+  button         "Next"
+  heading        "<redacted len=12>"
+  button         "<redacted len=24>"
+  link           "<redacted len=31>"
+  link           "<redacted len=25>"
+  link           "<redacted len=30>"
+  link           "<redacted len=34>"
+  button         "Me"
+  StaticText     "<redacted len=12>"
+  StaticText     "<redacted len=9>"
+  checkbox       "1st"
+  checkbox       "2nd"
+  checkbox       "3rd+"
+  checkbox       "<redacted len=15>"
+  checkbox       "<redacted len=9>"
+  checkbox       "Current companies"
+  StaticText     "<redacted len=26>"
+  StaticText     "<redacted len=45>"
+  StaticText     "Next"
+  StaticText     "<redacted len=12>"
+  StaticText     "<redacted len=31>"
+  button         "<redacted len=12>"
+  StaticText     "<redacted len=17>"
+  StaticText     "Home"
+  StaticText     "<redacted len=10>"
+  StaticText     "Jobs"
+  StaticText     "Messaging"
+  StaticText     "Notifications"
+  StaticText     "Me"
+  checkbox       "People"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=9>"
+  StaticText     "Current companies"
+  link           "<redacted len=126>"
+  link           "<redacted len=187>"
+  link           "<redacted len=201>"
+  link           "<redacted len=310>"
+  link           "<redacted len=234>"
+  link           "<redacted len=127>"
+  link           "<redacted len=117>"
+  link           "<redacted len=113>"
+  link           "<redacted len=216>"
+  link           "<redacted len=152>"
+  button         "Page 1"
+  button         "Page 2"
+  button         "Page 3"
+  button         "Page 4"
+  button         "Page 5"
+  button         "Page 6"
+  button         "Page 7"
+  button         "Page 8"
+  button         "Page 9"
+  button         "Page 10"
+  link           "About"
+  link           "<redacted len=13>"
+  link           "<redacted len=11>"
+  button         "<redacted len=15>"
+  link           "<redacted len=10>"
+  link           "<redacted len=11>"
+  button         "<redacted len=17>"
+  link           "<redacted len=20>"
+  link           "More"
+  StaticText     "<redacted len=27>"
+  button         "<redacted len=80>"
+  button         "<redacted len=80>"
+  StaticText     "People"
+  StaticText     "1"
+  StaticText     "2"
+  StaticText     "3"
+  StaticText     "4"
+  StaticText     "5"
+  StaticText     "6"
+  StaticText     "7"
+  StaticText     "8"
+  StaticText     "9"
+  StaticText     "10"
+  StaticText     "<redacted len=80>"
+  button         "<redacted len=28>"
+  button         "<redacted len=15>"
+  StaticText     "<redacted len=80>"
+  link           "<redacted len=25>"
+  StaticText     "<redacted len=5>"
+  StaticText     "<redacted len=69>"
+  StaticText     "<redacted len=24>"
+  link           "<redacted len=26>"
+  StaticText     "<redacted len=5>"
+  StaticText     "<redacted len=70>"
+  StaticText     "<redacted len=24>"
+  link           "<redacted len=35>"
+  StaticText     "<redacted len=22>"
+  link           "<redacted len=26>"
+  StaticText     "<redacted len=5>"
+  StaticText     "<redacted len=47>"
+  StaticText     "<redacted len=46>"
+  link           "<redacted len=35>"
+  link           "<redacted len=14>"
+  StaticText     "<redacted len=22>"
+  link           "<redacted len=29>"
+  StaticText     "<redacted len=5>"
+  StaticText     "<redacted len=126>"
+  StaticText     "<redacted len=52>"
+  link           "<redacted len=39>"
+  link           "<redacted len=13>"
+  StaticText     ","
+  link           "<redacted len=10>"
+  StaticText     "&"
+  link           "<redacted len=26>"
+  link           "<redacted len=26>"
+  StaticText     "<redacted len=6>"
+  StaticText     "<redacted len=117>"
+  StaticText     "<redacted len=46>"
+  link           "<redacted len=35>"
+  link           "<redacted len=26>"
+  StaticText     "<redacted len=6>"
+  StaticText     "<redacted len=36>"
+  StaticText     "<redacted len=20>"
+  link           "<redacted len=35>"
+  link           "<redacted len=17>"
+  StaticText     "<redacted len=6>"
+  StaticText     "<redacted len=24>"
+  StaticText     "<redacted len=31>"
+  link           "<redacted len=35>"
+  link           "<redacted len=26>"
+  StaticText     "<redacted len=5>"
+  StaticText     "<redacted len=36>"
+  StaticText     "<redacted len=7>"
+  link           "<redacted len=35>"
+  link           "<redacted len=31>"
+  StaticText     "<redacted len=5>"
+  StaticText     "<redacted len=50>"
+  StaticText     "<redacted len=46>"
+  link           "<redacted len=40>"
+  link           "<redacted len=16>"
+  StaticText     "<redacted len=22>"
+  link           "<redacted len=29>"
+  StaticText     "<redacted len=6>"
+  StaticText     "<redacted len=36>"
+  StaticText     "<redacted len=39>"
+  link           "<redacted len=38>"
+  StaticText     "About"
+  StaticText     "<redacted len=13>"
+  StaticText     "<redacted len=11>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=10>"
+  StaticText     "<redacted len=11>"
+  StaticText     "<redacted len=17>"
+  StaticText     "<redacted len=20>"
+  StaticText     "More"
+  StaticText     "<redacted len=16>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=17>"
+  StaticText     "<redacted len=17>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=17>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=14>"
+  StaticText     "<redacted len=21>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=13>"
+  StaticText     "<redacted len=10>"
+  StaticText     "<redacted len=26>"
+  StaticText     "<redacted len=17>"
+  StaticText     "Message"
+  StaticText     "<redacted len=17>"
+  StaticText     "Message"
+  StaticText     "<redacted len=17>"
+  StaticText     "Message"
+  StaticText     "<redacted len=17>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=22>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=16>"
+  StaticText     "<redacted len=20>"
+  StaticText     "Message"
+
+== PROBES ==
+  [10] div[role="listitem"]
+  [14] div[role="listitem"] p a[href*="/in/"]
+  [23] div[id^="SearchResults"]
+
+== DOM OUTLINE of div[role="list"] (403 nodes, depth<=30) ==
+  div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee  role=list
+    div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
+      div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee  role=listitem
+        div.b0d70e28._93e2ccf0  data-display-contents=true
+          a._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  href=https://www.linkedin.com/in/<slug>/
+            div._970c3eec._704ac4e0.afc9c46f.fd4f607c._3f534fa0._812fef91
+              div.a9b72b69._347e609e.aa06aed8._4bd14a34._130bfecf.a604b77a
+                div#0cb9c4a4-b10e-429b-bb8e-d5b8f6adec9a._2e8203b5._93e2ccf0  "<redacted len=17>"
+                  span.b7a0bafa._93e2ccf0
+                  svg#linkedin-bug-small._3db427ba.b8135b11._2fee7e1e  role=img aria-label="Premium" data-supported-dps=16x16 data-token-id=459
+                figure._51bda835.e6fa12cc._7d5c2c33._059d7400.ea6b618d._23c51670
+                  img._279ea809._35c7e914.be5a9f80.ef5dd24d._4ef7ad8f  data-loaded=true
+                div._970c3eec._704ac4e0.a9b72b69._23bc1528.aa06aed8._55d4291a
+                  p._9cb3f17d._04709d9d._84ce356b._7094a4ce.f21fdc59.bd49adbe
+                    a._35ce350e._5b279aba._654a606b._550e4f00  href=https://www.linkedin.com/in/<slug>/  "<redacted len=17>"
+                      span.b7a0bafa._93e2ccf0
+                      span._527f089d.b8135b11._93e2ccf0  role=img aria-label="Premium"
+                        svg#linkedin-bug-small._3db427ba.b8135b11.b5366d5a._2fee7e1e  data-supported-dps=16x16 data-token-id=459
+                    span._5575a1cd._93e2ccf0
+                      span._84ce356b.af1ff144._7094a4ce._6eff3ba2.bd49adbe._93e2ccf0  "<redacted len=5>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._35ce350e
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=69>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._5575a1cd
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=24>"
+                div.a9b72b69._347e609e.aa06aed8._25f92bae.b6c5c0ee.a604b77a
+                  div#SearchResults<memberid>._80e7dc63._4301d873._93e2ccf0
+                    div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
+              div#SearchResultssnippet_<memberid>._80e7dc63._4301d873._93e2ccf0
+        hr._74c45efc._9213b59e._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  role=presentation
+    div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
+      div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee  role=listitem
+        div.b0d70e28._93e2ccf0  data-display-contents=true
+          a._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  href=https://www.linkedin.com/in/<slug>/
+            div._970c3eec._704ac4e0.afc9c46f.fd4f607c._3f534fa0._812fef91
+              div.a9b72b69._347e609e.aa06aed8._4bd14a34._130bfecf.a604b77a
+                div#3e103f68-b547-4a95-8ad5-3703d07fda2c._2e8203b5._93e2ccf0  "<redacted len=17>"
+                  span.b7a0bafa._93e2ccf0
+                  svg#verified-small._27f2250c.b8135b11._2fee7e1e  role=img aria-label="Verified" data-supported-dps=16x16 data-token-id=304
+                figure._51bda835.e6fa12cc._7d5c2c33._059d7400.ea6b618d._23c51670
+                  img._279ea809._35c7e914.be5a9f80.ef5dd24d._4ef7ad8f  data-loaded=true
+                div._970c3eec._704ac4e0.a9b72b69._23bc1528.aa06aed8._55d4291a
+                  p._9cb3f17d._04709d9d._84ce356b._7094a4ce.f21fdc59.bd49adbe
+                    a._35ce350e._5b279aba._654a606b._550e4f00  href=https://www.linkedin.com/in/<slug>/  "<redacted len=17>"
+                      span.b7a0bafa._93e2ccf0
+                      span._527f089d.b8135b11._93e2ccf0  role=img aria-label="Verified"
+                        svg#verified-small._27f2250c.b8135b11.b5366d5a._2fee7e1e  data-supported-dps=16x16 data-token-id=304
+                    span._5575a1cd._93e2ccf0
+                      span._84ce356b.af1ff144._7094a4ce._6eff3ba2.bd49adbe._93e2ccf0  "<redacted len=5>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._35ce350e
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=70>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._5575a1cd
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=24>"
+                div.a9b72b69._347e609e.aa06aed8._25f92bae.b6c5c0ee.a604b77a
+                  div#SearchResults<memberid>._80e7dc63._4301d873._93e2ccf0
+                    div.b0d70e28._93e2ccf0  data-display-contents=true
+                      div._175f6c4b._845acbad._5909bdef._93e2ccf0
+                        div.b0d70e28._93e2ccf0  data-display-contents=true
+                          a.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=35>" href=/preload/search-custom-invite/?vanityName=soren-frederiksen-1b740b42
+                            span.dc0cb4c2.be9bc2bf._704ac4e0._25f92bae._6ec7d740.a67ed751
+                              svg#connect-small._95106a6a.c234c48b._4daf6ec6._2a907666._5a61b66c._8a2f3f8a  data-supported-dps=16x16 data-token-id=414
+                              div.f21fdc59.f255c433.c1768806
+                                span._9cb3f17d.d607a97b.dcaa7c96.f21fdc59._00a7c7e3._320058e5
+                                  span  "Connect"
+              div#SearchResultssnippet_<memberid>._80e7dc63._4301d873._93e2ccf0
+              div._69a8fdae._4087679b._646eaa08.a9b72b69._347e609e.aa06aed8
+                figure._51bda835.e6fa12cc._7d5c2c33._059d7400.ea6b618d.a74f0906
+                  svg#person-accent-4._279ea809._35c7e914.be5a9f80.ef5dd24d._87a34f78  data-token-id=356
+                div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._5575a1cd
+                  p._9cb3f17d._2bc3f589._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                    span  "<redacted len=22>"
+                      a.f255c433._550e4f00  href=https://
+                      span.b7a0bafa._93e2ccf0
+        hr._74c45efc._9213b59e._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  role=presentation
+    div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
+      div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee  role=listitem
+        div.b0d70e28._93e2ccf0  data-display-contents=true
+          a._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  href=https://www.linkedin.com/in/<slug>/
+            div._970c3eec._704ac4e0.afc9c46f.fd4f607c._3f534fa0._812fef91
+              div.a9b72b69._347e609e.aa06aed8._4bd14a34._130bfecf.a604b77a
+                div#24592405-b3bb-4d27-b830-c0f432755e3b._2e8203b5._93e2ccf0  "<redacted len=17>"
+                  span.b7a0bafa._93e2ccf0
+                  svg#verified-small._27f2250c.b8135b11._2fee7e1e  role=img aria-label="Verified" data-supported-dps=16x16 data-token-id=304
+                figure._51bda835.e6fa12cc._7d5c2c33._059d7400.ea6b618d._23c51670
+                  img._279ea809._35c7e914.be5a9f80.ef5dd24d._4ef7ad8f  data-loaded=true
+                div._970c3eec._704ac4e0.a9b72b69._23bc1528.aa06aed8._55d4291a
+                  p._9cb3f17d._04709d9d._84ce356b._7094a4ce.f21fdc59.bd49adbe
+                    a._35ce350e._5b279aba._654a606b._550e4f00  href=https://www.linkedin.com/in/<slug>/  "<redacted len=17>"
+                      span.b7a0bafa._93e2ccf0
+                      span._527f089d.b8135b11._93e2ccf0  role=img aria-label="Verified"
+                        svg#verified-small._27f2250c.b8135b11.b5366d5a._2fee7e1e  data-supported-dps=16x16 data-token-id=304
+                    span._5575a1cd._93e2ccf0
+                      span._84ce356b.af1ff144._7094a4ce._6eff3ba2.bd49adbe._93e2ccf0  "<redacted len=5>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._35ce350e
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=47>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._5575a1cd
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=46>"
+                div.a9b72b69._347e609e.aa06aed8._25f92bae.b6c5c0ee.a604b77a
+                  div#SearchResults<memberid>._80e7dc63._4301d873._93e2ccf0
+                    div.b0d70e28._93e2ccf0  data-display-contents=true
+                      div._175f6c4b._845acbad._5909bdef._93e2ccf0
+                        div.b0d70e28._93e2ccf0  data-display-contents=true
+                          a.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=35>" href=/preload/search-custom-invite/?vanityName=sfredk
+                            span.dc0cb4c2.be9bc2bf._704ac4e0._25f92bae._6ec7d740.a67ed751
+                              svg#connect-small._95106a6a.c234c48b._4daf6ec6._2a907666._5a61b66c._8a2f3f8a  data-supported-dps=16x16 data-token-id=414
+                              div.f21fdc59.f255c433.c1768806
+                                span._9cb3f17d.d607a97b.dcaa7c96.f21fdc59._00a7c7e3._320058e5
+                                  span  "Connect"
+              div#SearchResultssnippet_<memberid>._80e7dc63._4301d873._93e2ccf0
+              div._69a8fdae._4087679b._646eaa08.a9b72b69._347e609e.aa06aed8
+                figure._51bda835.e6fa12cc._7d5c2c33._059d7400.ea6b618d.a74f0906
+                  svg#person-accent-4._279ea809._35c7e914.be5a9f80.ef5dd24d._87a34f78  data-token-id=356
+                  img._279ea809._35c7e914.be5a9f80.ef5dd24d._4ef7ad8f  data-loaded=true
+                div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._5575a1cd
+                  p._9cb3f17d._2bc3f589._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                    span  "<redacted len=22>"
+                      a.f255c433._550e4f00  href=https://www.linkedin.com/in/<slug>/  "<redacted len=14>"
+                      span.b7a0bafa._93e2ccf0
+        hr._74c45efc._9213b59e._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  role=presentation
+    div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
+      div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee  role=listitem
+        div.b0d70e28._93e2ccf0  data-display-contents=true
+          a._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  href=https://www.linkedin.com/in/<slug>/
+            div._970c3eec._704ac4e0.afc9c46f.fd4f607c._3f534fa0._812fef91
+              div.a9b72b69._347e609e.aa06aed8._4bd14a34._130bfecf.a604b77a
+                div#e20bdd57-3ea7-4d28-812f-05e0d49807f3._2e8203b5._93e2ccf0  "<redacted len=21>"
+                  span.b7a0bafa._93e2ccf0
+                  svg#linkedin-bug-small._3db427ba.b8135b11._2fee7e1e  role=img aria-label="Premium" data-supported-dps=16x16 data-token-id=459
+                figure._51bda835.e6fa12cc._7d5c2c33._059d7400.ea6b618d._23c51670
+                  img._279ea809._35c7e914.be5a9f80.ef5dd24d._4ef7ad8f  data-loaded=true
+                div._970c3eec._704ac4e0.a9b72b69._23bc1528.aa06aed8._55d4291a
+                  p._9cb3f17d._04709d9d._84ce356b._7094a4ce.f21fdc59.bd49adbe
+                    a._35ce350e._5b279aba._654a606b._550e4f00  href=https://www.linkedin.com/in/<slug>/  "<redacted len=21>"
+                      span.b7a0bafa._93e2ccf0
+                      span._527f089d.b8135b11._93e2ccf0  role=img aria-label="Premium"
+                        svg#linkedin-bug-small._3db427ba.b8135b11.b5366d5a._2fee7e1e  data-supported-dps=16x16 data-token-id=459
+                    span._5575a1cd._93e2ccf0
+                      span._84ce356b.af1ff144._7094a4ce._6eff3ba2.bd49adbe._93e2ccf0  "<redacted len=5>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._35ce350e
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=120>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._5575a1cd
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=52>"
+                div.a9b72b69._347e609e.aa06aed8._25f92bae.b6c5c0ee.a604b77a
+                  div#SearchResults<memberid>._80e7dc63._4301d873._93e2ccf0
+                    div.b0d70e28._93e2ccf0  data-display-contents=true
+                      div._175f6c4b._845acbad._5909bdef._93e2ccf0
+                        div.b0d70e28._93e2ccf0  data-display-contents=true
+                          a.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=39>" href=/preload/search-custom-invite/?vanityName=s\xf8ren-lau-frederiksen-6aa1b329
+                            span.dc0cb4c2.be9bc2bf._704ac4e0._25f92bae._6ec7d740.a67ed751
+                              svg#connect-small._95106a6a.c234c48b._4daf6ec6._2a907666._5a61b66c._8a2f3f8a  data-supported-dps=16x16 data-token-id=414
+                              div.f21fdc59.f255c433.c1768806
+                                span._9cb3f17d.d607a97b.dcaa7c96.f21fdc59._00a7c7e3._320058e5
+                                  span  "Connect"
+              div#SearchResultssnippet_<memberid>._80e7dc63._4301d873._93e2ccf0
+              div._69a8fdae._4087679b._646eaa08.a9b72b69._347e609e.aa06aed8
+                ul.a9b72b69._347e609e._93e2ccf0  role=presentation
+                  li._6842b844._6e691c12._059d7400._481fafa3.ea6b618d._0d3bca01
+                    figure._51bda835.e6fa12cc._7d5c2c33._059d7400.ea6b618d.a74f0906
+                      svg#person-accent-4._279ea809._35c7e914.be5a9f80.ef5dd24d._87a34f78  data-token-id=356
+                      img._279ea809._35c7e914.be5a9f80.ef5dd24d._4ef7ad8f  data-loaded=true
+                  li._6842b844._6e691c12._059d7400._481fafa3.ea6b618d.b63a3376
+                    figure._51bda835.e6fa12cc._7d5c2c33._059d7400.ea6b618d.a74f0906
+                      svg#person-accent-4._279ea809._35c7e914.be5a9f80.ef5dd24d._87a34f78  data-token-id=356
+                      img._279ea809._35c7e914.be5a9f80.ef5dd24d._4ef7ad8f  data-loaded=true
+                div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._5575a1cd
+                  p._9cb3f17d._2bc3f589._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                    span  ",&"
+                      a.f255c433._550e4f00  href=https://www.linkedin.com/in/<slug>/  "<redacted len=13>"
+                      span.b7a0bafa._93e2ccf0
+                      a.f255c433._550e4f00  href=https://www.linkedin.com/in/<slug>/  "<redacted len=10>"
+                      span.b7a0bafa._93e2ccf0
+                      span.b7a0bafa._93e2ccf0
+                      a.f255c433._550e4f00  href=https://www.linkedin.com/search/results/people/?origin=SHARED_CONNECTIONS_CANNED_SEARCH&network=%5B%22F%22%5D&  "<redacted len=26>"
+        hr._74c45efc._9213b59e._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  role=presentation
+    div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
+      div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee  role=listitem
+        div.b0d70e28._93e2ccf0  data-display-contents=true
+          a._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  href=https://www.linkedin.com/in/<slug>/
+            div._970c3eec._704ac4e0.afc9c46f.fd4f607c._3f534fa0._812fef91
+              div.a9b72b69._347e609e.aa06aed8._4bd14a34._130bfecf.a604b77a
+                div#62e3c2d3-c5b0-4169-be31-c8741892a405._2e8203b5._93e2ccf0  "<redacted len=17>"
+                  span.b7a0bafa._93e2ccf0
+                  svg#verified-small._27f2250c.b8135b11._2fee7e1e  role=img aria-label="Verified" data-supported-dps=16x16 data-token-id=304
+                figure._51bda835.e6fa12cc._7d5c2c33._059d7400.ea6b618d._23c51670
+                  img._279ea809._35c7e914.be5a9f80.ef5dd24d._4ef7ad8f  data-loaded=true
+                div._970c3eec._704ac4e0.a9b72b69._23bc1528.aa06aed8._55d4291a
+                  p._9cb3f17d._04709d9d._84ce356b._7094a4ce.f21fdc59.bd49adbe
+                    a._35ce350e._5b279aba._654a606b._550e4f00  href=https://www.linkedin.com/in/<slug>/  "<redacted len=17>"
+                      span.b7a0bafa._93e2ccf0
+                      span._527f089d.b8135b11._93e2ccf0  role=img aria-label="Verified"
+                        svg#verified-small._27f2250c.b8135b11.b5366d5a._2fee7e1e  data-supported-dps=16x16 data-token-id=304
+                    span._5575a1cd._93e2ccf0
+                      span._84ce356b.af1ff144._7094a4ce._6eff3ba2.bd49adbe._93e2ccf0  "<redacted len=6>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._35ce350e
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=117>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._5575a1cd
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=46>"
+                div.a9b72b69._347e609e.aa06aed8._25f92bae.b6c5c0ee.a604b77a
+                  div#SearchResults<memberid>._80e7dc63._4301d873._93e2ccf0
+                    div.b0d70e28._93e2ccf0  data-display-contents=true
+                      div._175f6c4b._845acbad._5909bdef._93e2ccf0
+                        div.b0d70e28._93e2ccf0  data-display-contents=true
+                          a.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=35>" href=/messaging/compose/?profileUrn=<value>&recipient=<value>&screenContext=SEARCH&interop=msgOverlay
+                            span.dc0cb4c2.be9bc2bf._704ac4e0._25f92bae._6ec7d740.a67ed751
+                              svg#send-privately-small._95106a6a.c234c48b._4daf6ec6._2a907666._5a61b66c._8a2f3f8a  data-rtl=true data-supported-dps=16x16 data-token-id=232
+                              span._9cb3f17d.d607a97b.dcaa7c96.f21fdc59.f255c433.c1768806  "Message"
+              div#SearchResultssnippet_<memberid>._80e7dc63._4301d873._93e2ccf0
+        hr._74c45efc._9213b59e._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  role=presentation
+    div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
+      div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee  role=listitem
+        div.b0d70e28._93e2ccf0  data-display-contents=true
+          a._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  href=https://www.linkedin.com/in/<slug>/
+            div._970c3eec._704ac4e0.afc9c46f.fd4f607c._3f534fa0._812fef91
+              div.a9b72b69._347e609e.aa06aed8._4bd14a34._130bfecf.a604b77a
+                div#8aef32d7-bc89-45b3-a96b-c91f823022f3._2e8203b5._93e2ccf0  "<redacted len=17>"
+                  span.b7a0bafa._93e2ccf0
+                  svg#verified-small._27f2250c.b8135b11._2fee7e1e  role=img aria-label="Verified" data-supported-dps=16x16 data-token-id=304
+                figure._51bda835.e6fa12cc._7d5c2c33._059d7400.ea6b618d._23c51670
+                  img._279ea809._35c7e914.be5a9f80.ef5dd24d._4ef7ad8f  data-loaded=true
+                div._970c3eec._704ac4e0.a9b72b69._23bc1528.aa06aed8._55d4291a
+                  p._9cb3f17d._04709d9d._84ce356b._7094a4ce.f21fdc59.bd49adbe
+                    a._35ce350e._5b279aba._654a606b._550e4f00  href=https://www.linkedin.com/in/<slug>/  "<redacted len=17>"
+                      span.b7a0bafa._93e2ccf0
+                      span._527f089d.b8135b11._93e2ccf0  role=img aria-label="Verified"
+                        svg#verified-small._27f2250c.b8135b11.b5366d5a._2fee7e1e  data-supported-dps=16x16 data-token-id=304
+                    span._5575a1cd._93e2ccf0
+                      span._84ce356b.af1ff144._7094a4ce._6eff3ba2.bd49adbe._93e2ccf0  "<redacted len=6>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._35ce350e
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=36>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._5575a1cd
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=20>"
+                div.a9b72b69._347e609e.aa06aed8._25f92bae.b6c5c0ee.a604b77a
+                  div#SearchResults<memberid>._80e7dc63._4301d873._93e2ccf0
+                    div.b0d70e28._93e2ccf0  data-display-contents=true
+                      div._175f6c4b._845acbad._5909bdef._93e2ccf0
+                        div.b0d70e28._93e2ccf0  data-display-contents=true
+                          a.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=35>" href=/messaging/compose/?profileUrn=<value>&recipient=<value>&screenContext=SEARCH&interop=msgOverlay
+                            span.dc0cb4c2.be9bc2bf._704ac4e0._25f92bae._6ec7d740.a67ed751
+                              svg#send-privately-small._95106a6a.c234c48b._4daf6ec6._2a907666._5a61b66c._8a2f3f8a  data-rtl=true data-supported-dps=16x16 data-token-id=232
+                              span._9cb3f17d.d607a97b.dcaa7c96.f21fdc59.f255c433.c1768806  "Message"
+              div#SearchResultssnippet_<memberid>._80e7dc63._4301d873._93e2ccf0
+        hr._74c45efc._9213b59e._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  role=presentation
+    div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
+      div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee  role=listitem
+        div.b0d70e28._93e2ccf0  data-display-contents=true
+          a._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  href=https://www.linkedin.com/in/<slug>/
+            div._970c3eec._704ac4e0.afc9c46f.fd4f607c._3f534fa0._812fef91
+              div.a9b72b69._347e609e.aa06aed8._4bd14a34._130bfecf.a604b77a
+                figure._51bda835.e6fa12cc._7d5c2c33._059d7400.ea6b618d._23c51670
+                  img._279ea809._35c7e914.be5a9f80.ef5dd24d._4ef7ad8f  data-loaded=true
+                div._970c3eec._704ac4e0.a9b72b69._23bc1528.aa06aed8._55d4291a
+                  p._9cb3f17d._04709d9d._84ce356b._7094a4ce.f21fdc59.bd49adbe
+                    a._35ce350e._5b279aba._654a606b._550e4f00  href=https://www.linkedin.com/in/<slug>/  "<redacted len=17>"
+                    span._5575a1cd._93e2ccf0
+                      span._84ce356b.af1ff144._7094a4ce._6eff3ba2.bd49adbe._93e2ccf0  "<redacted len=6>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._35ce350e
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=24>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._5575a1cd
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=31>"
+                div.a9b72b69._347e609e.aa06aed8._25f92bae.b6c5c0ee.a604b77a
+                  div#SearchResults<memberid>._80e7dc63._4301d873._93e2ccf0
+                    div.b0d70e28._93e2ccf0  data-display-contents=true
+                      div._175f6c4b._845acbad._5909bdef._93e2ccf0
+                        div.b0d70e28._93e2ccf0  data-display-contents=true
+                          a.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=35>" href=/messaging/compose/?profileUrn=<value>&recipient=<value>&screenContext=SEARCH&interop=msgOverlay
+                            span.dc0cb4c2.be9bc2bf._704ac4e0._25f92bae._6ec7d740.a67ed751
+                              svg#send-privately-small._95106a6a.c234c48b._4daf6ec6._2a907666._5a61b66c._8a2f3f8a  data-rtl=true data-supported-dps=16x16 data-token-id=232
+                              span._9cb3f17d.d607a97b.dcaa7c96.f21fdc59.f255c433.c1768806  "Message"
+              div#SearchResultssnippet_<memberid>._80e7dc63._4301d873._93e2ccf0
+        hr._74c45efc._9213b59e._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  role=presentation
+    div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
+      div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee  role=listitem
+        div.b0d70e28._93e2ccf0  data-display-contents=true
+          a._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  href=https://www.linkedin.com/in/<slug>/
+            div._970c3eec._704ac4e0.afc9c46f.fd4f607c._3f534fa0._812fef91
+              div.a9b72b69._347e609e.aa06aed8._4bd14a34._130bfecf.a604b77a
+                div#c83b4303-19d8-42c8-9906-d1c50e7442ae._2e8203b5._93e2ccf0  "<redacted len=17>"
+                  span.b7a0bafa._93e2ccf0
+                  svg#verified-small._27f2250c.b8135b11._2fee7e1e  role=img aria-label="Verified" data-supported-dps=16x16 data-token-id=304
+                figure._51bda835.e6fa12cc._7d5c2c33._059d7400.ea6b618d._23c51670
+                  img._279ea809._35c7e914.be5a9f80.ef5dd24d._4ef7ad8f  data-loaded=true
+                div._970c3eec._704ac4e0.a9b72b69._23bc1528.aa06aed8._55d4291a
+                  p._9cb3f17d._04709d9d._84ce356b._7094a4ce.f21fdc59.bd49adbe
+                    a._35ce350e._5b279aba._654a606b._550e4f00  href=https://www.linkedin.com/in/<slug>/  "<redacted len=17>"
+                      span.b7a0bafa._93e2ccf0
+                      span._527f089d.b8135b11._93e2ccf0  role=img aria-label="Verified"
+                        svg#verified-small._27f2250c.b8135b11.b5366d5a._2fee7e1e  data-supported-dps=16x16 data-token-id=304
+                    span._5575a1cd._93e2ccf0
+                      span._84ce356b.af1ff144._7094a4ce._6eff3ba2.bd49adbe._93e2ccf0  "<redacted len=5>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._35ce350e
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=36>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._5575a1cd
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=7>"
+                div.a9b72b69._347e609e.aa06aed8._25f92bae.b6c5c0ee.a604b77a
+                  div#SearchResults<memberid>._80e7dc63._4301d873._93e2ccf0
+                    div.b0d70e28._93e2ccf0  data-display-contents=true
+                      div._175f6c4b._845acbad._5909bdef._93e2ccf0
+                        div.b0d70e28._93e2ccf0  data-display-contents=true
+                          a.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=35>" href=/preload/search-custom-invite/?vanityName=s\xf8ren-frederiksen-29647a52
+                            span.dc0cb4c2.be9bc2bf._704ac4e0._25f92bae._6ec7d740.a67ed751
+                              svg#connect-small._95106a6a.c234c48b._4daf6ec6._2a907666._5a61b66c._8a2f3f8a  data-supported-dps=16x16 data-token-id=414
+                              div.f21fdc59.f255c433.c1768806
+                                span._9cb3f17d.d607a97b.dcaa7c96.f21fdc59._00a7c7e3._320058e5
+                                  span  "Connect"
+              div#SearchResultssnippet_<memberid>._80e7dc63._4301d873._93e2ccf0
+        hr._74c45efc._9213b59e._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  role=presentation
+    div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
+      div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee  role=listitem
+        div.b0d70e28._93e2ccf0  data-display-contents=true
+          a._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  href=https://www.linkedin.com/in/<slug>/
+            div._970c3eec._704ac4e0.afc9c46f.fd4f607c._3f534fa0._812fef91
+              div.a9b72b69._347e609e.aa06aed8._4bd14a34._130bfecf.a604b77a
+                div#65824472-fbc4-4e8c-a49a-55370ba900cc._2e8203b5._93e2ccf0  "<redacted len=22>"
+                  span.b7a0bafa._93e2ccf0
+                  svg#verified-small._27f2250c.b8135b11._2fee7e1e  role=img aria-label="Verified" data-supported-dps=16x16 data-token-id=304
+                figure._51bda835.e6fa12cc._7d5c2c33._059d7400.ea6b618d._23c51670
+                  img._279ea809._35c7e914.be5a9f80.ef5dd24d._4ef7ad8f  data-loaded=true
+                div._970c3eec._704ac4e0.a9b72b69._23bc1528.aa06aed8._55d4291a
+                  p._9cb3f17d._04709d9d._84ce356b._7094a4ce.f21fdc59.bd49adbe
+                    a._35ce350e._5b279aba._654a606b._550e4f00  href=https://www.linkedin.com/in/<slug>/  "<redacted len=22>"
+                      span.b7a0bafa._93e2ccf0
+                      span._527f089d.b8135b11._93e2ccf0  role=img aria-label="Verified"
+                        svg#verified-small._27f2250c.b8135b11.b5366d5a._2fee7e1e  data-supported-dps=16x16 data-token-id=304
+                    span._5575a1cd._93e2ccf0
+                      span._84ce356b.af1ff144._7094a4ce._6eff3ba2.bd49adbe._93e2ccf0  "<redacted len=5>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._35ce350e
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=50>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._5575a1cd
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=46>"
+                div.a9b72b69._347e609e.aa06aed8._25f92bae.b6c5c0ee.a604b77a
+                  div#SearchResults<memberid>._80e7dc63._4301d873._93e2ccf0
+                    div.b0d70e28._93e2ccf0  data-display-contents=true
+                      div._175f6c4b._845acbad._5909bdef._93e2ccf0
+                        div.b0d70e28._93e2ccf0  data-display-contents=true
+                          a.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=40>" href=/preload/search-custom-invite/?vanityName=sorenb
+                            span.dc0cb4c2.be9bc2bf._704ac4e0._25f92bae._6ec7d740.a67ed751
+                              svg#connect-small._95106a6a.c234c48b._4daf6ec6._2a907666._5a61b66c._8a2f3f8a  data-supported-dps=16x16 data-token-id=414
+                              div.f21fdc59.f255c433.c1768806
+                                span._9cb3f17d.d607a97b.dcaa7c96.f21fdc59._00a7c7e3._320058e5
+                                  span  "Connect"
+              div#SearchResultssnippet_<memberid>._80e7dc63._4301d873._93e2ccf0
+              div._69a8fdae._4087679b._646eaa08.a9b72b69._347e609e.aa06aed8
+                figure._51bda835.e6fa12cc._7d5c2c33._059d7400.ea6b618d.a74f0906
+                  svg#person-accent-4._279ea809._35c7e914.be5a9f80.ef5dd24d._87a34f78  data-token-id=356
+                  img._279ea809._35c7e914.be5a9f80.ef5dd24d._4ef7ad8f  data-loaded=true
+                div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._5575a1cd
+                  p._9cb3f17d._2bc3f589._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                    span  "<redacted len=22>"
+                      a.f255c433._550e4f00  href=https://www.linkedin.com/in/<slug>/  "<redacted len=16>"
+                      span.b7a0bafa._93e2ccf0
+        hr._74c45efc._9213b59e._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  role=presentation
+    div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
+      div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee  role=listitem
+        div.b0d70e28._93e2ccf0  data-display-contents=true
+          a._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  href=https://www.linkedin.com/in/<slug>/
+            div._970c3eec._704ac4e0.afc9c46f.fd4f607c._3f534fa0._812fef91
+              div.a9b72b69._347e609e.aa06aed8._4bd14a34._130bfecf.a604b77a
+                div#a3fff962-41fc-4352-ae6e-89ad06f4b679._2e8203b5._93e2ccf0  "<redacted len=20>"
+                  span.b7a0bafa._93e2ccf0
+                  svg#verified-small._27f2250c.b8135b11._2fee7e1e  role=img aria-label="Verified" data-supported-dps=16x16 data-token-id=304
+                figure._51bda835.e6fa12cc._7d5c2c33._059d7400.ea6b618d._23c51670
+                  img._279ea809._35c7e914.be5a9f80.ef5dd24d._4ef7ad8f  data-loaded=true
+                div._970c3eec._704ac4e0.a9b72b69._23bc1528.aa06aed8._55d4291a
+                  p._9cb3f17d._04709d9d._84ce356b._7094a4ce.f21fdc59.bd49adbe
+                    a._35ce350e._5b279aba._654a606b._550e4f00  href=https://www.linkedin.com/in/<slug>/  "<redacted len=20>"
+                      span.b7a0bafa._93e2ccf0
+                      span._527f089d.b8135b11._93e2ccf0  role=img aria-label="Verified"
+                        svg#verified-small._27f2250c.b8135b11.b5366d5a._2fee7e1e  data-supported-dps=16x16 data-token-id=304
+                    span._5575a1cd._93e2ccf0
+                      span._84ce356b.af1ff144._7094a4ce._6eff3ba2.bd49adbe._93e2ccf0  "<redacted len=6>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._35ce350e
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=36>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._5575a1cd
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=39>"
+                div.a9b72b69._347e609e.aa06aed8._25f92bae.b6c5c0ee.a604b77a
+                  div#SearchResults<memberid>._80e7dc63._4301d873._93e2ccf0
+                    div.b0d70e28._93e2ccf0  data-display-contents=true
+                      div._175f6c4b._845acbad._5909bdef._93e2ccf0
+                        div.b0d70e28._93e2ccf0  data-display-contents=true
+                          a.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=38>" href=/messaging/compose/?profileUrn=<value>&recipient=<value>&screenContext=SEARCH&interop=msgOverlay
+                            span.dc0cb4c2.be9bc2bf._704ac4e0._25f92bae._6ec7d740.a67ed751
+                              svg#send-privately-small._95106a6a.c234c48b._4daf6ec6._2a907666._5a61b66c._8a2f3f8a  data-rtl=true data-supported-dps=16x16 data-token-id=232
+                              span._9cb3f17d.d607a97b.dcaa7c96.f21fdc59.f255c433.c1768806  "Message"
+              div#SearchResultssnippet_<memberid>._80e7dc63._4301d873._93e2ccf0
+

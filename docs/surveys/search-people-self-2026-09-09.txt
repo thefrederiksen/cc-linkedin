@@ -1,0 +1,148 @@
+# survey search-people-self
+# taken   2026-09-09 17:06:20
+# request https://www.linkedin.com/search/results/people/?keywords=<value>
+# final   https://www.linkedin.com/search/results/people/?keywords=<value>
+# rendering react ([data-urn] count=0)
+# signed-in probes {".global-nav__me": 0, "button.global-nav__primary-link-me-menu-trigger": 0, "img.global-nav__me-photo": 0, "[data-test-global-nav-me]": 0, "nav.global-nav": 0, ".global-nav__nav": 0, "#global-nav": 0, "header.global-nav": 0, "[data-view-name=\"navigation-me\"]": 0}
+# 'Me' controls    []
+# title   "Search | LinkedIn"
+# body    "<redacted len=300>"
+
+== ACCESSIBILITY (387 nodes in the tree) ==
+  heading        "0 notifications"
+  button         "LinkedIn"
+  StaticText     "0 notifications"
+  button         "Skip to search"
+  button         "Skip to main content"
+  button         "<redacted len=23>"
+  button         "<redacted len=13>"
+  region         "<redacted len=15>"
+  StaticText     "Skip to search"
+  StaticText     "Skip to main content"
+  StaticText     "<redacted len=23>"
+  StaticText     "<redacted len=13>"
+  button         "<redacted len=15>"
+  radio          "Filter by 1st connections"
+  radio          "Filter by 2nd connections"
+  radio          "Filter by 3rd+ connections"
+  button         "<redacted len=23>"
+  button         "<redacted len=19>"
+  button         "Filter by Current companies"
+  button         "All filters"
+  textbox        "Search"
+  button         "<redacted len=12>"
+  link           "<redacted len=30>"
+  radio          "Filter by People"
+  StaticText     "All filters"
+  button         "<redacted len=64>"
+  button         "<redacted len=67>"
+  heading        "<redacted len=12>"
+  button         "<redacted len=24>"
+  link           "<redacted len=31>"
+  link           "<redacted len=25>"
+  link           "<redacted len=30>"
+  link           "<redacted len=34>"
+  button         "Me"
+  StaticText     "<redacted len=12>"
+  StaticText     "<redacted len=9>"
+  checkbox       "1st"
+  checkbox       "2nd"
+  checkbox       "3rd+"
+  checkbox       "<redacted len=15>"
+  checkbox       "<redacted len=9>"
+  checkbox       "Current companies"
+  StaticText     "<redacted len=26>"
+  StaticText     "<redacted len=45>"
+  StaticText     "<redacted len=12>"
+  StaticText     "<redacted len=31>"
+  button         "<redacted len=12>"
+  StaticText     "<redacted len=25>"
+  StaticText     "Home"
+  StaticText     "<redacted len=10>"
+  StaticText     "Jobs"
+  StaticText     "Messaging"
+  StaticText     "Notifications"
+  StaticText     "Me"
+  checkbox       "People"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=9>"
+  StaticText     "Current companies"
+  link           "<redacted len=171>"
+  link           "About"
+  link           "<redacted len=13>"
+  link           "<redacted len=11>"
+  button         "<redacted len=15>"
+  link           "<redacted len=10>"
+  link           "<redacted len=11>"
+  button         "<redacted len=17>"
+  link           "<redacted len=20>"
+  link           "More"
+  StaticText     "<redacted len=27>"
+  button         "<redacted len=80>"
+  button         "<redacted len=80>"
+  StaticText     "People"
+  StaticText     "<redacted len=80>"
+  button         "<redacted len=28>"
+  button         "<redacted len=15>"
+  StaticText     "<redacted len=80>"
+  link           "<redacted len=25>"
+  StaticText     "<redacted len=5>"
+  StaticText     "<redacted len=69>"
+  StaticText     "<redacted len=24>"
+  StaticText     "About"
+  StaticText     "<redacted len=13>"
+  StaticText     "<redacted len=11>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=10>"
+  StaticText     "<redacted len=11>"
+  StaticText     "<redacted len=17>"
+  StaticText     "<redacted len=20>"
+  StaticText     "More"
+  StaticText     "<redacted len=16>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=17>"
+  StaticText     "<redacted len=36>"
+  StaticText     "<redacted len=7>"
+
+== PROBES ==
+  [1] div[role="listitem"]
+  [1] div[role="listitem"] p a[href*="/in/"]
+
+== DOM OUTLINE of div[role="list"] (36 nodes, depth<=30) ==
+  div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee  role=list
+    div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
+      div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee  role=listitem
+        div.b0d70e28._93e2ccf0  data-display-contents=true
+          a._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  href=https://www.linkedin.com/in/<slug>/
+            div._970c3eec._704ac4e0.afc9c46f.fd4f607c._3f534fa0._812fef91
+              div.a9b72b69._347e609e.aa06aed8._4bd14a34._130bfecf.a604b77a
+                div#5a104b04-be36-43e3-86b5-bd8c02bb3d35._2e8203b5._93e2ccf0  "<redacted len=17>"
+                  span.b7a0bafa._93e2ccf0
+                  svg#linkedin-bug-small._3db427ba.b8135b11._2fee7e1e  role=img aria-label="Premium" data-supported-dps=16x16 data-token-id=459
+                figure._51bda835.e6fa12cc._7d5c2c33._059d7400.ea6b618d._23c51670
+                  img._279ea809._35c7e914.be5a9f80.ef5dd24d._4ef7ad8f  data-loaded=true
+                div._970c3eec._704ac4e0.a9b72b69._23bc1528.aa06aed8._55d4291a
+                  p._9cb3f17d._04709d9d._84ce356b._7094a4ce.f21fdc59.bd49adbe
+                    a._35ce350e._5b279aba._654a606b._550e4f00  href=https://www.linkedin.com/in/<slug>/  "<redacted len=17>"
+                      span.b7a0bafa._93e2ccf0
+                      span._527f089d.b8135b11._93e2ccf0  role=img aria-label="Premium"
+                        svg#linkedin-bug-small._3db427ba.b8135b11.b5366d5a._2fee7e1e  data-supported-dps=16x16 data-token-id=459
+                    span._5575a1cd._93e2ccf0
+                      span._84ce356b.af1ff144._7094a4ce._6eff3ba2.bd49adbe._93e2ccf0  "<redacted len=5>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._35ce350e
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=69>"
+                  div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._5575a1cd
+                    p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                      span  "<redacted len=24>"
+                div.a9b72b69._347e609e.aa06aed8._25f92bae.b6c5c0ee.a604b77a
+                  div#SearchResults<memberid>._80e7dc63._4301d873._93e2ccf0
+                    div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
+              div#SearchResultssnippet_<memberid>._80e7dc63._4301d873._93e2ccf0
+                div._69a8fdae._4087679b._646eaa08._84ce356b._7094a4ce._6eff3ba2
+                  p._9cb3f17d._2bc3f589._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
+                    span  "<redacted len=36>"
+                      span.b7a0bafa._93e2ccf0
+                      span._35ce350e._93e2ccf0
+                        strong  "<redacted len=7>"
+

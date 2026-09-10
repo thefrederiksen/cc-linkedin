@@ -1,0 +1,25 @@
+R7, R9, R10, R12 and R2.4, watched failing against kit/selftest.py at 47d836b
+(before the fix), driven directly so the symptom shows:
+
+R7  OLD: EXPECTED_VIEWS exists and is 8 - one edit makes a view-count failure pass
+R12 OLD: DEGREES_NOT_SELF = ('1st', '2nd', '3rd', '3rd+', 'you') - '3rd' and '3rd+' were accepted for profile B
+R12 OLD: is '3rd' accepted? True
+R9  OLD: Rows/inventory exists? False
+R2.4 OLD: _same_post exists? False
+R2.4 OLD: the whole P2-6c assertion on a STRANGER'S post -> True
+R10 OLD: _notification_holds exists? False
+
+The R2.4 line is the one worth reading twice. P2-6c's entire post-return
+assertion was `bool(chain[0].get("author"))`, and a record for a STRANGER'S post
+- different urn, different author, different text - satisfies it, because a
+stranger's post also has an author. That is the row that was supposed to catch
+the resolver naming the wrong post.
+
+R9's silent skip, watched separately:
+
+  OLD: `if a.page and a.page_name:` at kit/selftest.py:400 wrapped the whole
+  Page publish-and-delete block, and cc_linkedin.py declared both options
+  without required=True. A run with neither flag executed none of it, reported
+  no row for it, and printed a passed= total with no denominator to check it
+  against. The new run refuses to start without them and reconciles a declared
+  row inventory at the end.

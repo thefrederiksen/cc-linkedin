@@ -1,0 +1,56 @@
+R3.3 as amended: watched failing first
+======================================
+2026-09-10. The Architect amended R3.3 after
+docs/evidence/lock-steals-itself-on-windows.txt: 'broken' means the file was
+OPENED and its content is not a valid record; any failure to OPEN is not
+evidence about the content, so retry bounded, then treat as HELD and wait.
+Fail closed. Never reclaim on an open failure.
+
+--- THE NEW TESTS AGAINST THE OLD CODE: 7 errors of 22
+
+ERROR: test_a_lock_that_cannot_be_opened_is_never_reclaimed (tests.test_lock.AnOpenFailureIsNotEvidenceAboutTheContent.test_a_lock_that_cannot_be_opened_is_never_reclaimed)
+AttributeError: module 'kit.browser' has no attribute '_read_lock_record'
+ERROR: test_a_lock_that_vanished_is_simply_acquired (tests.test_lock.AnOpenFailureIsNotEvidenceAboutTheContent.test_a_lock_that_vanished_is_simply_acquired)
+AttributeError: module 'kit.browser' has no attribute '_read_lock_record'
+ERROR: test_a_transient_unreadability_resolves_without_anybody_reclaiming (tests.test_lock.AnOpenFailureIsNotEvidenceAboutTheContent.test_a_transient_unreadability_resolves_without_anybody_reclaiming)
+AttributeError: module 'kit.browser' has no attribute '_read_lock_record'
+ERROR: test_content_that_does_not_parse_is_STILL_reclaimed (tests.test_lock.AnOpenFailureIsNotEvidenceAboutTheContent.test_content_that_does_not_parse_is_STILL_reclaimed)
+AttributeError: module 'kit.browser' has no attribute '_read_lock_record'
+ERROR: test_it_does_not_call_a_healthy_lock_broken (tests.test_lock.AnOpenFailureIsNotEvidenceAboutTheContent.test_it_does_not_call_a_healthy_lock_broken)
+AttributeError: module 'kit.browser' has no attribute '_read_lock_record'
+ERROR: test_a_link_that_never_works_gives_up_loudly_rather_than_raising_oserror (tests.test_lock.TheAcquisitionPathSurvivesEveryOSError.test_a_link_that_never_works_gives_up_loudly_rather_than_raising_oserror)
+PermissionError: [Errno 13] Access is denied
+ERROR: test_a_sharing_violation_on_the_link_does_not_escape (tests.test_lock.TheAcquisitionPathSurvivesEveryOSError.test_a_sharing_violation_on_the_link_does_not_escape)
+PermissionError: [Errno 13] Access is denied
+
+Two of the seven fail with the REAL symptom rather than a missing seam:
+PermissionError(13, 'Access is denied') escaping FileLock.__enter__ to the
+caller, which is symptom 2 in docs/evidence/lock-steals-itself-on-windows.txt.
+The other five fail on the absence of the _read_lock_record seam; the symptom
+those describe - a live holder's lock being taken over - was observed in the
+wild first, in that same file, before any of this was written.
+
+--- AFTER THE FIX
+
+    py -3.11 -m unittest tests.test_lock                 22 tests, OK
+
+R15's forty-thread test, the one that was losing an increment. Before the fix it
+failed 3 of 8 runs with the split in place and 1 of 8 at HEAD, and printed
+"lock is BROKEN ... taking it over" on almost every run, passing ones included.
+After the fix, 15 consecutive runs:
+
+    ok ok ok ok ok ok ok ok ok ok ok ok ok ok ok        (15 of 15)
+
+and 15 further runs counting the false BROKEN lines:
+
+    0 0 0 0 0 0 0 0 0 0 0 0 0 0 0                       (none, in any run)
+
+WHAT THIS DOES NOT PROVE. A race that stops showing is not a race that cannot
+happen. Thirty runs is evidence the window is closed on this machine, not a
+proof of absence - the same caveat tests/test_pace.py's own docstring makes
+about the tests it added for R15. What IS proved by construction rather than by
+repetition is narrower and is the part that matters: there is no longer any path
+from an open failure to _discard(self.path). The only two callers of that on the
+holder's lock are the "broken" verdict, which requires the bytes to have been
+READ, and the dead-pid verdict, which requires a parsed record naming a process
+that is gone.

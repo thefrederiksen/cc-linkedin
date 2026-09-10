@@ -1,0 +1,76 @@
+R3.3 IS FAIL-OPEN ON WINDOWS: A HEALTHY LOCK IS DECLARED BROKEN AND TAKEN OVER
+==============================================================================
+Found 2026-09-10 by the live-proving Manager, while measuring whether the
+view/view_self split had made an existing test flaky. It had not. The flakiness
+is a defect in code that ships, it is PRE-EXISTING (it reproduces at HEAD,
+dca2b3c, with the split reverted), and it is not rare.
+
+WHAT WAS RUN
+
+    py -3.11 -m unittest tests.test_pace.NoIncrementIsLost.test_forty_concurrent_views_count_forty
+
+Forty threads take a view through Pace. The test is R15's own: it exists to
+prove no increment is lost. Ten consecutive runs, current code:
+
+    FAILED  FAILED  ok  ok  ok  ok  FAILED  ok      (8 runs, split in place)
+    ok  ok  ok  ok  ok  ok  FAILED  ok              (8 runs, HEAD, split reverted)
+
+TWO SYMPTOMS, both from one cause
+
+  1. AssertionError: 39 != 40 : 1 of 40 views were lost to a read-modify-write
+     race.  This is precisely what R15 says cannot happen any more.
+  2. PermissionError(13, 'Access is denied') escaping to the caller out of
+     FileLock.__enter__, which catches only FileExistsError.
+
+THE CAUSE, read straight off the log. This line is printed on ALMOST EVERY RUN,
+including the ones that pass:
+
+    browser lock at ...\pace.json.lock is BROKEN: it cannot be opened
+    ([Errno 13] Permission denied: ...). A lock record is written whole or not
+    at all, so this one cannot be a healthy holder; taking it over.
+
+and, alternating with it:
+
+    browser lock at ...\pace.json.lock is BROKEN: it cannot be opened
+    ([Errno 2] No such file or directory: ...). ... taking it over.
+
+`FileLock._holder()` returns "unreadable" for BOTH of these, and __enter__ then
+_discard()s the lock file and links its own sentinel in - while a LIVE holder is
+still inside the critical section. Two threads in the section is the lost
+increment in symptom 1.
+
+Neither errno means the record is corrupt:
+
+  * Errno 2 means the holder RELEASED the lock in the window between our
+    os.link raising FileExistsError and our open() of the file. Nothing is
+    wrong at all. The correct response is to try the link again.
+  * Errno 13 is Windows delete-pending / sharing violation: the file is open or
+    being unlinked elsewhere this instant. It says nothing about the content.
+    The correct response is to wait and look again.
+
+WHY THE RULING'S OWN ARGUMENT DOES NOT COVER THIS. R3.3 earned the rule "a lock
+we cannot read is BROKEN" from a specific guarantee: the sentinel is written to
+a temporary file and LINKED into place, so a partial record cannot exist, so a
+record that does not parse must be broken. That argument is about CONTENT. The
+code applied it to OPEN FAILURES as well, and the argument does not reach them -
+an open failure is a statement about the operating system this millisecond, not
+about the bytes in the file. So the one lock in this repository that exists to
+stop two Playwright clients attaching to one Chrome will, on Windows, take
+itself away from a healthy holder.
+
+BLAST RADIUS. `BrowserLock` IS this class (kit/browser.py:186). The same steal
+applies to the browser lock, on a machine that runs a fleet of sessions - which
+is the exact failure R3 was written to end, arriving by the door R3 installed.
+
+THE SHAPE OF A FIX, not applied, because R3.3 is the Architect's:
+  * separate "the record is malformed" (BROKEN - R3.3's rule stands, unchanged,
+    and it is safe because of the link-into-place guarantee) from "the file
+    could not be opened right now" (UNKNOWN - not a verdict).
+  * FileNotFoundError: the holder let go. Retry the link immediately.
+  * PermissionError / OSError on open: wait `poll` and look again; only after a
+    bounded run of consecutive unreadable attempts is anything declared, and
+    what is declared then is a loud failure rather than a silent takeover.
+  * catch PermissionError alongside FileExistsError on os.link, for the same
+    delete-pending reason.
+This keeps every property R3 bought and removes the fail-open. It does NOT
+soften R3.3: nothing here makes a malformed record survivable.

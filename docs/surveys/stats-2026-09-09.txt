@@ -1,0 +1,642 @@
+# survey stats
+# taken   2026-09-09 17:07:33
+# request https://www.linkedin.com/company/107519091/admin/analytics/updates/
+# final   https://www.linkedin.com/company/107519091/admin/analytics/updates/
+# rendering react ([data-urn] count=0)
+# signed-in probes {".global-nav__me": 1, "button.global-nav__primary-link-me-menu-trigger": 1, "img.global-nav__me-photo": 1, "[data-test-global-nav-me]": 0, "nav.global-nav": 0, ".global-nav__nav": 1, "#global-nav": 1, "header.global-nav": 1, "[data-view-name=\"navigation-me\"]": 0}
+# 'Me' controls    []
+# title   "<redacted len=53>"
+# body    "<redacted len=300>"
+
+== ACCESSIBILITY (997 nodes in the tree) ==
+  region         "<redacted len=13>"
+  button         "Skip to search"
+  button         "Skip to main content"
+  button         "<redacted len=18>"
+  button         "<redacted len=15>"
+  link           "LinkedIn"
+  navigation     "<redacted len=18>"
+  heading        "0 notifications total"
+  StaticText     "Skip to search"
+  StaticText     "Skip to main content"
+  StaticText     "<redacted len=18>"
+  StaticText     "<redacted len=15>"
+  region         "<redacted len=44>"
+  StaticText     "0 notifications total"
+  heading        "<redacted len=22>"
+  button         "Verify with Premium"
+  link           "3 followers"
+  link           "<redacted len=6>"
+  link           "<redacted len=14>"
+  heading        "Analytics"
+  combobox       "Search"
+  link           "new feed updates notifications Home"
+  link           "<redacted len=10>"
+  link           "Jobs"
+  link           "Messaging"
+  link           "Notifications"
+  link           "<redacted len=32>"
+  StaticText     "<redacted len=22>"
+  StaticText     "Verify with Premium"
+  StaticText     "3 followers"
+  StaticText     "<redacted len=6>"
+  StaticText     "<redacted len=14>"
+  StaticText     "Analytics"
+  button         "<redacted len=6>"
+  heading        "<redacted len=12>"
+  button         "<redacted len=20>"
+  button         "<redacted len=12>"
+  StaticText     "<redacted len=32>"
+  link           "Content"
+  link           "Visitors"
+  link           "Followers"
+  link           "<redacted len=18>"
+  link           "Competitors"
+  link           "Leads"
+  button         "<redacted len=37>"
+  StaticText     "<redacted len=6>"
+  heading        "Content engagement"
+  StaticText     "<redacted len=27>"
+  StaticText     "<redacted len=12>"
+  button         "<redacted len=12>"
+  StaticText     "new feed updates notifications"
+  StaticText     "Home"
+  StaticText     "<redacted len=10>"
+  StaticText     "Jobs"
+  StaticText     "Messaging"
+  StaticText     "Notifications"
+  StaticText     "Me"
+  link           "Dashboard"
+  link           "Page posts"
+  link           "Analytics"
+  link           "Feed"
+  link           "Activity"
+  link           "<redacted len=5>"
+  link           "Edit Page"
+  link           "Jobs"
+  link           "<redacted len=20>"
+  link           "<redacted len=18>"
+  link           "Invite to follow"
+  link           "Settings"
+  button         "<redacted len=17>"
+  StaticText     "Content"
+  StaticText     "Visitors"
+  StaticText     "Followers"
+  StaticText     "<redacted len=18>"
+  StaticText     "Competitors"
+  StaticText     "Leads"
+  StaticText     "<redacted len=25>"
+  StaticText     "Content engagement"
+  button         "<redacted len=35>"
+  button         "<redacted len=37>"
+  StaticText     "<redacted len=5>"
+  button         "Show 10 results"
+  link           "About"
+  link           "<redacted len=13>"
+  link           "<redacted len=11>"
+  link           "<redacted len=10>"
+  link           "<redacted len=11>"
+  button         "<redacted len=20>"
+  button         "<redacted len=12>"
+  button         "<redacted len=80>"
+  button         "<redacted len=80>"
+  StaticText     "<redacted len=31>"
+  StaticText     "<redacted len=12>"
+  StaticText     "Dashboard"
+  StaticText     "Page posts"
+  StaticText     "Analytics"
+  StaticText     "Feed"
+  StaticText     "Activity"
+  StaticText     "<redacted len=5>"
+  StaticText     "Edit Page"
+  StaticText     "Jobs"
+  StaticText     "<redacted len=20>"
+  StaticText     "<redacted len=18>"
+  StaticText     "Invite to follow"
+  StaticText     "Settings"
+  StaticText     "<redacted len=17>"
+  heading        "<redacted len=28>"
+  StaticText     "<redacted len=28>"
+  heading        "<redacted len=7>"
+  region         "<redacted len=36>"
+  StaticText     "<redacted len=11>"
+  StaticText     "<redacted len=26>"
+  StaticText     "10"
+  cell           "<redacted len=1354>"
+  cell           "<redacted len=5>"
+  cell           "All followers"
+  cell           "48"
+  cell           "1"
+  cell           "1"
+  cell           "<redacted len=5>"
+  cell           "0"
+  cell           "0"
+  cell           "0"
+  cell           "-"
+  cell           "<redacted len=5>"
+  StaticText     "About"
+  StaticText     "<redacted len=13>"
+  StaticText     "<redacted len=11>"
+  button         "<redacted len=15>"
+  StaticText     "<redacted len=10>"
+  StaticText     "<redacted len=11>"
+  button         "<redacted len=17>"
+  StaticText     "<redacted len=20>"
+  StaticText     "More"
+  StaticText     "<redacted len=80>"
+  button         "<redacted len=28>"
+  button         "<redacted len=15>"
+  StaticText     "<redacted len=80>"
+  StaticText     "<redacted len=28>"
+  button         "<redacted len=51>"
+  StaticText     "<redacted len=7>"
+  region         "<redacted len=32>"
+  StaticText     "<redacted len=24>"
+  columnheader   "Post title"
+  columnheader   "Post type"
+  columnheader   "<redacted len=8>"
+  columnheader   "Impressions"
+  columnheader   "<redacted len=5>"
+  columnheader   "Clicks"
+  columnheader   "<redacted len=3>"
+  columnheader   "Reactions"
+  columnheader   "Comments"
+  columnheader   "Reposts"
+  columnheader   "<redacted len=7>"
+  columnheader   "Engagement rate"
+  link           "<redacted len=1275>"
+  StaticText     "Posted by"
+  link           "<redacted len=17>"
+  StaticText     "<redacted len=1>"
+  StaticText     "<redacted len=8>"
+  StaticText     "<redacted len=5>"
+  StaticText     "All followers"
+  StaticText     "48"
+  StaticText     "1"
+  StaticText     "1"
+  StaticText     "<redacted len=5>"
+  StaticText     "0"
+  StaticText     "0"
+  StaticText     "0"
+  StaticText     "-"
+  StaticText     "<redacted len=5>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=17>"
+  StaticText     "<redacted len=16>"
+  StaticText     "<redacted len=15>"
+  StaticText     "5"
+  StaticText     "Impressions"
+  StaticText     "<redacted len=5>"
+  StaticText     "0"
+  StaticText     "Reactions"
+  StaticText     "<redacted len=2>"
+  StaticText     "0"
+  StaticText     "Comments"
+  StaticText     "<redacted len=2>"
+  StaticText     "0"
+  StaticText     "Reposts"
+  StaticText     "<redacted len=2>"
+  link           "<redacted len=5>"
+  button         "<redacted len=22>"
+  region         "<redacted len=24>"
+  StaticText     "<redacted len=1275>"
+  StaticText     "<redacted len=17>"
+  StaticText     "<redacted len=33>"
+  StaticText     "<redacted len=5>"
+  StaticText     "Impressions"
+  StaticText     "Chart"
+  StaticText     "<redacted len=24>"
+  StaticText     "<redacted len=51>"
+  StaticText     "<redacted len=71>"
+  region         "<redacted len=43>"
+  region         "<redacted len=41>"
+  button         "<redacted len=12>"
+  button         "<redacted len=14>"
+  StaticText     "<redacted len=25>"
+  StaticText     "Post title"
+  StaticText     "Post type"
+  StaticText     "<redacted len=8>"
+  StaticText     "Impressions"
+  StaticText     "<redacted len=5>"
+  StaticText     "Clicks"
+  StaticText     "<redacted len=3>"
+  StaticText     "Reactions"
+  StaticText     "Comments"
+  StaticText     "Reposts"
+  StaticText     "<redacted len=7>"
+  StaticText     "Engagement rate"
+
+== PROBES ==
+  [1] table
+  [12] table th
+  [1] table tbody tr
+  [4] .member-analytics-addon-summary__list-item
+  [0] .org-analytics-highlight
+
+== DOM OUTLINE of main (405 nodes, depth<=20) ==
+  main.QYvZdvzvpSFafeDZBdTXMxdjbJwOonVPPTawE.scaffold-layout__nested.scaffold-layout__nested--main
+    section.artdeco-card.org-feed__page-header
+      div.org-page-header__top
+        div.display-flex
+            h2.text-heading-large.flex-1  "Analytics"
+      ul.org-menu.org-menu--horizontal.org-page-header__menu  data-test-org-menu=
+        li.org-menu__item  data-test-org-menu__item=horizontal
+          a#org-menu-CONTENTS.LuuMWfaYXrFozmEnAlksCThIJskvuhGBFaM.org-menu-item.org-menu-item--horizontal.org-menu-item--selected  role=link href=https://www.linkedin.com/company/107519091/admin/analytics/updates data-test-org-menu-item=CONTENTS data-test-org-menu__menu-item=0 data-view-name= data-test-app-aware-link=
+            span.display-flex
+                span.display-flex.align-items-center
+                  span.org-menu-item__title.org-menu-item__stateful-content.text-body-medium-bold  data-test-org-menu-item__title=  "Content"
+        li.org-menu__item  data-test-org-menu__item=horizontal
+          a#org-menu-VISITORS.LuuMWfaYXrFozmEnAlksCThIJskvuhGBFaM.org-menu-item.org-menu-item--horizontal  role=link href=https://www.linkedin.com/company/107519091/admin/analytics/visitors data-test-org-menu-item=VISITORS data-test-org-menu__menu-item=1 data-view-name= data-test-app-aware-link=
+            span.display-flex
+                span.display-flex.align-items-center
+                  span.org-menu-item__title.org-menu-item__stateful-content.text-body-medium-bold  data-test-org-menu-item__title=  "Visitors"
+        li.org-menu__item  data-test-org-menu__item=horizontal
+          a#org-menu-FOLLOWERS.LuuMWfaYXrFozmEnAlksCThIJskvuhGBFaM.org-menu-item.org-menu-item--horizontal  role=link href=https://www.linkedin.com/company/107519091/admin/analytics/followers data-test-org-menu-item=FOLLOWERS data-test-org-menu__menu-item=2 data-view-name= data-test-app-aware-link=
+            span.display-flex
+                span.display-flex.align-items-center
+                  span.org-menu-item__title.org-menu-item__stateful-content.text-body-medium-bold  data-test-org-menu-item__title=  "Followers"
+        li.org-menu__item  data-test-org-menu__item=horizontal
+          a#org-menu-SEARCH_APPEARANCES.LuuMWfaYXrFozmEnAlksCThIJskvuhGBFaM.org-menu-item.org-menu-item--horizontal  role=link href=https://www.linkedin.com/company/107519091/admin/analytics/search-appearances data-test-org-menu-item=SEARCH_APPEARANCES data-test-org-menu__menu-item=3 data-view-name= data-test-app-aware-link=
+            span.display-flex
+                span.display-flex.align-items-center
+                  span.org-menu-item__title.org-menu-item__stateful-content.text-body-medium-bold  data-test-org-menu-item__title=  "<redacted len=18>"
+        li.org-menu__item  data-test-org-menu__item=horizontal
+          a#org-menu-COMPETITORS.LuuMWfaYXrFozmEnAlksCThIJskvuhGBFaM.org-menu-item.org-menu-item--horizontal  role=link href=https://www.linkedin.com/company/107519091/admin/analytics/competitors data-test-org-menu-item=COMPETITORS data-test-org-menu__menu-item=4 data-view-name= data-test-app-aware-link=
+            span.display-flex
+                span.display-flex.align-items-center
+                  span.org-menu-item__title.org-menu-item__stateful-content.text-body-medium-bold  data-test-org-menu-item__title=  "Competitors"
+        li.org-menu__item  data-test-org-menu__item=horizontal
+          a#org-menu-LEADS.LuuMWfaYXrFozmEnAlksCThIJskvuhGBFaM.org-menu-item.org-menu-item--horizontal  role=link href=https://www.linkedin.com/company/107519091/admin/analytics/leads data-test-org-menu-item=LEADS data-test-org-menu__menu-item=5 data-view-name= data-test-app-aware-link=
+            span.display-flex
+                span.display-flex.align-items-center
+                  span.org-menu-item__title.org-menu-item__stateful-content.text-body-medium-bold  data-test-org-menu-item__title=  "Leads"
+      section.artdeco-card.org-analytics-export-by-date__container
+        div.display-flex
+          div.display-flex.align-items-center.flex-row
+              div#ember38.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-left.ember-view
+                button.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-bottom.ember-view.t-14.t-black--light.t-bold  aria-label="<redacted len=37>"  "<redacted len=25>"
+                  li-icon.artdeco-dropdown__trigger-icon
+                    svg.mercado-match  data-supported-dps=16x16
+                div#ember40.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--justification-left.artdeco-dropdown__content--placement-bottom.ember-view.member-analytics-addon-daterange-pi
+          div.org-analytics-export-by-date__cta-container
+            button#ember41.artdeco-button.artdeco-button--2.artdeco-button--primary.ember-view
+              svg.artdeco-button__icon  role=none data-supported-dps=16x16 data-test-icon=download-small
+              span.artdeco-button__text  "<redacted len=6>"
+        div.member-analytics-addon-drawer.member-analytics-addon-section__body
+          div.member-analytics-addon-drawer.member-analytics-addon-section__inner-drawer
+            div.member-analytics-addon-card-list  role=alert
+              section.artdeco-card.member-analytics-addon-card__base-card
+                div.member-analytics-addon-loader
+                    div#member-analytics-addon-card-0.mb5
+                      div.member-analytics-addon-header__content
+                        div.mrA
+                          div.member-analytics-addon-header__container
+                            h2#ember66.ember-view.member-analytics-addon-header__title  "<redacted len=28>"
+                            span#ember67.artdeco-hoverable-trigger.artdeco-hoverable-trigger--content-placed-bottom.ember-view
+                              button#ember68.artdeco-button.artdeco-button--circle.artdeco-button--muted.artdeco-button--1.artdeco-button--tertiary.ember-view  aria-label="<redacted len=51>"
+                                svg.artdeco-button__icon  role=none data-supported-dps=16x16 data-test-icon=question-small data-rtl=true data-rtl-ignore=iw
+                                span.artdeco-button__text
+                              div#artdeco-gen-43.ember-view
+                                div#ember70.ember-view
+                          span.t-14.t-black--light  "<redacted len=28>"
+                    div.member-analytics-addon-card__subcomponent-container.member-analytics-addon-card__subcomponent-container--vertical
+                      ul.member-analytics-addon-summary
+                        li.member-analytics-addon-summary__list-item
+                          div.display-flex.align-items-center
+                            p.text-body-medium-bold.pr1.text-heading-large  "5"
+                          p.member-analytics-addon-list-item__description.t-14.pr3  "Impressions"
+                          span.text-body-xsmall
+                            strong.analytics-tools-shared-trend-text__value--decrease-caret-lead.text-body-xsmall-bold  aria-label="<redacted len=17>"  "<redacted len=5>"
+                        li.member-analytics-addon-summary__list-item
+                          div.display-flex.align-items-center
+                            p.text-body-medium-bold.pr1.text-heading-large  "0"
+                          p.member-analytics-addon-list-item__description.t-14.pr3  "Reactions"
+                          span.text-body-xsmall
+                            strong.analytics-tools-shared-trend-text__value--neutral-caret-lead.text-body-xsmall-bold  aria-label="<redacted len=19>"  "<redacted len=2>"
+                        li.member-analytics-addon-summary__list-item
+                          div.display-flex.align-items-center
+                            p.text-body-medium-bold.pr1.text-heading-large  "0"
+                          p.member-analytics-addon-list-item__description.t-14.pr3  "Comments"
+                          span.text-body-xsmall
+                            strong.analytics-tools-shared-trend-text__value--neutral-caret-lead.text-body-xsmall-bold  aria-label="<redacted len=19>"  "<redacted len=2>"
+                        li.member-analytics-addon-summary__list-item
+                          div.display-flex.align-items-center
+                            p.text-body-medium-bold.pr1.text-heading-large  "0"
+                          p.member-analytics-addon-list-item__description.t-14.pr3  "Reposts"
+                          span.text-body-xsmall
+                            strong.analytics-tools-shared-trend-text__value--neutral-caret-lead.text-body-xsmall-bold  aria-label="<redacted len=19>"  "<redacted len=2>"
+              section.artdeco-card.member-analytics-addon-card__base-card
+                div.member-analytics-addon-loader
+                    div#member-analytics-addon-card-1.mb5
+                      div.member-analytics-addon-header__content
+                        div.mrA
+                          div.member-analytics-addon-header__container
+                            h2#ember71.ember-view.member-analytics-addon-header__title  "<redacted len=7>"
+                      div.member-analytics-addon-chart-module
+                        div#search-reusables__filters-bar.search-reusables__filters-bar-grouping.full-width.pt3.okDoOXWvhzstqztezWDoiiKqJTzbDiY
+                          ul.search-reusables__filter-list.flex-wrap
+                            li.search-reusables__primary-filter
+                              div#ember73.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-left.ember-view.search-reusables__navigation-filter-dropdown
+                                button#navigational-filter_resultType.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-bottom.ember-view.artdeco-pill.artdeco-pill--slate.artdeco-pill--choice  aria-label="<redacted len=22>"  "Impressions"
+                                  svg.navigational-filter-dropdown__caret-icon  role=none data-supported-dps=16x16 data-test-icon=caret-small
+                                div#ember75.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--justification-left.artdeco-dropdown__content--placement-bottom.ember-view.p0
+                          div.display-flex.align-items-center
+                        div.member-analytics-addon-loader
+                              figure.member-analytics-addon-line-chart  role=region aria-label="<redacted len=36>" data-highcharts-chart=0
+                                div#highcharts-screen-reader-region-before-0  role=region aria-label="<redacted len=32>"
+                                    p  "Chart"
+                                    div  "<redacted len=24>"
+                                    div  "<redacted len=51>"
+                                    div  "<redacted len=71>"
+                                div.highcharts-announcer-container
+                                div#highcharts-053r5ml-0.highcharts-container
+                                  svg.highcharts-root  aria-label="<redacted len=17>"
+                                    desc  "<redacted len=29>"
+                                    rect.highcharts-background
+                                    rect.highcharts-plot-background
+                                    g.highcharts-grid.highcharts-xaxis-grid  data-z-index=1
+                                      path.highcharts-grid-line  data-z-index=1
+                                      path.highcharts-grid-line  data-z-index=1
+                                      path.highcharts-grid-line  data-z-index=1
+                                      path.highcharts-grid-line  data-z-index=1
+                                      path.highcharts-grid-line  data-z-index=1
+                                      path.highcharts-grid-line  data-z-index=1
+                                    g.highcharts-grid.highcharts-yaxis-grid  data-z-index=1
+                                      path.highcharts-grid-line  data-z-index=1
+                                      path.highcharts-grid-line  data-z-index=1
+                                      path.highcharts-grid-line  data-z-index=1
+                                      path.highcharts-grid-line  data-z-index=1
+                                    rect.highcharts-plot-border  data-z-index=1
+                                    g.highcharts-axis.highcharts-xaxis  data-z-index=2
+                                      path.highcharts-axis-line  data-z-index=7
+                                    g.highcharts-axis.highcharts-yaxis  data-z-index=2
+                                      path.highcharts-axis-line  data-z-index=7
+                                    g.highcharts-series-group  data-z-index=3
+                                      g.highcharts-series.highcharts-series-1.highcharts-line-series  data-z-index=1
+                                        path.highcharts-graph  data-z-index=1
+                                        path.highcharts-tracker-line  data-z-index=2
+                                      g.highcharts-markers.highcharts-series-1.highcharts-line-series.highcharts-tracker  role=region aria-label="<redacted len=43>" data-z-index=1
+                                        path.highcharts-point  role=img aria-label="<redacted len=47>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=48>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=49>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=51>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=50>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=48>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=50>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=48>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=48>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=50>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=52>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=51>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=49>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=51>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=49>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=49>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=50>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=52>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=51>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=49>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=51>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=49>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=49>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=49>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=51>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=50>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=48>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=50>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=48>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=48>"
+                                      g.highcharts-series.highcharts-series-0.highcharts-line-series  data-z-index=2
+                                        path.highcharts-graph  data-z-index=1
+                                        path.highcharts-tracker-line  data-z-index=2
+                                      g.highcharts-markers.highcharts-series-0.highcharts-line-series.highcharts-tracker  role=region aria-label="<redacted len=41>" data-z-index=2
+                                        path.highcharts-point  role=img aria-label="<redacted len=43>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=44>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=45>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=47>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=79>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=44>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=46>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=44>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=44>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=46>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=48>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=47>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=45>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=47>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=45>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=45>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=46>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=48>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=47>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=45>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=47>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=45>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=45>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=45>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=47>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=46>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=44>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=46>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=44>"
+                                        path.highcharts-point  role=img aria-label="<redacted len=44>"
+                                    text.highcharts-title  data-z-index=4
+                                    text.highcharts-subtitle  data-z-index=4
+                                    text.highcharts-caption  data-z-index=4
+                                    g.highcharts-plot-lines-5  data-z-index=5
+                                      path.highcharts-plot-line
+                                    g.highcharts-legend  data-z-index=7
+                                      rect.highcharts-legend-box
+                                      g  data-z-index=1
+                                          g.highcharts-legend-item.highcharts-line-series.highcharts-color-undefined.highcharts-series-0  data-z-index=1
+                                          g.highcharts-legend-item.highcharts-line-series.highcharts-color-undefined.highcharts-series-1  data-z-index=1
+                                    g.highcharts-axis-labels.highcharts-xaxis-labels  data-z-index=7
+                                      text  "<redacted len=5>"
+                                      text  "<redacted len=6>"
+                                      text  "<redacted len=6>"
+                                      text  "<redacted len=6>"
+                                      text  "<redacted len=6>"
+                                      text  "<redacted len=5>"
+                                    g.highcharts-axis-labels.highcharts-yaxis-labels  data-z-index=7
+                                      text  "0"
+                                      text  "2"
+                                      text  "4"
+                                      text  "6"
+                                  div.highcharts-a11y-proxy-container
+                                    div  role=region aria-label="<redacted len=24>"
+                                      button.highcharts-a11y-proxy-button  aria-label="<redacted len=12>"
+                                      button.highcharts-a11y-proxy-button  aria-label="<redacted len=14>"
+                                  div.highcharts-legend
+                                        div.highcharts-legend-item.highcharts-line-series.highcharts-color-undefined.highcharts-series-0
+                                          span  data-z-index=2
+                                        div.highcharts-legend-item.highcharts-line-series.highcharts-color-undefined.highcharts-series-1
+                                          span  data-z-index=2
+                                  input#highcharts-legend-checkbox-0.highcharts-legend-checkbox
+                                  label.highcharts-legend-checkbox-label  data-test-line-chart-legend-checkbox-label=
+                                  input#highcharts-legend-checkbox-1.highcharts-legend-checkbox
+                                  label.highcharts-legend-checkbox-label  data-test-line-chart-legend-checkbox-label=
+                                    div#highcharts-end-of-chart-marker-0  "<redacted len=25>"
+                                div.highcharts-exit-anchor
+        section.org-update-engagement-table.artdeco-card.mb5.mt4
+          header.org-analytics-module-header.org-update-engagement-table__header-container
+            div.org-analytics-module-header__header-title
+              div.display-flex.align-items-center
+                h2.t-16.t-bold  "Content engagement"
+                span#ember42.artdeco-hoverable-trigger.artdeco-hoverable-trigger--content-placed-right.artdeco-hoverable-trigger--is-hoverable.ember-view
+                  button#ember43.artdeco-button.artdeco-button--circle.artdeco-button--muted.artdeco-button--1.artdeco-button--tertiary.ember-view  aria-label="<redacted len=35>"
+                    svg.artdeco-button__icon  role=none data-supported-dps=16x16 data-test-icon=question-small data-rtl=true data-rtl-ignore=iw
+                    span.artdeco-button__text
+                  div#artdeco-gen-42.ember-view
+                    div#ember45.ember-view
+            div.org-update-engagement-table__header
+              div#ember46.org-analytics__time-range-dropdown.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-left.ember-view
+                button#ember47.org-analytics__dropdown-trigger.org-analytics__time-range-dropdown-trigger.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-bottom.ember-view
+                    span.t-14.t-black.t-normal.mr1  "<redacted len=11>"
+                    span.t-14.t-black.t-bold  "<redacted len=26>"
+                  li-icon.artdeco-dropdown__trigger-icon
+                    svg.mercado-match  data-supported-dps=16x16
+                div#ember48.org-analytics-time-range-dropdown__dropdown-content-redesign.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--justification-left.artdeco-dropdown__content--pl
+              div.mlA.display-flex.align-items-center
+                label.t-14.t-black.t-normal.mr3.mt1  "<redacted len=5>"
+                div#ember49.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-right.ember-view
+                  button#org-update-engagement-table-count.org-update-engagement-table__count-trigger.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-bottom.ember-view  aria-label="Show 10 results"
+                    span.t-14.t-black.t-normal.v-align-middle.mv1  "10"
+                    li-icon.artdeco-dropdown__trigger-icon
+                      svg.mercado-match  data-supported-dps=16x16
+                  div#ember51.org-update-engagement-table__count-content.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--justification-right.artdeco-dropdown__content--placement-bottom.em
+          div.org-analytics-loading-state-container.overflow-auto
+            div.org-update-engagement-table__scroll-wrapper
+              table.org-analytics__table.table
+                  caption.visually-hidden  "<redacted len=24>"
+                    th.org-update-engagement-table__table-header
+                      span#ember89.artdeco-hoverable-trigger.artdeco-hoverable-trigger--content-placed-top.artdeco-hoverable-trigger--is-hoverable.ember-view
+                        span.t-12.t-black.t-bold.org-update-engagement-table__table-header-title  "Post title"
+                        div#artdeco-gen-44.ember-view
+                          div#ember91.ember-view
+                    th.org-update-engagement-table__table-header
+                      span#ember92.artdeco-hoverable-trigger.artdeco-hoverable-trigger--content-placed-top.artdeco-hoverable-trigger--is-hoverable.ember-view
+                        span.t-12.t-black.t-bold.org-update-engagement-table__table-header-title  "Post type"
+                        div#artdeco-gen-45.ember-view
+                          div#ember94.ember-view
+                    th.org-update-engagement-table__table-header
+                      span#ember95.fr.artdeco-hoverable-trigger.artdeco-hoverable-trigger--content-placed-top.artdeco-hoverable-trigger--is-hoverable.ember-view
+                        span.t-12.t-black.t-bold.org-update-engagement-table__table-header-title  "<redacted len=8>"
+                        div#artdeco-gen-46.ember-view
+                          div#ember97.ember-view
+                    th.org-update-engagement-table__table-header
+                      span#ember98.fr.artdeco-hoverable-trigger.artdeco-hoverable-trigger--content-placed-top.artdeco-hoverable-trigger--is-hoverable.ember-view
+                        span.t-12.t-black.t-bold.org-update-engagement-table__table-header-title  "Impressions"
+                        div#artdeco-gen-47.ember-view
+                          div#ember100.ember-view
+                    th.org-update-engagement-table__table-header
+                      span#ember101.fr.artdeco-hoverable-trigger.artdeco-hoverable-trigger--content-placed-top.artdeco-hoverable-trigger--is-hoverable.ember-view
+                        span.t-12.t-black.t-bold.org-update-engagement-table__table-header-title  "<redacted len=5>"
+                        div#artdeco-gen-48.ember-view
+                          div#ember103.ember-view
+                    th.org-update-engagement-table__table-header
+                      span#ember104.fr.artdeco-hoverable-trigger.artdeco-hoverable-trigger--content-placed-top.artdeco-hoverable-trigger--is-hoverable.ember-view
+                        span.t-12.t-black.t-bold.org-update-engagement-table__table-header-title  "Clicks"
+                        div#artdeco-gen-49.ember-view
+                          div#ember106.ember-view
+                    th.org-update-engagement-table__table-header
+                      span#ember107.fr.artdeco-hoverable-trigger.artdeco-hoverable-trigger--content-placed-top.artdeco-hoverable-trigger--is-hoverable.ember-view
+                        span.t-12.t-black.t-bold.org-update-engagement-table__table-header-title  "<redacted len=3>"
+                        div#artdeco-gen-50.ember-view
+                          div#ember109.ember-view
+                    th.org-update-engagement-table__table-header
+                      span#ember110.fr.artdeco-hoverable-trigger.artdeco-hoverable-trigger--content-placed-top.artdeco-hoverable-trigger--is-hoverable.ember-view
+                        span.t-12.t-black.t-bold.org-update-engagement-table__table-header-title  "Reactions"
+                        div#artdeco-gen-51.ember-view
+                          div#ember112.ember-view
+                    th.org-update-engagement-table__table-header
+                      span#ember113.fr.artdeco-hoverable-trigger.artdeco-hoverable-trigger--content-placed-top.artdeco-hoverable-trigger--is-hoverable.ember-view
+                        span.t-12.t-black.t-bold.org-update-engagement-table__table-header-title  "Comments"
+                        div#artdeco-gen-52.ember-view
+                          div#ember115.ember-view
+                    th.org-update-engagement-table__table-header
+                      span#ember116.fr.artdeco-hoverable-trigger.artdeco-hoverable-trigger--content-placed-top.artdeco-hoverable-trigger--is-hoverable.ember-view
+                        span.t-12.t-black.t-bold.org-update-engagement-table__table-header-title  "Reposts"
+                        div#artdeco-gen-53.ember-view
+                          div#ember118.ember-view
+                    th.org-update-engagement-table__table-header
+                      span#ember119.fr.artdeco-hoverable-trigger.artdeco-hoverable-trigger--content-placed-top.artdeco-hoverable-trigger--is-hoverable.ember-view
+                        span.t-12.t-black.t-bold.org-update-engagement-table__table-header-title  "<redacted len=7>"
+                        div#artdeco-gen-54.ember-view
+                          div#ember121.ember-view
+                    th.org-update-engagement-table__table-header
+                      span#ember122.fr.artdeco-hoverable-trigger.artdeco-hoverable-trigger--content-placed-top.artdeco-hoverable-trigger--is-hoverable.ember-view
+                        span.t-12.t-black.t-bold.org-update-engagement-table__table-header-title  "Engagement rate"
+                        div#artdeco-gen-55.ember-view
+                          div#ember124.ember-view
+                tbody.org-update-engagement-table__table-body--high-height
+                    td#row-0.org-update-engagement-table__table-cell.display-flex.justify-center.flex-column
+                      a#org-update-engagement-table__table-cell-title-link-0.ember-view.link-without-visited-state  href=/company/107519091/admin/post-analytics/urn:li:activity:<id>/
+                        div#ember126.ember-view.lt-line-clamp.lt-line-clamp--multi-line.break-words  "<redacted len=119>"
+                      div.display-flex.mt1.org-update-engagement-table__metadata-row
+                        span.mr1  "Posted by"
+                        a#ember127.ember-view.org-update-engagement-table__creator-link  href=/in/<slug>/
+                          span.t-10.link-without-visited-state
+                            div#ember129.ember-view.lt-line-clamp.lt-line-clamp--multi-line  "<redacted len=17>"
+                        span.org-update-engagement-table__date  "<redacted len=8>"
+                      div.mt2
+                        div.org-update-engagement-table__boost-bar.org-update-engagement-table__boost-bar--enabled  data-test-boost-action-bar=
+                          div.display-block
+                            div.org-update-engagement-table__boost-bar-header-text.text-body-small  data-test-boost-action-bar__primary_text=  "<redacted len=33>"
+                          div.ml3  data-test-boost-action-bar__primary_action=
+                            a.LuuMWfaYXrFozmEnAlksCThIJskvuhGBFaM.artdeco-button.artdeco-button--secondary.artdeco-button--2.artdeco-button--default.white-space-nowrap  aria-label="<redacted len=5>" href=https://www.linkedin.com/ad-beta/boost/campaigns/new/details?content=urn%3Ali%3AugcPost%3A<id>& data-test-boost-bar-button=analytics-table data-view-name=org-feed-update-card-boost-cta data-test-app-aware-link=  "<redacted len=5>"
+                    td.org-update-engagement-table__table-cell
+                      span.t-14  "<redacted len=5>"
+                    td.org-update-engagement-table__table-cell  "All followers"
+                    td.org-update-engagement-table__table-cell.text-align-right  "48"
+                    td.org-update-engagement-table__table-cell.text-align-right
+                      span  "1"
+                    td.org-update-engagement-table__table-cell.text-align-right  "1"
+                    td.org-update-engagement-table__table-cell.text-align-right  "<redacted len=5>"
+                    td.org-update-engagement-table__table-cell.text-align-right  "0"
+                    td.org-update-engagement-table__table-cell.text-align-right  "0"
+                    td.org-update-engagement-table__table-cell.text-align-right  "0"
+                    td.org-update-engagement-table__table-cell.text-align-right  "-"
+                    td.org-update-engagement-table__table-cell.text-align-right  "<redacted len=5>"
+            div#ember130.pv4.artdeco-pagination.artdeco-pagination--hide-pagination.ember-view
+      div#ember53.ember-view
+    footer.global-footer-compact  aria-label="LinkedIn Footer Content"
+      div#ember54.ember-view
+        ul.global-footer-compact__content.global-footer-compact__links
+          li.global-footer-compact__item
+            a#compactfooter-about.ember-view.global-footer__link.t-12.t-normal  href=https://about.linkedin.com/
+              span  "About"
+          li.global-footer-compact__item
+            a#compactfooter-accessibility.ember-view.global-footer__link.t-12.t-normal  href=https://www.linkedin.com/accessibility
+              span  "<redacted len=13>"
+          li.global-footer-compact__item
+            a#compactfooter-help.ember-view.global-footer__link.t-12.t-normal  href=https://www.linkedin.com/help/linkedin?trk=footer_d_flagship3_company_admin
+              span  data-dyn-trk=  "<redacted len=11>"
+          li.global-footer-compact__item
+            div#ember80.artdeco-dropdown.artdeco-dropdown--placement-top.artdeco-dropdown--justification-left.ember-view.global-footer-dropdown
+              button#compactfooter-privacy_dropdown-trigger.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-top.ember-view.global-footer-dropdown__trigger
+                span.global-footer__link.global-footer__dropdown-trigger.t-12.t-normal
+                  span.text-align-left  "<redacted len=15>"
+                    svg.global-footer-dropdown__trigger-icon  role=none data-supported-dps=16x16 data-test-icon=caret-small
+              div#ember82.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--justification-left.artdeco-dropdown__content--placement-top.ember-view.global-footer-dropdown__options
+          li.global-footer-compact__item
+            a#compactfooter-ad_choices.ember-view.global-footer__link.t-12.t-normal  href=https://www.linkedin.com/help/linkedin/answer/62931
+              span  "<redacted len=10>"
+          li.global-footer-compact__item
+            a#compactfooter-advertising.ember-view.global-footer__link.t-12.t-normal  href=https://www.linkedin.com/ad/start?trk=n_nav_ads_rr
+              span  "<redacted len=11>"
+          li.global-footer-compact__item
+            div#ember85.artdeco-dropdown.artdeco-dropdown--placement-top.artdeco-dropdown--justification-right.ember-view.global-footer-dropdown
+              button#compactfooter-business_services_dropdown-trigger.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-top.ember-view.global-footer-dropdown__trigger
+                span.global-footer__link.global-footer__dropdown-trigger.t-12.t-normal
+                  span.text-align-left  "<redacted len=17>"
+                    svg.global-footer-dropdown__trigger-icon  role=none data-supported-dps=16x16 data-test-icon=caret-small
+              div#ember87.artdeco-dropdown__content.artdeco-dropdown--is-dropdown-element.artdeco-dropdown__content--justification-right.artdeco-dropdown__content--placement-top.ember-view.global-footer-dropdown__options
+          li.global-footer-compact__item
+                div#ember88.ember-view
+                button#compactfooter-get_app_footer.global-footer__link.global-footer__dropdown-trigger.t-12.t-normal  "<redacted len=20>"
+          li.global-footer-compact__item
+            button#compactfooter-more.global-footer__link.t-12.t-normal  aria-label="<redacted len=12>"  "More"
+        div#compactfooter-copyright.global-footer-compact__content.t-12.t-normal.text-align-center.clear-both  "<redacted len=27>"
+          svg.global-footer-compact__linkedin-logo  role=img aria-label="LinkedIn" data-supported-dps=56x14 data-test-icon=linkedin-logo-blue-xxsmall
+        div#ember56.ember-view
+

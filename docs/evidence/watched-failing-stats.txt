@@ -1,0 +1,18 @@
+R4, watched failing against kit/account.py at 47d836b (before the fix), driven
+directly against the old table-reading code:
+
+OLD: every row short (renderer still hydrating) -> posts=[], and the RESULT line then prints impressions=0
+OLD: an empty tbody                             -> posts=[], impressions=0
+OLD: one post whose Impressions cell reads '-'  -> the sum is 48, with the missing post contributing a literal 0 and nothing saying so
+OLD: the only landing check was '/admin/analytics' in the final URL -> a redirect to another Page passes: True
+
+The first two are the header assertion covering the wrong property. It proves
+the table's SCHEMA is the one this was written against, which is true and
+useful, and says nothing at all about whether one number is present. Both shapes
+exited successfully with a Page reported as having nothing on it.
+
+The third is quieter and worse: the aggregate is a real number with a wrong
+value, and no field said a post had been skipped.
+
+The fourth is finding 4. `--page A` redirected to another administered Page
+satisfied the only check there was, and B's numbers were then labelled A.
