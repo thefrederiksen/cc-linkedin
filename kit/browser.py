@@ -28,6 +28,7 @@ import re
 import sys
 import tempfile
 import time
+from urllib.parse import urlparse
 
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout, Error as PWError
 
@@ -388,6 +389,47 @@ _URL_COMPANY = re.compile(
 _URL_NOTIFICATIONS = re.compile(
     r"//(?:[a-z0-9-]+\.)*linkedin\.com/notifications(?:[/?#]|$)", re.I)
 
+# -- A2, 2026-09-10: docs/phase-3-amendments.md ------------------------------
+#
+# The messaging LIST and the invitation manager are the owner's own inbox and his
+# own invitations. They notify nobody and no volume of reading them resembles
+# scraping, which is the one thing the safety number exists against. So they are
+# view_self.
+#
+# A THREAD IS NOT, AND THAT IS THE HALF THAT COSTS SOMETHING. Opening a thread
+# marks it read and can show the other participant a read receipt - the one
+# messaging read with an outward, irreversible side effect. It stays capped so a
+# runaway loop meets a wall instead of quietly marking a hundred conversations
+# read. Anything else under /messaging/ - compose, and whatever LinkedIn adds
+# next - is capped too, by not being matched.
+#
+# THESE TWO MATCH THE URL'S PATH, NOT THE WHOLE URL STRING, which is a stricter
+# test than the three patterns above use and the difference is deliberate rather
+# than accidental. A pattern searched against the whole string can be satisfied
+# by our own path sitting in somebody else's query parameter; matching the parsed
+# path cannot. The older three are left as they are - narrowing them is not what
+# A2 ruled on - but a new own-surface should be written this way.
+_PATH_MESSAGING_LIST = re.compile(r"^/messaging/?$", re.I)
+_PATH_INVITATION_MANAGER = re.compile(r"^/mynetwork/invitation-manager(?:/.*)?$", re.I)
+_HOST_LINKEDIN = re.compile(r"^(?:[a-z0-9-]+\.)*linkedin\.com$", re.I)
+
+
+def _linkedin_path(url):
+    """The path of `url` when, and only when, it is positively a linkedin.com
+    URL. None for anything else - another host, a lookalike host, a string that
+    is not a URL at all - so that every caller's unrecognised direction is the
+    capped one."""
+    try:
+        parts = urlparse(url)
+    except Exception:
+        return None
+    if parts.scheme.lower() not in ("http", "https"):
+        return None
+    host = (parts.hostname or "")
+    if not _HOST_LINKEDIN.match(host):
+        return None
+    return parts.path or "/"
+
 
 def surface_kind(url):
     """Which counter a URL belongs on: "view_self" or "view".
@@ -397,8 +439,11 @@ def surface_kind(url):
     read_profile and read_company use, instead of a second opinion that drifts.
 
     "view_self" needs a positive identification: a linkedin.com URL on one of the
-    three paths below whose identifier is on the owner's own list, or his own
-    notifications page. EVERYTHING ELSE IS "view", including a URL this does not
+    three paths below whose identifier is on the owner's own list, his own
+    notifications page, or - A2, 2026-09-10 - his own messaging LIST or his own
+    invitation manager. A messaging THREAD is deliberately NOT one of them; see
+    the note above _PATH_MESSAGING_LIST for why that is the half that matters.
+    EVERYTHING ELSE IS "view", including a URL this does not
     recognise, a URL that is not LinkedIn's, an empty string and None. The
     unrecognised direction has to be the capped one - the failure mode of a
     classifier that guesses generously is a day of stranger-views that the safety
@@ -421,6 +466,12 @@ def surface_kind(url):
         return "view_self"
     if _URL_NOTIFICATIONS.search(u):
         return "view_self"
+    path = _linkedin_path(u)
+    if path is not None:
+        if _PATH_MESSAGING_LIST.match(path):
+            return "view_self"
+        if _PATH_INVITATION_MANAGER.match(path):
+            return "view_self"
     return "view"
 
 
