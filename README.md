@@ -83,7 +83,7 @@ Three things worth knowing before you use them:
 
 * `search-posts` gives you `share_url` (a `lnkd.in` link) and `permalink` (the
   real `urn:li:activity` URL, or null). There is no field called `url`, because
-  a content-search card genuinely carries no permalink - see `kit/search.py` for
+  a content-search card genuinely carries no permalink - see `cc_linkedin_kit/search.py` for
   what was measured. `--resolve` follows each short link in the browser to fill
   `permalink`, capped at 10 rows, and that is what feeds a result straight into
   the comment and reaction verbs above.

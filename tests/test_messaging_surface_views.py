@@ -32,7 +32,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from kit.browser import surface_kind
+from cc_linkedin_kit.browser import surface_kind
 
 
 class TheMessagingListIsOurs(unittest.TestCase):

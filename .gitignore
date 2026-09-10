@@ -6,3 +6,8 @@ __pycache__/
 
 # Transient: the running session id, rewritten constantly. Never a repo artifact.
 .claude/sounds/.current_session
+
+# Packaging build artefacts.
+*.egg-info/
+build/
+dist/

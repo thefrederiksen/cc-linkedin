@@ -12,7 +12,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from kit import selftest as T
+from cc_linkedin_kit import selftest as T
 
 GOOD = ("name=A Person; headline=some words; location=Toronto, Ontario, Canada; "
         "company=Acme; degree=2nd; primary=Message; can_connect=yes; connections=418")

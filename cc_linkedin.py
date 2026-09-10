@@ -60,7 +60,7 @@ import time
 
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout, Error as PWError
 
-from kit.browser import BrowserLock
+from cc_linkedin_kit.browser import BrowserLock
 
 VIDEO_EXT = (".mp4", ".mov", ".webm", ".avi", ".m4v", ".mpeg", ".mpg", ".wmv", ".flv")
 IMAGE_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp")
@@ -685,8 +685,8 @@ def main():
     sp.add_argument("--match", required=True, help="words that appear in exactly one scheduled post")
     sp.set_defaults(fn=cmd_unschedule)
 
-    # -- Phase 1: comments and reactions (kit/comments.py) --------------------
-    from kit import comments as C
+    # -- Phase 1: comments and reactions (cc_linkedin_kit/comments.py) --------------------
+    from cc_linkedin_kit import comments as C
 
     def post_verb(name, fn, help_, text=False, expect=True, extra=None):
         sp = sub.add_parser(name, help=help_)
@@ -714,7 +714,7 @@ def main():
     post_verb("delete-post", C.delete_post, "delete one of our posts")
 
     # -- Phase 2: reading people, companies, search, notifications, stats ----
-    from kit import people as P
+    from cc_linkedin_kit import people as P
 
     sp = sub.add_parser("read-profile", help="print one person's profile as JSON")
     sp.add_argument("url", help="a /in/ profile URL, or just the slug")
@@ -727,7 +727,7 @@ def main():
     sp.add_argument("--port", type=int, default=9224)
     sp.set_defaults(fn=P.read_company)
 
-    from kit import search as Q
+    from cc_linkedin_kit import search as Q
 
     sp = sub.add_parser("search-people", help="search people, print each result as JSON")
     sp.add_argument("query", help="what to search for")
@@ -759,7 +759,7 @@ def main():
     sp.add_argument("--port", type=int, default=9224)
     sp.set_defaults(fn=Q.search_posts)
 
-    from kit import account as A
+    from cc_linkedin_kit import account as A
 
     sp = sub.add_parser("notifications", help="print the notifications page as JSON, one row per line")
     sp.add_argument("--limit", type=int, default=25)
@@ -775,7 +775,7 @@ def main():
     sp.set_defaults(fn=A.stats)
 
     # -- Phase 3: the invitations we sent ------------------------------------
-    from kit import connections as N
+    from cc_linkedin_kit import connections as N
 
     sp = sub.add_parser(
         "withdraw", help="withdraw one invitation we sent",
@@ -806,7 +806,7 @@ def main():
     sp.add_argument("--port", type=int, default=9224)
     sp.set_defaults(fn=N.withdraw)
 
-    from kit import selftest as T
+    from cc_linkedin_kit import selftest as T
     sp = sub.add_parser("selftest",
                         help="run every verb on things we own, leaving nothing behind")
     sp.add_argument("--post", help="permalink of a post WE authored (comments go here). REQUIRED: pass it here, or record it in the machine's selftest fixtures file (R20). The run FAILS without it either way.")

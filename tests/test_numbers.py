@@ -28,7 +28,7 @@ from contextlib import redirect_stdout
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from kit import people as P
+from cc_linkedin_kit import people as P
 
 
 class NumbersThatParse(unittest.TestCase):

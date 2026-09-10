@@ -4,7 +4,7 @@
     py -3.11 tools/survey.py <label> <url> [--out FILE] [--full-out FILE]
                              [--probe SELECTOR ...] [--depth N] [--settle N]
 
-It opens the URL through kit.browser.Browser - so it takes the same lock and the
+It opens the URL through cc_linkedin_kit.browser.Browser - so it takes the same lock and the
 same background tab every verb takes - and dumps what is actually there:
 
   * the final URL after any redirect (an authwall shows up here first);
@@ -68,7 +68,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from kit.browser import Browser, Pace, log, surface_kind, _URL_PROFILE
+from cc_linkedin_kit.browser import Browser, Pace, log, surface_kind, _URL_PROFILE
 
 # Words that are LinkedIn's own furniture rather than anybody's data. A name or
 # a run of text is printed as-is only when EVERY word in it is one of these.
