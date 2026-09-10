@@ -66,7 +66,7 @@ Read section 6 of that file before trusting any of it.
 
 ### WHAT REMAINS - a fresh Manager can finish this from cold
 
-Nothing to build. Three things to observe, in this order:
+Nothing of the fix is left to build. Four things, in this order:
 
 1. **Watch revert 2 fail.** In `kit/people.py`, put the OLD positional employer
    read back - the headline and employer as the first and second surviving
@@ -84,6 +84,11 @@ Nothing to build. Three things to observe, in this order:
 3. **Three consecutive clean runs**, `passed=25 failed=0`, nothing left behind.
    One such run of the final build exists (ended 20:05, 2026-09-09); it does not
    count towards the three unless the Architect says so.
+4. **Implement the `view` / `view_self` split** that
+   `docs/ruling-view-cap-2026-09-09.md` calls for, since that ruling hands it to
+   whoever picks up the next Phase 2 task. Do it BEFORE the three clean runs, so
+   the runs that count are runs of the code that ships - and see the note on
+   `EXPECTED_VIEWS` at the end of this section before touching that constant.
 
 ### The fixtures - SHAPES only, values passed at run time and NEVER committed
 
@@ -136,15 +141,32 @@ Chrome must be up and signed in on port 9224: call
 the whole fleet through one `pace.json`, and it resets on the local date roll.
 It hit 80 at 20:12 on 2026-09-09 and every further read refused. The Architect's
 ruling stands: **the cap is not to be raised or routed around to get a green
-run.** Nothing is lost by waiting but machine time.
+run.** Nothing is lost by waiting but machine time. Read
+`docs/ruling-view-cap-2026-09-09.md`; it is short and it is the reason this pass
+handed back instead of finishing.
 
-Budget accordingly. `EXPECTED_VIEWS = 8` - one full selftest is eight views
-(four `read-profile`, including the refusal, which navigates before it refuses;
-`read-company`; three search pages). P2-9 proves the counter moved by exactly
-that, so a run that costs a different number is itself a failure. Three clean
-runs plus the two revert proofs is 40 views - half a day's budget. Most of the
-80 spent on 2026-09-09 went on surveying six profiles to find the two shapes the
+Budget accordingly. `EXPECTED_VIEWS = 8` as the code stands - one full selftest
+is eight views (four `read-profile`, including the refusal, which navigates
+before it refuses; `read-company`; three search pages). P2-9 proves the counter
+moved by exactly that, so a run that costs a different number is itself a
+failure. Three clean runs plus the two revert proofs is 40 views. Most of the 80
+spent on 2026-09-09 went on surveying six profiles to find the two shapes the
 rows now need; that part is a one-off.
+
+**`EXPECTED_VIEWS` will change, and the change is a fourth task, not a knob.**
+The same ruling splits `Pace` into `view` (other people's profiles and company
+pages, cap 80) and `view_self` (our own profile and our own Pages, counted and
+reported but uncapped), effective when the counter rolls. It is NOT implemented -
+`kit/browser.py` still has the single counter - and the ruling says whoever
+picks up the next Phase 2 task implements it, with the split visible in
+`pace.json` and a dated note in `kit/browser.py` saying what each counter is for.
+When it lands, the owner's own profile and the CenterConsulting page move off
+`view`, so `EXPECTED_VIEWS` drops to 6 and P2-9's arithmetic must be re-derived
+and re-observed rather than assumed. Beware the shape of that edit: P2-9 exists
+to catch a run that cost more views than it should, so `EXPECTED_VIEWS` is the
+one constant in this suite that a tired Manager can quietly retune until a run
+goes green. Change it only as a consequence of the counter split, and say so in
+the commit.
 
 ## Open with the owner
 
