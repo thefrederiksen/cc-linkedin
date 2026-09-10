@@ -1,0 +1,377 @@
+# survey page-invite-dialog
+# taken   2026-09-10 07:39:30
+# request https://www.linkedin.com/company/107519091/admin/?invite=true
+# subject tokens redacted literally: 2
+# final   https://www.linkedin.com/company/107519091/admin/dashboard/?invite=true
+# NOTE the URL changed - a redirect, or an authwall
+# rendering ember ([data-urn] count=3)
+# signed-in probes {".global-nav__me": 1, "button.global-nav__primary-link-me-menu-trigger": 1, "img.global-nav__me-photo": 1, "[data-test-global-nav-me]": 0, "nav.global-nav": 0, ".global-nav__nav": 1, "#global-nav": 1, "header.global-nav": 1, "[data-view-name=\"navigation-me\"]": 0}
+# 'Me' controls    []
+# title   "<redacted len=53>"
+# body    "<redacted len=300>"
+
+== ACCESSIBILITY (1211 nodes in the tree) ==
+  region         "<redacted len=13>"
+  dialog         "Invite to follow"
+  heading        "0 notifications total"
+  StaticText     "<redacted len=21>"
+  button         "Dismiss"
+  StaticText     "<redacted len=19>"
+  StaticText     "0 notifications total"
+  heading        "Invite to follow"
+  StaticText     "Invite to follow"
+  StaticText     "<redacted len=57>"
+  link           "<redacted len=57>"
+  StaticText     "<redacted len=5>"
+  StaticText     "<redacted len=50>"
+  StaticText     "<redacted len=10>"
+  button         "<redacted len=12>"
+  StaticText     "<redacted len=10>"
+  button         "<redacted len=24>"
+  button         "<redacted len=17>"
+  listbox        "Select connections to invite"
+  button         "Show more results"
+  StaticText     "<redacted len=12>"
+  button         "Invite"
+  option         "<redacted len=158>"
+  option         "<redacted len=249>"
+  option         "<redacted len=186>"
+  option         "<redacted len=76>"
+  option         "<redacted len=189>"
+  option         "<redacted len=141>"
+  option         "<redacted len=110>"
+  option         "<redacted len=222>"
+  option         "<redacted len=54>"
+  option         "<redacted len=53>"
+  option         "<redacted len=76>"
+  option         "<redacted len=85>"
+  option         "<redacted len=168>"
+  option         "<redacted len=214>"
+  option         "<redacted len=78>"
+  option         "<redacted len=215>"
+  option         "<redacted len=266>"
+  option         "<redacted len=49>"
+  option         "<redacted len=235>"
+  option         "<redacted len=67>"
+  StaticText     "Show more results"
+  StaticText     "Invite"
+  combobox       "<redacted len=14>"
+  heading        "<redacted len=36>"
+  link           "Try Premium Page"
+  checkbox       "<redacted len=21>"
+  checkbox       "<redacted len=19>"
+  StaticText     "<redacted len=36>"
+  StaticText     "<redacted len=96>"
+  StaticText     "Try Premium Page"
+  StaticText     "<redacted len=31>"
+  checkbox       "<redacted len=25>"
+  checkbox       "<redacted len=18>"
+  checkbox       "<redacted len=22>"
+  checkbox       "<redacted len=17>"
+  checkbox       "<redacted len=22>"
+  checkbox       "<redacted len=17>"
+  checkbox       "<redacted len=20>"
+  checkbox       "<redacted len=14>"
+  checkbox       "<redacted len=15>"
+  checkbox       "<redacted len=21>"
+  checkbox       "<redacted len=21>"
+  checkbox       "<redacted len=18>"
+  checkbox       "<redacted len=26>"
+  checkbox       "<redacted len=24>"
+  checkbox       "<redacted len=26>"
+  checkbox       "<redacted len=18>"
+  checkbox       "<redacted len=28>"
+  checkbox       "<redacted len=17>"
+  StaticText     "<redacted len=14>"
+  StaticText     "<redacted len=121>"
+  StaticText     "<redacted len=12>"
+  StaticText     "<redacted len=33>"
+  StaticText     "<redacted len=18>"
+  StaticText     "<redacted len=141>"
+  StaticText     "<redacted len=11>"
+  StaticText     "<redacted len=45>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=150>"
+  StaticText     "<redacted len=10>"
+  StaticText     "<redacted len=112>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=71>"
+  StaticText     "<redacted len=10>"
+  StaticText     "<redacted len=193>"
+  StaticText     "<redacted len=13>"
+  StaticText     "<redacted len=19>"
+  StaticText     "<redacted len=7>"
+  StaticText     "<redacted len=30>"
+  StaticText     "<redacted len=8>"
+  StaticText     "<redacted len=51>"
+  StaticText     "<redacted len=14>"
+  StaticText     "<redacted len=48>"
+  StaticText     "<redacted len=14>"
+  StaticText     "<redacted len=131>"
+  StaticText     "<redacted len=11>"
+  StaticText     "<redacted len=183>"
+  StaticText     "<redacted len=19>"
+  StaticText     "<redacted len=31>"
+  StaticText     "<redacted len=17>"
+  StaticText     "<redacted len=172>"
+  StaticText     "<redacted len=19>"
+  StaticText     "<redacted len=219>"
+  StaticText     "<redacted len=11>"
+  StaticText     "<redacted len=18>"
+  StaticText     "<redacted len=21>"
+  StaticText     "<redacted len=184>"
+  StaticText     "<redacted len=10>"
+  StaticText     "<redacted len=38>"
+  button         "<redacted len=77>"
+  button         "<redacted len=89>"
+  button         "<redacted len=71>"
+  button         "<redacted len=75>"
+  StaticText     "<redacted len=9>"
+  StaticText     "Current company"
+  StaticText     "School"
+  StaticText     "Industry"
+
+== PROBES ==
+  [1] [role="dialog"]
+  [20] [role="option"]
+  [6] input[role="combobox"]
+
+== JS PROBES ==
+  (() => [...document.querySelectorAll("[role=dialog],[aria-modal=true],dialog")].map(d=>({tag:d.tagName, role:d.getAttribute("role"), label:d.getAttribute("aria-label"), text:(d.innerText||"").replace(/\s+/g," ").trim().slice(0,500), inputs:[...d.querySelectorAll("input")].map(i=>({type:i.type, role:i.getAttribute("role"), label:i.getAttribute("aria-label"), cls:(i.className||"").slice(0,40)})), buttons:[...d.querySelectorAll("button")].map(b=>({text:(b.innerText||"").replace(/\s+/g," ").trim().slice(0,40), aria:b.getAttribute("aria-label"), disabled:b.disabled})).slice(0,15), options:d.query... <truncated 41 chars; the whole line is in the unredacted dump>
+    [
+     {
+      "tag": "DIV",
+      "role": "dialog",
+      "label": null,
+      "text": "Dialog content start. Invite to follow Expand your reach by inviting others to follow your page. Learn more 50/50 credits available \u00b7 Credit refill: October 1, 2026 Locations Current company School Industry Dmitry Shapiro CEO at GoRemy.ai and MindStudio.ai - ex: Product @ Google, CTO @ MySpace, 3 x founder, Strategic Advisor, Angel Investor. Select Dmitry Shapiro Mark Langley Group VP, Technology at Fullsteam Select Mark Langley Grow faster with 300 monthly credits Invite more connections and au",
+      "inputs": [
+       {
+        "type": "text",
+        "role": "combobox",
+        "label": "<redacted len=14>",
+        "cls": "artdeco-typeahead__input "
+       },
+       {
+        "type": "checkbox",
+        "role": null,
+        "label": null,
+        "cls": "ember-checkbox ember-view"
+       },
+       {
+        "type": "checkbox",
+        "role": null,
+        "label": null,
+        "cls": "ember-checkbox ember-view"
+       },
+       {
+        "type": "checkbox",
+        "role": null,
+        "label": null,
+        "cls": "ember-checkbox ember-view"
+       },
+       {
+        "type": "checkbox",
+        "role": null,
+        "label": null,
+        "cls": "ember-checkbox ember-view"
+       },
+       {
+        "type": "checkbox",
+        "role": null,
+        "label": null,
+        "cls": "ember-checkbox ember-view"
+       },
+       {
+        "type": "checkbox",
+        "role": null,
+        "label": null,
+        "cls": "ember-checkbox ember-view"
+       },
+       {
+        "type": "checkbox",
+        "role": null,
+        "label": null,
+        "cls": "ember-checkbox ember-view"
+       },
+       {
+        "type": "checkbox",
+        "role": null,
+        "label": null,
+        "cls": "ember-checkbox ember-view"
+       },
+       {
+        "type": "checkbox",
+        "role": null,
+        "label": null,
+        "cls": "ember-checkbox ember-view"
+       },
+       {
+        "type": "checkbox",
+        "role": null,
+        "label": null,
+        "cls": "ember-checkbox ember-view"
+       },
+       {
+        "type": "checkbox",
+        "role": null,
+        "label": null,
+        "cls": "ember-checkbox ember-view"
+       },
+       {
+        "type": "checkbox",
+        "role": null,
+        "label": null,
+        "cls": "ember-checkbox ember-view"
+       },
+       {
+        "type": "checkbox",
+        "role": null,
+        "label": null,
+        "cls": "ember-checkbox ember-view"
+       },
+       {
+        "type": "checkbox",
+        "role": null,
+        "label": null,
+        "cls": "ember-checkbox ember-view"
+       },
+       {
+        "type": "checkbox",
+        "role": null,
+        "label": null,
+        "cls": "ember-checkbox ember-view"
+       },
+       {
+        "type": "checkbox",
+        "role": null,
+        "label": null,
+        "cls": "ember-checkbox ember-view"
+       },
+       {
+        "type": "checkbox",
+        "role": null,
+        "label": null,
+        "cls": "ember-checkbox ember-view"
+       },
+       {
+        "type": "checkbox",
+        "role": null,
+        "label": null,
+        "cls": "ember-checkbox ember-view"
+       },
+       {
+        "type": "checkbox",
+        "role": null,
+        "label": null,
+        "cls": "ember-checkbox ember-view"
+       },
+       {
+        "type": "checkbox",
+        "role": null,
+        "label": null,
+        "cls": "ember-checkbox ember-view"
+       }
+      ],
+      "buttons": [
+       {
+        "text": "",
+        "aria": "Dismiss",
+        "disabled": false
+       },
+       {
+        "text": "",
+        "aria": "Dismiss",
+        "disabled": false
+       },
+       {
+        "text": "",
+        "aria": "<redacted len=24>",
+        "disabled": false
+       },
+       {
+        "text": "",
+        "aria": null,
+        "disabled": false
+       },
+       {
+        "text": "<redacted len=9>",
+        "aria": "<redacted len=77>",
+        "disabled": false
+       },
+       {
+        "text": "Current company",
+        "aria": "<redacted len=89>",
+        "disabled": false
+       },
+       {
+        "text": "School",
+        "aria": "<redacted len=71>",
+        "disabled": false
+       },
+       {
+        "text": "Industry",
+        "aria": "<redacted len=75>",
+        "disabled": false
+       },
+       {
+        "text": "",
+        "aria": null,
+        "disabled": false
+       },
+       {
+        "text": "Show more results",
+        "aria": null,
+        "disabled": false
+       },
+       {
+        "text": "<redacted len=12>",
+        "aria": null,
+        "disabled": true
+       },
+       {
+        "text": "Invite",
+        "aria": null,
+        "disabled": true
+       }
+      ],
+      "options": 20
+     }
+    ]
+  (() => { const t=document.body.innerText; const m=t.match(/(\d[\d,]*)\s*\/\s*(\d[\d,]*)\s+credits?\s+available/i); const r=t.match(/Credit refill:\s*([^\n]+)/i); return {credits:m?m.slice(0,3):null, refill:r?r[1]:null}; })()
+    {
+     "credits": [
+      "50/50 credits available",
+      "50",
+      "50"
+     ],
+     "refill": "<redacted len=15>"
+    }
+
+== DOM OUTLINE of main (26 nodes, depth<=5) ==
+  main.PBkYAWHwqwRDMPwNxwgRzhSyBGHlUDASmw.scaffold-layout__nested.scaffold-layout__nested--main
+    div#ember54.ember-view
+      section.artdeco-card.p5.mb3
+        div.mb3
+          div.display-flex.justify-space-between.align-items-center
+            h2.text-heading-large.mb1  "<redacted len=29>"
+            div.org-suggested-page-action-cards__info-bubble.ml2
+        ul.org-suggested-page-action-cards__suggested-actions-list
+          li#ember58.ember-view.org-suggested-page-action-card.org-suggested-page-action-cards__suggested-actions-list-item
+            section.artdeco-card.artdeco-card--with-hover.p4  role=region data-view-name=
+          li#ember60.ember-view.org-suggested-page-action-card.org-suggested-page-action-cards__suggested-actions-list-item
+            section.artdeco-card.artdeco-card--with-hover.p4  role=region data-view-name=
+        section.artdeco-card.mv3.pv2
+          section#ember62.member-analytics-addon-carousel.artdeco-carousel.ember-view.org-dashboard__analytics-carousel
+            div.artdeco-carousel__heading.artdeco-carousel__heading--custom
+            div.artdeco-carousel__content
+            div#artdeco-carousel__a11y-notification.visually-hidden
+        div.mv4
+          section.artdeco-card.gp-dashboard-promo-embedded-card__card.display-flex.Elevation-0dp
+            div#ember69.artdeco-dropdown.artdeco-dropdown--placement-bottom.artdeco-dropdown--justification-right.ember-view.gp-promo-overflow-menu__dropdown
+            div.display-flex.flex-column.flex-1.justify-center
+        section.artdeco-card.mb3.org-view-section
+            div.org-view-admin-updates-carousel
+        section.artdeco-card.mb3.org-view-section
+          div.pt5.ph5.pb5
+            div.org-view-updates-carousel.org-dashboard__updates-carousel
+

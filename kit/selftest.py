@@ -471,8 +471,19 @@ def _notification_holds(recs, limit):
 
 
 
-def _run(name, fn, **kw):
-    """Run one verb, capture its output, return (ok, everything it printed)."""
+def _run(name, fn, /, **kw):
+    """Run one verb, capture its output, return (ok, everything it printed).
+
+    `name` AND `fn` ARE POSITIONAL-ONLY, and that is not a style choice.
+    Phase 3's `invite-to-follow` takes a `--name` argument of its own - the full
+    name of the person to invite - and passing it through **kw collided with
+    this function's own `name` parameter, so the call raised "got multiple
+    values for argument 'name'" and the row could never have run. The bar makes
+    the collision impossible rather than renamed, because the next verb with an
+    argument called `fn` would reintroduce it. Found 2026-09-10 by a test that
+    drove the Phase 3 block offline; the live run costs twenty views and would
+    have found it the expensive way.
+    """
     args = {"port": 9224, "expect": None, "text": None, "text_file": None,
             "limit": None, "resolve": False, "company": None, "title": None,
             "location": None, "page": None, "page_name": None, "days": None}
@@ -553,6 +564,354 @@ def sweep_page(a):
     return urns
 
 
+
+# ============================================================================
+# PHASE 3 ROWS. Added 2026-09-10.
+#
+# WHAT THIS BLOCK DELIBERATELY DOES NOT DO: it never passes --submit to
+# `connect` or to `message`. Both reach a real human being and cannot be taken
+# back, and the rows that need that are declared BLOCKED - reported by name,
+# counted separately from passes and from failures, and enough to make the run
+# exit non-zero. Design section 5 asks for exactly that: a blocked row must
+# never read as a passed one.
+#
+# WHAT A "CLEAN" PHASE 3 RUN MEANS, therefore, and it is not exit 0: every row
+# that CAN run passed, `failed=0`, and the blocked rows are named on the RESULT
+# line with the reason. The process still exits non-zero, because there are
+# acceptance rows nobody has proven.
+# ============================================================================
+
+PHASE3_ROWS = ("P3-1", "P3-4a", "P3-4b", "P3-9", "P3-10", "P3-5", "P3-11", "P3-12",
+               "P3-13", "P3-14")
+# Declared and BLOCKED, every run, until somebody consents. Named here so the
+# inventory owes a report for each and none of them can go quiet.
+PHASE3_BLOCKED = (
+    ("P3-2", "connect --submit to a consenting person"),
+    ("P3-3", "withdraw of that same invitation"),
+    ("P3-6", "message --submit to a consenting person"),
+    ("P3-7", "a multi-paragraph message, staged LIVE - the offline suite proves the "
+             "line breaks and the guard, but proving Shift+Enter does not submit "
+             "LinkedIn's form needs a thread where an accidental send harms nobody, "
+             "and no such thread has been identified"),
+    ("P3-8", "the Enter-sends guard broken on purpose, which sends a fragment on "
+             "purpose"),
+    ("P3-13b", "invite-to-follow --submit, which spends a real credit and puts an "
+               "invitation in front of a real person"),
+)
+
+
+def _phase3(a, rows, step, check, blocked, attempt, every, all_of):
+    """Every Phase 3 row this run can execute. Returns nothing; reports rows."""
+    from kit import connections as N
+    from kit import messaging as M
+    from .browser import Pace, views_taken
+
+    # -- P3-1: connect, STAGED, with a note -----------------------------------
+    # Three capped views: the profile, the invitation page, and the profile
+    # again. The third is not waste - it is the half of rule 0.1's proof that
+    # the invitation manager cannot give, because a profile that has gone
+    # Pending says so where the Sent tab might simply not have caught up.
+    note = ("cc-linkedin selftest %s - a staged note. Nothing is sent: this run never "
+            "passes --submit." % time.strftime("%H:%M:%S"))
+    ok, out = attempt("connect-staged", N.connect, url=a.other_profile, note=note,
+                      note_file=None, expect_name=None, submit=False, dump=None)
+    m = re.search(r"note_limit_stated=(\d+)", out or "")
+    subs = [
+        ("the staged connect returned cleanly", ok, out.strip().splitlines()[-1][:90] if out else ""),
+        ("it read a note limit OFF THE PAGE", bool(m),
+         "the page stated %s" % (m.group(1) if m else "nothing - and this verb refuses "
+                                                      "to fall back on a remembered number")),
+        ("the profile still offers an invitation after the run",
+         "still_connectable=true" in (out or ""), "rule 0.1, half one"),
+        ("and the invitation manager does not list one",
+         "not_in_sent_tab=true" in (out or ""), "rule 0.1, half two"),
+        ("nothing was pressed", "pressed=nothing" in (out or ""), ""),
+    ]
+    check("P3-1", every(subs), "connect staged, %d checks" % len(subs))
+
+    # -- P3-4a: --submit with no --expect-name, refused before the browser opens
+    # THIS ROW OPENS NOTHING. The refusal is the first statement in the verb, so
+    # it costs no view and touches no page - which is why it is safe to run with
+    # --submit on the flag, and why P3-4b below is NOT.
+    ok, out = attempt("connect-submit-without-a-name", N.connect, url=a.other_profile,
+                      note=None, note_file=None, expect_name=None, submit=True, dump=None)
+    check("P3-4a", (not ok) and "--expect-name is REQUIRED" in (out or "")
+          and "RESULT" not in (out or ""),
+          "connect --submit with no --expect-name refuses before opening anything")
+
+    # -- P3-4b: a name that names somebody else, refused after reading the page
+    # RUN WITHOUT --submit ON PURPOSE. The comparison under test is the same
+    # line of code either way, and running it WITH --submit against a real
+    # person means that a bug in that one line sends them an invitation. The
+    # combination is proven in tests/test_phase3_verbs.py, where nothing is
+    # real; here the risk is not worth the extra realism and the report says so.
+    ok, out = attempt("connect-wrong-name", N.connect, url=a.other_profile, note=None,
+                      note_file=None, expect_name="Not This Person At All",
+                      submit=False, dump=None)
+    check("P3-4b", (not ok) and "two different people" in (out or ""),
+          "a mismatched --expect-name refuses and names both readings")
+
+    # -- P3-9: read-inbox opens nothing --------------------------------------
+    before_unread = None
+    ok, out = attempt("read-inbox", M.read_inbox, limit=25, unread=False)
+    rows_seen = _records(out)
+    marker = "unread_marker_seen=true" in (out or "")
+    if ok and rows_seen:
+        before_unread = sum(1 for r in rows_seen if r.get("unread"))
+    subs = [
+        ("read-inbox returned cleanly", ok, ""),
+        ("it returned conversations", len(rows_seen) >= 1, "%d rows" % len(rows_seen)),
+        ("every row names a participant",
+         all_of((bool(r.get("participant")) for r in rows_seen), len(rows_seen)),
+         "%d rows" % len(rows_seen)),
+        ("every row carries a thread_ref, because it cannot carry a URL (A3)",
+         all_of(((r.get("thread_ref") or "").startswith(M.REF_PREFIX) for r in rows_seen),
+                len(rows_seen)), ""),
+        ("it says it opened nothing", "opened_nothing=true" in (out or ""), ""),
+    ]
+    check("P3-9", every(subs), "read-inbox, %d rows, unread marker seen=%s"
+          % (len(rows_seen), marker))
+
+    # -- P3-10 and P3-5: one thread, opened ONCE and used twice ---------------
+    # OPENING A THREAD MARKS IT READ, so this block opens exactly one and it is
+    # one it can PROVE is already read - the same construction survey.py uses:
+    # keep only rows WITHOUT the unread marker, and refuse unless the list also
+    # holds a row that HAS it, because a marker missing from every row is a
+    # renamed marker and "nothing looks unread" would then be a broken
+    # instrument reading as a clean result.
+    already_read = [r for r in rows_seen if not r.get("unread")]
+    any_unread = [r for r in rows_seen if r.get("unread")]
+    if not rows_seen:
+        blocked("P3-10", "read-inbox returned no rows, so no thread could be chosen")
+        blocked("P3-5", "read-inbox returned no rows, so no thread could be chosen")
+    elif not any_unread:
+        blocked("P3-10", "no row on the inbox carries the unread marker, so 'this row is "
+                         "already read' cannot be proven - only assumed. Opening one on "
+                         "that basis could mark a real conversation read.")
+        blocked("P3-5", "the same: no positive control for the unread marker")
+    elif not already_read:
+        blocked("P3-10", "every conversation on the inbox is unread, so opening any of "
+                         "them marks a real one read")
+        blocked("P3-5", "the same: no already-read conversation to compose in")
+    else:
+        ref = already_read[0]["thread_ref"]
+        ok, out = attempt("read-thread", M.read_thread, url=ref)
+        msgs = _records(out)
+        thread_url = None
+        mu = re.search(r"url=(\S+)", out or "")
+        if mu:
+            thread_url = mu.group(1)
+        subs = [
+            ("read-thread returned cleanly", ok, ""),
+            ("it returned messages", len(msgs) >= 1, "%d messages" % len(msgs)),
+            ("every message names a sender",
+             all_of((bool(m2.get("sender")) for m2 in msgs), len(msgs)), ""),
+            ("the RESULT line admits it marked the thread read",
+             "marked_read=true" in (out or ""),
+             "a side effect nobody mentions is how a tool loses somebody's trust"),
+        ]
+        check("P3-10", every(subs), "read-thread, %d messages" % len(msgs))
+
+        # -- P3-5: message, STAGED, into that same already-read thread --------
+        # ONE LINE, AND THE REASON IS WRITTEN HERE. A multi-paragraph draft
+        # needs Shift+Enter, and that Shift+Enter does not submit LinkedIn's
+        # form is a convention this code relies on rather than something anybody
+        # has measured. A single line uses insertText only, which fires no key
+        # events at all, so this row cannot send anything to anybody even if
+        # that convention is wrong. The multi-paragraph row is P3-7 and it is
+        # BLOCKED, not quietly folded into this one.
+        if thread_url:
+            draft = ("cc-linkedin selftest %s - a staged draft. It is typed, counted, "
+                     "read back and deleted. Nothing is sent." % time.strftime("%H:%M:%S"))
+            ok, out = attempt("message-staged", M.message, url=thread_url, text=draft,
+                              text_file=None, expect_name=None, submit=False, dump=None)
+            subs = [
+                ("the staged message returned cleanly", ok,
+                 (out or "").strip().splitlines()[-1][:90] if out else ""),
+                ("the thread gained no message while the draft was typed",
+                 "unchanged=true" in (out or ""), "rule 0.2's count, watched NOT firing"),
+                ("the draft was taken back out and the reload agrees",
+                 "draft_cleared=true" in (out or ""), "rule 0.1"),
+                ("nothing was sent", "sent=nothing" in (out or ""), ""),
+            ]
+            check("P3-5", every(subs), "message staged, %d checks" % len(subs))
+        else:
+            blocked("P3-5", "read-thread returned no thread URL to compose in")
+
+    # -- P3-11: invitations, parsed against the page's own count --------------
+    ok, out = attempt("invitations", N.invitations, limit=25)
+    invites = _records(out)
+    mp = re.search(r"page_says=(\d+)", out or "")
+    mr = re.search(r"rows=(\d+)", out or "")
+    subs = [
+        ("invitations returned cleanly", ok, ""),
+        ("the page publishes a count for the filter whose rows were parsed", bool(mp),
+         "A4: without one, the zero-rows exception does not apply"),
+        ("the parse equals that count", bool(mp and mr and mp.group(1) == mr.group(1)),
+         "parsed %s, page says %s" % (mr.group(1) if mr else "?",
+                                      mp.group(1) if mp else "?")),
+        ("every row names somebody",
+         all_of((bool(r.get("name")) for r in invites), len(invites)) if invites else True,
+         "%d rows" % len(invites)),
+        ("it pressed nothing", "pressed=nothing" in (out or ""),
+         "Accept and Ignore are the two controls here that change another person's world"),
+    ]
+    check("P3-11", every(subs), "invitations, %d rows" % len(invites))
+
+    # -- P3-12: follow and unfollow, ENDING WHERE IT STARTED ------------------
+    #
+    # THE ROW IS A ROUND TRIP AND NOT A FIXED STARTING STATE, and that is a
+    # deliberate change from design row P3-12's wording ("a Page not currently
+    # followed"). What the design ASSERTS is "final state equals the initial
+    # state, asserted after a reload", and a round trip proves that from either
+    # end while a fixed starting state does not survive its own first run - the
+    # row leaves the Page where it found it, so a fixture chosen as "not
+    # followed" is still not followed, but a fixture that drifts would silently
+    # stop exercising the flip.
+    #
+    # It also lets the default be the owner's OWN Page, which costs NOTHING
+    # against the safety cap (view_self) and borrows nobody else's. Four capped
+    # views a run, three times over, to flip a stranger's Page back and forth is
+    # a real price for no extra coverage: the control, its three signals and the
+    # top-card scoping are the same element on any organisation page. A third
+    # party's Page can still be passed and then it is capped like any other.
+    if not a.follow_company:
+        blocked("P3-12", "no --follow-company and no default: without one the follow path "
+                         "never runs, and a path that never executes is not covered by a "
+                         "green suite however green.")
+    else:
+        ok1, out1 = attempt("follow", N.follow, url=a.follow_company, dump=None)
+        started_following = "changed=false" in (out1 or "")
+        if started_following:
+            # Already followed - `follow` correctly pressed nothing. Go the
+            # other way first, then come back.
+            ok2, out2 = attempt("unfollow", N.unfollow, url=a.follow_company, dump=None)
+            ok3, out3 = attempt("follow-back", N.follow, url=a.follow_company, dump=None)
+            flipped_away, flipped_back = out2, out3
+            want_end = "following=True"
+            ok_away, ok_back = ok2, ok3
+        else:
+            ok2, out2 = attempt("unfollow", N.unfollow, url=a.follow_company, dump=None)
+            flipped_away, flipped_back = out1, out2
+            want_end = "following=False"
+            ok_away, ok_back = ok1, ok2
+        subs = [
+            ("the first read of the control returned cleanly", ok1,
+             "started %s" % ("following" if started_following else "not following")),
+            ("one verb flipped the state away from where it started", ok_away
+             and "changed=true" in (flipped_away or ""),
+             (flipped_away or "").strip().splitlines()[-1][:80] if flipped_away else ""),
+            ("the other flipped it back", ok_back and "changed=true" in (flipped_back or ""),
+             (flipped_back or "").strip().splitlines()[-1][:80] if flipped_back else ""),
+            ("THE FINAL STATE EQUALS THE INITIAL ONE", want_end in (flipped_back or ""),
+             "this row borrows a Page and gives it back; it must not be the thing that "
+             "changes what the owner follows"),
+        ]
+        check("P3-12", every(subs), "follow round trip from %s, %d checks"
+              % ("following" if started_following else "not following", len(subs)))
+
+    # -- P3-13: invite-to-follow, STAGED --------------------------------------
+    if not (a.page and a.invite_name):
+        blocked("P3-13", "no --invite-name: the full name of one of the owner's own "
+                         "connections, exactly as the Page's invite dialog states it. "
+                         "The dialog picks a person by that name and by nothing else.")
+    else:
+        ok, out = attempt("invite-to-follow-staged", N.invite_to_follow, page=a.page,
+                          name=[a.invite_name], submit=False, dump=None)
+        mc = re.search(r"credits=(\d+)", out or "")
+        subs = [
+            ("the staged invite returned cleanly", ok,
+             (out or "").strip().splitlines()[-1][:90] if out else ""),
+            ("it read the credit line off the page", bool(mc),
+             "the credit is the thing that is actually spent"),
+            ("the credits did not move", "unchanged=true" in (out or ""), "rule 0.1"),
+            ("nothing was pressed", "pressed=nothing" in (out or ""), ""),
+        ]
+        check("P3-13", every(subs), "invite-to-follow staged, credits=%s"
+              % (mc.group(1) if mc else "?"))
+
+    # -- P3-14: the caps, exercised against a throwaway pacing file -----------
+    # IT DOES NOT TOUCH THE REAL pace.json. The rolling window is a property of
+    # a FILE, so the only way to exercise it is to write one - and writing a
+    # hundred connects into the machine's own file to prove a cap would spend
+    # the account's real allowance to test the thing that protects it.
+    check("P3-14", every(_cap_checks()), "the rolling 7-day connect cap and the retention "
+                                         "that makes it mean anything")
+
+
+def _cap_checks():
+    """P3-14, run against a temporary state directory.
+
+    TWO SCENARIOS, because the two halves of this cap fail in opposite
+    directions. A week already at the allowance must REFUSE and must not spend a
+    slot doing it; and a week under the allowance must go through AND leave the
+    history the next check will need. The second is what the retention change is
+    for: pace.json used to delete every day but today, which makes a rolling sum
+    identical to the daily count and a weekly cap unreachable forever.
+    """
+    import datetime
+    import shutil
+    import tempfile as _tf
+    from . import browser as _B
+
+    def day(o):
+        return (datetime.date.today() + datetime.timedelta(days=o)).strftime("%Y-%m-%d")
+
+    def seed(path, per_day):
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump({day(-o): {"connect": per_day} for o in range(1, 7)}, f)
+
+    tmp = _tf.mkdtemp(prefix="cc-linkedin-caps-")
+    keep_state, keep_gap = _B.STATE_DIR, _B.Pace.GAP
+    _B.STATE_DIR, _B.Pace.GAP = tmp, (0, 0)
+    try:
+        path = os.path.join(tmp, "pace.json")
+        limit, window = _B.Pace.ROLLING_CAPS["connect"]
+        # 1. a week already holding the whole allowance
+        seed(path, (limit // 6) + 1)
+        refused = False
+        with redirect_stdout(io.StringIO()):
+            try:
+                _B.Pace().before("connect")
+            except SystemExit:
+                refused = True
+        with open(path, encoding="utf-8") as f:
+            after_refusal = json.load(f)
+        # 2. a quiet week, which must go through and keep its history
+        seed(path, 1)
+        went = True
+        with redirect_stdout(io.StringIO()):
+            try:
+                _B.Pace().before("connect")
+            except SystemExit:
+                went = False
+        with open(path, encoding="utf-8") as f:
+            after_ok = json.load(f)
+        kept = sorted(k for k in after_ok if _B.DAY_KEY.match(k))
+        seeded_still_there = [day(-o) for o in range(1, 7) if day(-o) not in kept]
+        return [
+            ("a week already holding the whole allowance refuses the next invitation",
+             refused, "cap %d over %d days" % (limit, window)),
+            ("and it took no slot on the way to refusing",
+             (after_refusal.get(day(0)) or {}).get("connect", 0) == 0,
+             "a refusal that spent a slot would make tomorrow smaller for having been "
+             "refused"),
+            ("a quiet week is not refused", went,
+             "a cap that refuses whatever the numbers are is not a check"),
+            ("and the history the window counts over SURVIVES the save",
+             not seeded_still_there,
+             "dropped %s - pace.json used to delete every day but today, which makes "
+             "the rolling sum identical to the daily count"
+             % (", ".join(seeded_still_there) or "nothing")),
+            ("the retention covers the window it is for",
+             _B.Pace.RETAIN_DAYS >= window + 1,
+             "retain %d, window %d" % (_B.Pace.RETAIN_DAYS, window)),
+        ]
+    finally:
+        _B.STATE_DIR, _B.Pace.GAP = keep_state, keep_gap
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def run(a):
     # RULING R9. --page and --page-name used to be optional, and a missing one
     # SILENTLY SKIPPED the whole Page publish-and-delete block: not a failed row,
@@ -587,6 +946,10 @@ def run(a):
     # on 2026-09-09, at the owner's instruction; nothing about it can be
     # fabricated and no other profile can stand in for it.
     a.pending_profile = FX.value(a.pending_profile, "pending_profile", "url")
+    # Phase 3's own two fixtures, on the machine for the same reason as the
+    # others (R20): both name a third party and this repository is public.
+    a.follow_company = FX.value(a.follow_company, "follow_company", "url")
+    a.invite_name = FX.value(a.invite_name, "invite_name", "name")
     if not a.post:
         print("FAIL --post is required: a permalink of a post WE authored, which the\n"
               "comment rows comment on and then delete from. Pass it, or put it in %s\n"
@@ -641,11 +1004,13 @@ def run(a):
     stamp = time.strftime("%H:%M:%S")
     text = "cc-linkedin selftest %s. Test comment, deleted by the tool a minute later." % stamp
     reply_text = "Reply from the selftest %s, also deleted." % stamp
-    passed = failed = 0
+    passed = failed = blocked_n = 0
 
     rows = Rows()
     rows.declare(PHASE1_ROWS)
     rows.declare(PHASE2_ROWS)
+    rows.declare(PHASE3_ROWS)
+    rows.declare(tuple(name for name, _ in PHASE3_BLOCKED))
     rows.declare(("INVENTORY",))
     print("--- this run intends to execute %d rows: %s ---"
           % (len(rows.declared), ", ".join(rows.declared)), flush=True)
@@ -661,7 +1026,7 @@ def run(a):
         print("      could not count the browser's tabs before the run (%s); P2-9 will fail "
               "on it rather than report a tidy zero" % str(exc).splitlines()[0][:80], flush=True)
 
-    def step(row, name, fn, **kw):
+    def step(row, name, fn, /, **kw):
         """Run one verb and record it against the row it is. Every row goes
         through exactly one accounting path (ruling R9)."""
         nonlocal passed, failed
@@ -674,12 +1039,29 @@ def run(a):
             print("      %s FAILED: the verb did not return cleanly" % row, flush=True)
         return ok, out
 
-    def attempt(name, fn, **kw):
+    def attempt(name, fn, /, **kw):
         """Run a Phase 2 verb WITHOUT counting it. Every Phase 2 row is counted
         once, by its check - and row P2-3 is a row whose verb is SUPPOSED to
         fail, so a runner that counted a non-zero exit would score the correct
         behaviour as a defect and the whole run as red."""
         return _run(name, fn, port=a.port, **kw)
+
+    def blocked(row, why):
+        """A row nobody has proven, reported BY NAME and counted on its own.
+
+        Design section 5: a blocked row must never read as a passed one. It is
+        not a failure either - nothing is broken - so it gets its own counter,
+        it appears on the RESULT line, and it is enough on its own to make the
+        run exit non-zero. A suite that went green with acceptance rows nobody
+        had run would be the largest fail-open instrument in this repository.
+        """
+        nonlocal blocked_n
+        rows.report(row)
+        blocked_n += 1
+        print("[%s] %-16s %-70s %s" % (time.strftime("%H:%M:%S"), row, why[:70], "BLOCKED"),
+              flush=True)
+        if len(why) > 70:
+            print("      BLOCKED: %s" % why, flush=True)
 
     def check(row, ok, detail):
         nonlocal passed, failed
@@ -954,6 +1336,16 @@ def run(a):
          repr([x.get("impressions") for x in posts][:5])),
     ]), "Page stats: %d posts, followers=%r" % (len(posts), r.get("followers")))
 
+    # ======================================================== PHASE 3: reaching
+    # It runs BEFORE P2-9, so the views it takes are inside the window P2-9
+    # reconciles. A block that ran afterwards would be invisible to the one row
+    # that checks the pacing file against what the run believes it opened.
+    print("--- Phase 3: connect, message, the inbox, invitations, follow ---", flush=True)
+    _phase3(a, rows, step, check, blocked, attempt, every, all_of)
+
+    for name, why in PHASE3_BLOCKED:
+        blocked(name, why)
+
     # -- P2-9: the run left nothing behind, and the two records of what it
     # -- viewed agree -------------------------------------------------------
     from .browser import open_file_dialogs, views_taken, STATE_DIR
@@ -1021,7 +1413,11 @@ def run(a):
     ok, detail = rows.reconcile(reporting_now="INVENTORY")
     check("INVENTORY", ok, detail)
 
-    print("RESULT selftest passed=%d failed=%d rows=%d/%d"
-          % (passed, failed, len(rows.reported), len(rows.declared)), flush=True)
-    if failed:
+    print("RESULT selftest passed=%d failed=%d blocked=%d rows=%d/%d"
+          % (passed, failed, blocked_n, len(rows.reported), len(rows.declared)), flush=True)
+    # BLOCKED EXITS NON-ZERO TOO, and design section 5 asks for exactly that.
+    # A CLEAN Phase 3 run is `failed=0` with the blocked rows named - not exit
+    # 0, which would say every acceptance row had been proven when six of them
+    # have not.
+    if failed or blocked_n:
         sys.exit(1)

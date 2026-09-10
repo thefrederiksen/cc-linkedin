@@ -252,6 +252,67 @@ MAP_URL = re.compile(r"https?://[^\"\s]*(?:maps|/maps/|geo/)[^\"\s]*", re.I)
 # keeps that shape in the dump. This one is the net underneath them.
 LONG_NUMBER = re.compile(r"\d{15,}")
 
+# A BARE NUMERIC IDENTIFIER SITTING ON A JSON KEY - measured 2026-09-10 on the
+# custom-invite page, and it is R17 one level down again.
+#
+# That page embeds a block of LinkedIn's own configuration JSON in the document,
+# and a probe that swept the page's leaf text matched it. Inside it, written as
+# `"plainId":11950918`, is the signed-in member's own numeric id. Every rule
+# above walks past it: it is on no path, inside no urn, and carries no parameter
+# name, and a member id is EIGHT digits, so R17's fifteen-digit net is above it
+# by construction. That floor is not a mistake - it is what keeps the owner's
+# nine-digit Page id (R13.3) - but it means this whole class passes underneath.
+#
+# THIS IS A SHAPE AND NOT AN ENUMERATION, deliberately, and that is the whole
+# reason it is written this way: a JSON key whose name ends in `id`, holding a
+# bare number of five or more digits. `plainId` is what was measured; `memberId`,
+# `entityId` and whatever LinkedIn writes next are the same shape and are covered
+# without anybody teaching this rule a second name. It also matches LinkedIn's
+# own `experimentId`, which is not anybody's data - redacting it costs nothing
+# and keeping the rule a shape is worth more than the precision.
+#
+# Both spellings of the quote: a JSON blob that arrives inside a JSON string is
+# escaped, `\"plainId\":`, which is how it appeared in the dump this was
+# written for.
+#
+# WHAT IT DOES NOT COVER: a bare number that is somebody's identifier and is NOT
+# on a key ending in "id" - `"member":11950918`, or a number in prose. No shape
+# separates that from any other number, and this rule does not pretend to.
+JSON_ID_FORMS = (
+    (r"\\?\"[A-Za-z_]*[Ii][Dd]\\?\"\s*:\s*", r"\d{5,}", "<id>"),
+)
+JSON_ID = re.compile("(%s)(?!<)%s" % (JSON_ID_FORMS[0][0], JSON_ID_FORMS[0][1]))
+
+# A COMMITTED DUMP IS EVIDENCE, AND EVIDENCE IS READ BY A PERSON - 2026-09-10.
+#
+# The same page embeds that configuration JSON as a single leaf node, and three
+# lines of probe output came to 150KB of it. Nobody reads 150KB, so the last
+# guard the redaction rules rest on - R13.4's "a new surface deserves a fresh
+# look before its dump is committed" - silently stops being performed, and every
+# identifier form nothing here knows about rides in underneath it.
+#
+# So one line of the REDACTED dump is capped. The cap keeps the head of the
+# line, which is where a selector's shape is, and says how much it dropped so
+# that a truncation is never mistaken for the page having nothing more to say.
+# The full dump is uncapped: it is scratch, it is never committed, and it is
+# where somebody goes when the head of the line was not enough.
+#
+# IDEMPOTENT BY CONTRACT, like every other rule here, because
+# tools/redact_surveys.py --check proves a dump is clean by running the rules
+# again and finding nothing changed. A line that already carries the marker is
+# returned untouched; without that, each pass would shave another 600 characters
+# off it forever.
+SAFE_LINE_LIMIT = 600
+TRUNCATION_MARK = "... <truncated %d chars; the whole line is in the unredacted dump>"
+_TRUNCATED = re.compile(r"\.\.\. <truncated \d+ chars;")
+
+
+def cap_line(line):
+    """One line of the redacted dump, capped. See SAFE_LINE_LIMIT."""
+    if len(line) <= SAFE_LINE_LIMIT or _TRUNCATED.search(line):
+        return line
+    return line[:SAFE_LINE_LIMIT] + TRUNCATION_MARK % (len(line) - SAFE_LINE_LIMIT)
+
 
 # ---------------------------------------------------- THE SUBJECT'S OWN TOKENS
 #
@@ -349,6 +410,9 @@ def redact_identifiers(value):
     v = ARTICLE.sub(lambda m: m.group(1) + "<article>", v)
     v = QUERY_VALUE.sub(lambda m: m.group(1) + QUERY_PLACEHOLDER, v)
     v = LONG_NUMBER.sub("<id>", v)          # R17: the shape rule, under all of them
+    # Under that one again: a bare id on a JSON key, which is below R17's floor
+    # by construction. See JSON_ID_FORMS.
+    v = JSON_ID.sub(lambda m: m.group(1) + JSON_ID_FORMS[0][2], v)
     return v
 
 
@@ -400,6 +464,23 @@ REVEAL_ONLY = {
     "received": "the invitation manager's Received tab - a tab, not an action",
     "write a message": "the messaging list's compose control; opens an empty draft",
     "compose": "as above, the other name the same control has worn",
+    # 2026-09-10, Phase 3. Survey section 10.3 names this as unmeasured and
+    # design rule 0.2 hangs on what is inside it: it is the likeliest home of
+    # the press-Enter-to-send setting. Opening it REVEALS a menu of settings; it
+    # neither types, submits nor toggles anything, and the survey presses Escape
+    # afterwards. If it turns out to hold a control that sends, this entry comes
+    # straight back out - the rule above admits no exception for a name already
+    # on the list.
+    "open send options": "opens the composer's settings menu so the Enter-sends "
+                         "setting can be READ. Opening it toggles nothing",
+    # 2026-09-10, Phase 3. On the custom-invite page the dialog offers exactly
+    # two actions: "Add a note", which REVEALS the note textarea, and "Send
+    # without a note", which SENDS. This entry is the first one and the second
+    # one is permanently ineligible - it is the irreversible act this whole
+    # phase is built around. Measured: clicking Add a note revealed the textarea
+    # and sent nothing (the Sent tab's own count was 39 before and 39 after).
+    "add a note": "on the custom-invite dialog, reveals the note textarea so its "
+                  "character limit can be read off the page. It sends nothing",
 }
 
 
@@ -683,7 +764,7 @@ def survey(br, label, url, dump, probes, depth, settle, expand, scope=None, js_e
             dump.both("  " + redact_attr(expr))
             if dump.safe:
                 for line in json.dumps(redact_json(val), indent=1, ensure_ascii=True).splitlines():
-                    dump.safe.write("    " + line + chr(10))
+                    dump.safe.write(cap_line("    " + line) + chr(10))
             if dump.full:
                 for line in json.dumps(val, indent=1, ensure_ascii=True).splitlines():
                     dump.full.write("    " + line + chr(10))

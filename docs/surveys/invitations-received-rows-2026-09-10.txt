@@ -1,0 +1,305 @@
+# survey invitations-received-rows
+# taken   2026-09-10 07:38:29
+# request https://www.linkedin.com/mynetwork/invitation-manager/received/
+# subject tokens redacted literally: 21
+# final   https://www.linkedin.com/mynetwork/invitation-manager/received/
+# rendering react ([data-urn] count=0)
+# signed-in probes {".global-nav__me": 0, "button.global-nav__primary-link-me-menu-trigger": 0, "img.global-nav__me-photo": 0, "[data-test-global-nav-me]": 0, "nav.global-nav": 0, ".global-nav__nav": 0, "#global-nav": 0, "header.global-nav": 0, "[data-view-name=\"navigation-me\"]": 0}
+# 'Me' controls    []
+# title   "<redacted len=29>"
+# body    "<redacted len=300>"
+
+== ACCESSIBILITY (994 nodes in the tree) ==
+  heading        "0 notifications"
+  button         "LinkedIn"
+  StaticText     "0 notifications"
+  button         "Skip to search"
+  button         "Skip to main content"
+  button         "<redacted len=23>"
+  button         "Skip to aside"
+  region         "<redacted len=15>"
+  StaticText     "Skip to search"
+  StaticText     "Skip to main content"
+  StaticText     "<redacted len=23>"
+  StaticText     "Skip to aside"
+  button         "<redacted len=15>"
+  textbox        "Search"
+  button         "<redacted len=12>"
+  link           "<redacted len=30>"
+  button         "<redacted len=19>"
+  button         "<redacted len=11>"
+  radio          "<redacted len=12>"
+  heading        "<redacted len=12>"
+  button         "<redacted len=24>"
+  link           "<redacted len=31>"
+  link           "<redacted len=25>"
+  link           "<redacted len=30>"
+  link           "<redacted len=34>"
+  button         "Me"
+  StaticText     "<redacted len=12>"
+  StaticText     "<redacted len=9>"
+  StaticText     "<redacted len=18>"
+  heading        "<redacted len=19>"
+  link           "<redacted len=288>"
+  link           "<redacted len=100>"
+  link           "<redacted len=198>"
+  link           "<redacted len=102>"
+  link           "<redacted len=162>"
+  link           "<redacted len=119>"
+  link           "<redacted len=204>"
+  link           "<redacted len=90>"
+  link           "<redacted len=89>"
+  link           "<redacted len=225>"
+  link           "<redacted len=183>"
+  link           "<redacted len=110>"
+  link           "<redacted len=146>"
+  link           "<redacted len=127>"
+  link           "<redacted len=111>"
+  link           "<redacted len=159>"
+  link           "<redacted len=157>"
+  link           "<redacted len=158>"
+  link           "<redacted len=112>"
+  link           "<redacted len=146>"
+  link           "About"
+  link           "<redacted len=13>"
+  link           "<redacted len=11>"
+  button         "<redacted len=15>"
+  link           "<redacted len=10>"
+  link           "<redacted len=11>"
+  button         "<redacted len=17>"
+  link           "<redacted len=20>"
+  link           "More"
+  StaticText     "<redacted len=27>"
+  StaticText     "<redacted len=12>"
+  StaticText     "<redacted len=31>"
+  button         "<redacted len=12>"
+  StaticText     "Home"
+  StaticText     "<redacted len=10>"
+  StaticText     "Jobs"
+  StaticText     "Messaging"
+  StaticText     "Notifications"
+  StaticText     "Me"
+  checkbox       "<redacted len=11>"
+  checkbox       "<redacted len=12>"
+  button         "<redacted len=50>"
+  button         "<redacted len=33>"
+  StaticText     "<redacted len=19>"
+  button         "<redacted len=27>"
+  button         "<redacted len=37>"
+  button         "<redacted len=38>"
+  button         "<redacted len=32>"
+  button         "<redacted len=38>"
+  button         "<redacted len=44>"
+  button         "<redacted len=33>"
+  button         "<redacted len=28>"
+  button         "<redacted len=26>"
+  button         "<redacted len=38>"
+  button         "<redacted len=29>"
+  button         "<redacted len=36>"
+  button         "<redacted len=32>"
+  button         "<redacted len=29>"
+  button         "<redacted len=32>"
+  button         "<redacted len=37>"
+  button         "<redacted len=35>"
+  button         "<redacted len=30>"
+  button         "<redacted len=30>"
+  button         "<redacted len=32>"
+  button         "<redacted len=80>"
+  button         "<redacted len=80>"
+  link           "<redacted len=8>"
+  link           "<redacted len=4>"
+  StaticText     "<redacted len=11>"
+  link           "<redacted len=22>"
+  StaticText     "<redacted len=103>"
+  StaticText     "<redacted len=6>"
+  StaticText     "<redacted len=6>"
+  StaticText     "<redacted len=9>"
+  StaticText     "<redacted len=204>"
+  StaticText     "<redacted len=36>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=19>"
+  StaticText     "<redacted len=33>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=20>"
+  StaticText     "<redacted len=101>"
+  StaticText     "<redacted len=28>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=14>"
+  StaticText     "<redacted len=45>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=20>"
+  StaticText     "<redacted len=56>"
+  StaticText     "<redacted len=36>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=26>"
+  StaticText     "<redacted len=47>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=107>"
+  StaticText     "<redacted len=37>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=10>"
+  StaticText     "<redacted len=50>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=8>"
+  StaticText     "<redacted len=23>"
+  StaticText     "<redacted len=29>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=20>"
+  StaticText     "<redacted len=119>"
+  StaticText     "<redacted len=36>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=11>"
+  StaticText     "<redacted len=95>"
+  StaticText     "<redacted len=36>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=18>"
+  StaticText     "<redacted len=17>"
+  StaticText     "<redacted len=28>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=14>"
+  StaticText     "<redacted len=52>"
+  StaticText     "<redacted len=36>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=11>"
+  StaticText     "<redacted len=40>"
+  StaticText     "<redacted len=36>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=14>"
+  StaticText     "<redacted len=25>"
+  StaticText     "<redacted len=37>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=19>"
+  StaticText     "<redacted len=54>"
+  StaticText     "<redacted len=38>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=17>"
+  StaticText     "<redacted len=57>"
+  StaticText     "<redacted len=36>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=12>"
+  StaticText     "<redacted len=65>"
+  StaticText     "<redacted len=39>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=12>"
+  StaticText     "<redacted len=31>"
+  StaticText     "<redacted len=36>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=14>"
+  StaticText     "<redacted len=61>"
+  StaticText     "<redacted len=36>"
+  StaticText     "Connect"
+  StaticText     "About"
+  StaticText     "<redacted len=13>"
+  StaticText     "<redacted len=11>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=10>"
+  StaticText     "<redacted len=11>"
+  StaticText     "<redacted len=17>"
+  StaticText     "<redacted len=20>"
+  StaticText     "More"
+  StaticText     "<redacted len=80>"
+  button         "<redacted len=28>"
+  button         "<redacted len=15>"
+  StaticText     "<redacted len=80>"
+  StaticText     "<redacted len=8>"
+  StaticText     "<redacted len=4>"
+  StaticText     "<redacted len=16>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=13>"
+
+== PROBES ==
+  [42] a[href*="/in/"]
+  [1] button[aria-label^="Accept"]
+  [1] button[aria-label^="Ignore"]
+
+== JS PROBES ==
+  (() => { const acc=[...document.querySelectorAll("button[aria-label^=\"Accept\"]")]; return acc.slice(0,6).map((b,i)=>{ let row=b, person=null; for(let up=0;up<10&&row;up++){row=row.parentElement; if(!row)break; const p=row.querySelector("a[href*=\"/in/\"]"); if(p){person=p;break;}} const t=row?(row.innerText||""):""; return {i:i, label:b.getAttribute("aria-label"), profile:person?person.getAttribute("href"):null, rowText:t.replace(/\s+/g," ").trim().slice(0,300), timeEls:[...(row?row.querySelectorAll("time"):[])].map(e=>({dt:e.getAttribute("datetime"), t:(e.innerText||"").trim()})), rowTagC... <truncated 73 chars; the whole line is in the unredacted dump>
+    [
+     {
+      "i": 0,
+      "label": "<redacted len=33>",
+      "profile": "https://www.linkedin.com/in/<slug>/",
+      "rowText": "<redacted len=131>",
+      "timeEls": [],
+      "rowTagChain": "<redacted len=64>"
+     }
+    ]
+  (() => [...document.querySelectorAll("button, a")].map(e=>((e.getAttribute("aria-label")||e.innerText||"").replace(/\s+/g," ").trim())).filter(t=>/\(\d+\)/.test(t)).slice(0,12))()
+    []
+  (() => ({bodyHead: document.body.innerText.replace(/\s+/g," ").slice(0,400)}))()
+    {
+     "bodyHead": "<redacted len=400>"
+    }
+
+== DOM OUTLINE of main (69 nodes, depth<=10) ==
+  main#workspace.f59fbc39.c3bcac2f._38232876.e193d4ed.c39f4aba._4c0d7f95
+    div._6376d83e.d1b6db25.bd04e45f._78cbe4ff._9dc21ff9._96f7ce15
+      div.aa99edaa._2664f753.c39f4aba.cd7b4533._6a6103b1._25472c6d
+        section._584fdf8e.c33289f9._0be12a3c._93e2ccf0  aria-label="<redacted len=15>"
+          section.ab5d2150._3320b76a._066f0933.a7c0df65.ea6b618d._93e2ccf0
+            div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
+              div._970c3eec.afc9c46f._3f534fa0._303ab667.a9b72b69._23bc1528
+                div._904777d2.cdfac49d.a9b72b69._347e609e.af62721a._55d4291a
+                  p._9cb3f17d.cde1cee6._704ac4e0._84ce356b._7094a4ce._6eff3ba2  "<redacted len=18>"
+                  div._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  role=button
+                    svg#settings-medium._95106a6a._704ac4e0.c234c48b._27f2250c._2fee7e1e  role=img aria-label="<redacted len=19>" data-supported-dps=24x24 data-token-id=377
+                nav._895c7a8a._93e2ccf0
+                  ul.a9b72b69._347e609e.b6c5c0ee.d9b42440._93e2ccf0
+                    li._04a3943d._704ac4e0.c062a782._967b8d6a._93e2ccf0
+                      a.d4ba77c2.ee5d4478._25f92bae._6ec7d740.a67ed751._24fd924b  href=https://www.linkedin.com/mynetwork/invitation-manager/received
+                    li._04a3943d._704ac4e0.c062a782._967b8d6a._93e2ccf0
+                      a.d4ba77c2.ee5d4478._25f92bae._6ec7d740.a67ed751._24fd924b  href=https://www.linkedin.com/mynetwork/invitation-manager/sent
+              div._93e2ccf0  data-sdui-screen=com.linkedin.sdui.flagshipnav.mynetwork.invitations.Invitati data-sdui-destination-screen=com.linkedin.sdui.flagshipnav.mynetwork.invitations.Invitati data-sdui-destination-screen-hash=com.linkedin.sdui.flagshipnav.mynetwork.invitations.Invitati
+                div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
+                  hr._74c45efc._9213b59e._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  role=presentation
+                  div.afc9c46f.fd4f607c._3ce34c73._38803412.a9b72b69._347e609e
+                    div._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  role=button
+                      div._16d58add._213a4ab4.f091963e.bcc43b28._25f92bae._481fafa3
+                    div._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  role=radio
+                      div._16d58add._213a4ab4.f091963e.bcc43b28._25f92bae._481fafa3
+                  div._970c3eec._704ac4e0.a9b72b69._23bc1528.a9da8e14.d9b42440  data-testid=lazy-column data-component-type=LazyColumn
+                    hr._74c45efc._9213b59e._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  role=presentation
+                    div._175f6c4b._845acbad._69919e25._93e2ccf0
+                      div.b0d70e28._93e2ccf0  data-display-contents=true
+                    div._175f6c4b._845acbad._69919e25._61b6f9b3._93e2ccf0
+                      div._970c3eec.e262696c._36f0869f._3f534fa0._812fef91.a9b72b69
+                    div.a9b72b69._584fdf8e._93e2ccf0
+        aside._584fdf8e._2be77876.dba054c0._93e2ccf0  aria-label="Aside"
+          div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
+            div._62ca32df.cd6bc9e5._88138eda._6b430f13._175f6c4b._845acbad
+              div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
+                div._175f6c4b._845acbad._1d45b150._93e2ccf0
+                  div.a3ae5bd9._78b9637d._9045876d._3e48ce65._175f6c4b._845acbad
+                    iframe._65f3e082.a8b7c004._78cbe4ff._9dc21ff9._5a6b3e95.e8b5a029
+                    dialog.f1e5c804._76b28157._048e3f75._01d4b4d6._89f6871c.d569fe1a
+                      button.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="Dismiss"
+                      div.a9b72b69._23bc1528._704ac4e0._93e2ccf0
+                    dialog.f1e5c804._76b28157._048e3f75._01d4b4d6._89f6871c.d569fe1a
+                      button.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="Dismiss"
+                      div.a9b72b69._23bc1528._704ac4e0._93e2ccf0
+                div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
+                  footer.a9b72b69._347e609e.d955fe8d._25f92bae._130bfecf.d9b42440
+                    a.a48f6c8f.fb322ee5.dbbefc9c.ba0c317f._382c7b22._6b42a0cd  href=https://about.linkedin.com/
+                      p._9cb3f17d._2bc3f589._704ac4e0._84ce356b._7094a4ce._6eff3ba2  "About"
+                    a.a48f6c8f.fb322ee5.dbbefc9c.ba0c317f._382c7b22._6b42a0cd  href=https://www.linkedin.com/accessibility/
+                      p._9cb3f17d._2bc3f589._704ac4e0._84ce356b._7094a4ce._6eff3ba2  "<redacted len=13>"
+                    a.a48f6c8f.fb322ee5.dbbefc9c.ba0c317f._382c7b22._6b42a0cd  href=https://www.linkedin.com/help/linkedin/
+                      p._9cb3f17d._2bc3f589._704ac4e0._84ce356b._7094a4ce._6eff3ba2  "<redacted len=11>"
+                    div.a48f6c8f.fb322ee5.dbbefc9c.ba0c317f._382c7b22._6b42a0cd  role=button
+                      div._704ac4e0.a9b72b69._347e609e.aa06aed8._55d4291a.b6c5c0ee
+                    a.a48f6c8f.fb322ee5.dbbefc9c.ba0c317f._382c7b22._6b42a0cd  href=https://www.linkedin.com/help/linkedin/answer/62931/
+                      p._9cb3f17d._2bc3f589._704ac4e0._84ce356b._7094a4ce._6eff3ba2  "<redacted len=10>"
+                    a.a48f6c8f.fb322ee5.dbbefc9c.ba0c317f._382c7b22._6b42a0cd  href=https://www.linkedin.com/ad/start/?trk=n_nav_ads_rr
+                      p._9cb3f17d._2bc3f589._704ac4e0._84ce356b._7094a4ce._6eff3ba2  "<redacted len=11>"
+                    div.a48f6c8f.fb322ee5.dbbefc9c.ba0c317f._382c7b22._6b42a0cd  role=button
+                      div._704ac4e0.a9b72b69._347e609e.aa06aed8._55d4291a.b6c5c0ee
+                    a.a48f6c8f.fb322ee5.dbbefc9c.ba0c317f._382c7b22._6b42a0cd  href=https://www.linkedin.com/mobile/
+                      p._9cb3f17d._2bc3f589._704ac4e0._84ce356b._7094a4ce._6eff3ba2  "<redacted len=20>"
+                    a.a48f6c8f.fb322ee5.dbbefc9c.ba0c317f._382c7b22._6b42a0cd  href=https://www.linkedin.com/
+                      p._9cb3f17d._2bc3f589._704ac4e0._84ce356b._7094a4ce._6eff3ba2  "More"
+                  div.a9b72b69._347e609e.d955fe8d._25f92bae.b6c5c0ee.d9b42440
+                    svg#linkedin-logo-xxsmall._95106a6a.c234c48b._69854171._2fee7e1e  data-supported-dps=56x14 data-token-id=297
+                      path.background-mercado
+                    p._9cb3f17d._2bc3f589.dbbefc9c.ba0c317f._84ce356b._7094a4ce  "<redacted len=27>"
+

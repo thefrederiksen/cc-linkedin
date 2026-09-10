@@ -655,6 +655,57 @@ def _followers(br):
     return None, None, "the Activity card states no follower count"
 
 
+def resolve_invite(br, pace, url):
+    """Where this person's invitation lives, read off their profile.
+
+    ONE RESOLVER, USED BY BOTH VERBS. `connect` needs exactly what read-profile
+    already works out - is there an invite control, where does it live, what is
+    its href, is an invitation already pending, and what is this person's name
+    as the top card states it - and amendment A1 is emphatic that it must not go
+    looking for the word "Connect" itself: the control is an <a> whose accessible
+    name is "Invite <Name> to connect", and `get_by_role("button", name="Connect")`
+    finds NOTHING on this page. Every one of those questions was measured on
+    five profiles for Phase 2 and answered here. A second implementation in
+    kit/connections.py would be a second opinion that drifts.
+
+    Returns the fields `connect` needs and nothing else. It takes the view on
+    the caller's behalf, on the counter the slug chooses.
+    """
+    full = url if url.startswith("http") else "https://www.linkedin.com/in/%s/" % url.strip("/")
+    m = SLUG.search(full)
+    if not m:
+        die("not a profile URL (no /in/ in it): %s" % url)
+    want = m.group(1).lower()
+    if is_own_profile(want):
+        pace.before_self_view("profile %s (the owner's own)" % want)
+    else:
+        pace.before_view("profile %s" % want)
+    final = br.read(full, "the profile %s" % want, settle=7)
+    pace.after_view()
+    got = SLUG.search(final)
+    if not got or got.group(1).lower() != want:
+        die("asked for the profile %r and landed on %r (%s)"
+            % (want, got.group(1) if got else "(no /in/)", final))
+    card = br.page.evaluate(TOPCARD_JS, [S.PROFILE_TOPCARD, {"fill": S.PROFILE_PRIMARY_FILL}])
+    if card is None:
+        die("no profile top card on %s (selector %s)." % (final, S.PROFILE_TOPCARD))
+    name = card["name"]
+    if not name:
+        die("the top card on %s has no name in it; that is not a read, it is a blank page"
+            % final)
+    primary, actions = _primary(card, name)
+    degree = _degree(card, name)
+    if degree is None and _invite(card["controls"]) is None and not any(
+            l == "Message" or l.startswith("Follow") for l in actions):
+        degree = "self"
+    (can_connect, reason, via, connect_url, pending) = _connect(br, card, name, degree)
+    return {"slug": want, "url": final.split("?")[0], "name": name, "degree": degree,
+            "primary_button": primary, "actions": actions,
+            "can_connect": can_connect, "can_connect_reason": reason,
+            "connect_via": via, "connect_url": connect_url,
+            "invitation_pending": pending}
+
+
 def read_profile(a):
     url = a.url if a.url.startswith("http") else "https://www.linkedin.com/in/%s/" % a.url.strip("/")
     m = SLUG.search(url)

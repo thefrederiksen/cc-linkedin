@@ -18,6 +18,14 @@ check, and it is IDEMPOTENT: running it again changes nothing, which is also how
 
 It uses tools/survey.py's own redact_identifiers, deliberately. Two lists of
 rules drift apart; one does not.
+
+IT ALSO APPLIES survey.py's LINE CAP, added 2026-09-10 for the same reason and
+by the same route. A Phase 3 probe on the custom-invite page matched a block of
+LinkedIn's own configuration JSON embedded in the document, and three lines of
+probe output came to 150KB. A dump nobody can read is a dump nobody DID read,
+and reading it is the last guard the redaction rules rest on (R13.4). The cap is
+a READABILITY rule and not a second redactor: the redaction runs first, so an
+identifier is removed rather than pushed past the cap and left in the file.
 """
 import argparse
 import glob
@@ -26,7 +34,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from survey import redact_identifiers, note_subject_tokens
+from survey import redact_identifiers, note_subject_tokens, cap_line
 
 DEFAULT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                        "docs", "surveys", "*.txt")
@@ -59,7 +67,11 @@ def main():
     for path in paths:
         with open(path, encoding="utf-8") as f:
             before = f.read().splitlines()
-        after = [redact_identifiers(line) for line in before]
+        # Both passes, in this order. The redaction first, so an identifier near
+        # the head of a very long line is taken out rather than merely pushed past
+        # the cap and left in the file - the cap is a READABILITY rule and must
+        # never be mistaken for a second redactor. See SAFE_LINE_LIMIT.
+        after = [cap_line(redact_identifiers(line)) for line in before]
         changed = [(i + 1, b) for i, (b, x) in enumerate(zip(before, after)) if b != x]
         if not changed:
             print("clean   %s (%d lines)" % (path, len(before)))
@@ -75,7 +87,16 @@ def main():
                 f.write("\n".join(after) + "\n")
 
     if a.check and dirty:
-        print("FAIL %d dump(s) still carry identifiers the redactor knows how to remove." % dirty)
+        # THE MESSAGE NAMES BOTH RULES, because this pass now applies two and
+        # they mean very different things. A line the redactor changed is an
+        # IDENTIFIER in a public repository; a line only the cap changed is one
+        # too long for a person to read, which is a review problem and not a
+        # leak. Saying "identifiers" for both would have this check crying wolf
+        # on its own formatting rule - and a check that overstates what it found
+        # is one people stop believing.
+        print("FAIL %d dump(s) would change: either they carry an identifier the redactor "
+              "knows how to remove, or they carry a line longer than SAFE_LINE_LIMIT. The "
+              "lines are listed above; run this without --check to apply both." % dirty)
         sys.exit(1)
     print("RESULT redact-surveys files=%d changed=%d" % (len(paths), dirty))
 

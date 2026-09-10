@@ -806,6 +806,168 @@ def main():
     sp.add_argument("--port", type=int, default=9224)
     sp.set_defaults(fn=N.withdraw)
 
+    # -- Phase 3: reaching people -------------------------------------------
+    from kit import messaging as M
+
+    sp = sub.add_parser(
+        "connect", help="send one person an invitation to connect",
+        description="Send ONE invitation. STAGED BY DEFAULT: without --submit it opens the "
+                    "person's profile, finds the invitation wherever it lives, opens the "
+                    "invitation page, types the note, and then PROVES NOTHING HAPPENED - it "
+                    "dismisses, re-reads the profile from scratch and re-reads the "
+                    "invitation manager, and both must still agree that no invitation "
+                    "exists. "
+                    "THE NOTE LIMIT IS READ OFF THE PAGE, never remembered: LinkedIn states "
+                    "it (300 characters on 2026-09-10) and the textarea carries NO maxlength, "
+                    "so the browser does not enforce it and a longer note is cut or rejected "
+                    "at the one moment nobody can see. "
+                    "The invitation control is an <a> named 'Invite <Name> to connect' - the "
+                    "word Connect identifies nothing on a profile page - and this verb uses "
+                    "read-profile's own resolver rather than hunting for a word. "
+                    "It refuses if an invitation is already pending, and it counts against "
+                    "TWO caps: 20 a day and 100 in any rolling seven days.",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    sp.add_argument("url", help="the person's profile URL, or just the /in/ slug")
+    sp.add_argument("--note", help="a personal note. The page states the limit and this "
+                                   "verb enforces what the page says.")
+    sp.add_argument("--note-file", help="UTF-8 file holding the note")
+    sp.add_argument("--expect-name", help="the person's name as their top card states it. "
+                                          "REQUIRED with --submit (design rule 0.3), and "
+                                          "checked against the profile AND against the "
+                                          "invitation dialog, which names them again.")
+    sp.add_argument("--submit", action="store_true",
+                    help="actually send it. Default stages and sends nothing.")
+    sp.add_argument("--dump", help="write everything the run measured to this JSON file")
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=N.connect)
+
+    sp = sub.add_parser(
+        "invitations", help="print the invitations OTHER PEOPLE have sent us",
+        description="The invitation manager's Received tab, as JSON, one row per line. "
+                    "READ-ONLY IN FACT: this verb presses nothing, and the two controls on "
+                    "that page which change another person's world - Accept and Ignore - are "
+                    "out of scope for Phase 3. "
+                    "The count the page publishes is a PER-FILTER PILL ('Focused (1)'), not "
+                    "a sentence, so the parse is checked against the pill of the SAME filter "
+                    "whose rows are on screen; if that pill cannot be read, zero rows is a "
+                    "FAIL like everywhere else in this toolkit. "
+                    "NOTE AND WHEN: design 4.6 asks for both and the rows measured on "
+                    "2026-09-10 stated neither. They are reported as null when the row does "
+                    "not state them, and a null note means the row did not say - NOT that "
+                    "the person sent no note.",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    sp.add_argument("--limit", type=int, default=25)
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=N.invitations)
+
+    for verb, fn, what in (("follow", N.follow, "follow"), ("unfollow", N.unfollow, "unfollow")):
+        sp = sub.add_parser(
+            verb, help="%s a company page" % what,
+            description="Read the Follow control's current state on the Page's TOP CARD, "
+                        "flip it, and assert it flipped after a reload. "
+                        "Three independent signals agree on the state - aria-pressed, the "
+                        "is-following class token and the accessible name - and all three "
+                        "are read: a control whose signals disagree is one this code cannot "
+                        "read, and pressing it would be a guess about somebody's Page. "
+                        "Follow controls for OTHER organisations sit further down the same "
+                        "page on recommendation cards, so the search is scoped to the top "
+                        "card. Already in the asked-for state, it presses nothing and says "
+                        "so.",
+            formatter_class=argparse.RawDescriptionHelpFormatter)
+        sp.add_argument("url", help="a /company/ URL, or just the slug")
+        sp.add_argument("--dump", help="write what the run measured to this JSON file")
+        sp.add_argument("--port", type=int, default=9224)
+        sp.set_defaults(fn=fn)
+
+    sp = sub.add_parser(
+        "invite-to-follow", help="invite connections to follow a Page we administer",
+        description="The Page's own 'Invite to follow' dialog, reachable by URL. "
+                    "STAGED BY DEFAULT: it opens the dialog, reads the credit line, ticks "
+                    "the people named, and then dismisses and RE-READS the credit line, "
+                    "which must not have moved. "
+                    "THE PROOF OF A REAL RUN IS THE CREDIT COUNT AND NOT A ROW THAT SAYS "
+                    "'Invited': a credit is the thing that is actually spent, so the page's "
+                    "own 'N/50 credits available' is read before and after and must fall by "
+                    "exactly the number invited. "
+                    "A person is picked BY NAME, off the row control that names them "
+                    "('Select <Full Name>') - the checkbox beside it has no label at all and "
+                    "twenty rows are on screen before anybody searches. "
+                    "At most five credits a run; the Page's whole monthly budget is 50.",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    sp.add_argument("--page", required=True, help="the Page's numeric id or slug")
+    sp.add_argument("--name", action="append",
+                    help="a person's full name exactly as the dialog states it. Repeat for "
+                         "more than one; at most five.")
+    sp.add_argument("--submit", action="store_true",
+                    help="actually spend the credits. Default stages and spends nothing.")
+    sp.add_argument("--dump", help="write what the run measured to this JSON file")
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=N.invite_to_follow)
+
+    sp = sub.add_parser(
+        "read-inbox", help="print the messaging inbox as JSON, one conversation per line",
+        description="The conversation LIST only. IT DOES NOT OPEN A THREAD, AND IT PROVES "
+                    "IT: opening one marks it read and can show the other participant a read "
+                    "receipt, which is a write wearing a read's clothes. The list is reached "
+                    "through a bare /messaging/compose/, measured to render it with nothing "
+                    "selected, and the run asserts no thread is open rather than trusting "
+                    "the route. "
+                    "It cannot return a thread URL - the rows are not links and carry no id "
+                    "in any attribute (amendment A3) - so each row carries an opaque "
+                    "thread_ref that read-thread and message both accept. "
+                    "Unread is read from TWO independent signals and a disagreement is a "
+                    "FAIL; an inbox where no row carries the marker says so on the RESULT "
+                    "line rather than reporting a quiet nothing-unread.",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    sp.add_argument("--limit", type=int, default=25)
+    sp.add_argument("--unread", action="store_true",
+                    help="drive the inbox's OWN Unread filter, rather than filtering rows here")
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=M.read_inbox)
+
+    sp = sub.add_parser(
+        "read-thread", help="print one conversation as JSON, one message per line",
+        description="OPENING A THREAD MARKS IT READ and that cannot be undone invisibly - "
+                    "the unread signal is gone even if it is later marked unread again, and "
+                    "the other participant may see a read receipt. So this verb is read-only "
+                    "in name only, its RESULT line carries marked_read=true, and a thread is "
+                    "the one messaging read that stays on the daily safety cap. "
+                    "It takes a thread URL or a thread_ref that read-inbox printed.",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    sp.add_argument("url", help="a /messaging/thread/<id>/ URL, or a thread_ref from read-inbox")
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=M.read_thread)
+
+    sp = sub.add_parser(
+        "message", help="compose a message to one person",
+        description="STAGED BY DEFAULT: it opens the conversation, checks who it is with, "
+                    "counts the messages already in it, types the draft, proves nothing was "
+                    "sent, takes the draft back out and re-reads the thread to prove that "
+                    "too. "
+                    "ON LINKEDIN'S MESSAGE BOX, ENTER SENDS, and the shared typing helper "
+                    "presses one Enter per newline - so this verb has its own typing path "
+                    "that never presses a bare Enter, and it is BACKED BY A COUNT: the "
+                    "number of messages in the thread is read before typing and again after "
+                    "every line, and a rise means a fragment has already reached the "
+                    "recipient and it says so at once. "
+                    "A thread also carries one-click quick-reply buttons that send canned "
+                    "text with no draft stage, so nothing inside a thread is clicked here: "
+                    "the composer is reached with focus(), which dispatches no pointer "
+                    "event, and the only click is Send under --submit. "
+                    "It takes a profile URL, a thread URL or a thread_ref.",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    sp.add_argument("url", help="a profile URL, a /messaging/thread/<id>/ URL, or a thread_ref")
+    sp.add_argument("--text", help="the message")
+    sp.add_argument("--text-file", help="UTF-8 file holding the message")
+    sp.add_argument("--expect-name", help="the recipient's name as the conversation's title "
+                                          "bar states it. REQUIRED with --submit (rule 0.3).")
+    sp.add_argument("--submit", action="store_true",
+                    help="actually send it. Default stages and sends nothing.")
+    sp.add_argument("--dump", help="write everything the run measured to this JSON file")
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=M.message)
+
+
     from kit import selftest as T
     sp = sub.add_parser("selftest",
                         help="run every verb on things we own, leaving nothing behind")
@@ -838,6 +1000,19 @@ def main():
                          "not been accepted, so its top card reads Pending. REQUIRED and never "
                          "committed. No other fixture reaches that state, and none of it can be "
                          "fabricated - an invitation has to have been sent to a real person.")
+    sp.add_argument("--follow-company", default="centerconsulting-inc",
+                    help="row P3-12: the company Page the follow round trip borrows. It is "
+                         "flipped away from whatever state it is in and then flipped BACK, "
+                         "so it ends exactly where it started whichever end it began at. "
+                         "Defaults to the owner's OWN Page, which costs nothing against the "
+                         "daily safety cap and borrows nobody else's; pass a third party's "
+                         "slug to exercise the same control on a Page we do not administer, "
+                         "and then it is capped like any other read.")
+    sp.add_argument("--invite-name",
+                    help="row P3-13: the full name of one of the owner's own connections, "
+                         "exactly as the Page's invite dialog states it. The dialog picks a "
+                         "person by that name and by nothing else. REQUIRED and never "
+                         "committed.")
     sp.add_argument("--company", default="centerconsulting-inc", help="company slug (row P2-4)")
     sp.add_argument("--query-people", default="Soren Frederiksen mindzie",
                     help="people search whose first row is the owner (row P2-5)")

@@ -343,7 +343,7 @@
      "lis": 58,
      "testids": []
     }
-  () => ({boxes:[...document.querySelectorAll('[contenteditable="true"],textarea,[role="textbox"]')].slice(0,8).map(e=>({tag:e.tagName,role:e.getAttribute('role')||'',name:e.getAttribute('aria-label')||'',ph:e.getAttribute('placeholder')||e.getAttribute('data-placeholder')||'',maxlength:e.getAttribute('maxlength')||''})), sendish:[...document.querySelectorAll('button')].filter(b=>/send|submit|attach/i.test((b.innerText||'')+(b.getAttribute('aria-label')||''))).slice(0,10).map(b=>({name:(b.getAttribute('aria-label')||'').slice(0,50),text:(b.innerText||'').trim().slice(0,30),disabled:b.disabled,type:b.getAttribute('type')||''}))})
+  () => ({boxes:[...document.querySelectorAll('[contenteditable="true"],textarea,[role="textbox"]')].slice(0,8).map(e=>({tag:e.tagName,role:e.getAttribute('role')||'',name:e.getAttribute('aria-label')||'',ph:e.getAttribute('placeholder')||e.getAttribute('data-placeholder')||'',maxlength:e.getAttribute('maxlength')||''})), sendish:[...document.querySelectorAll('button')].filter(b=>/send|submit|attach/i.test((b.innerText||'')+(b.getAttribute('aria-label')||''))).slice(0,10).map(b=>({name:(b.getAttribute('aria-label')||'').slice(0,50),text:(b.innerText||'').trim().slice(0,30),disabled:b.disabled,... <truncated 36 chars; the whole line is in the unredacted dump>
     {
      "boxes": [
       {

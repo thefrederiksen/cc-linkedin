@@ -21,6 +21,7 @@ MEASURED
 """
 import ctypes
 import ctypes.wintypes as wt
+import datetime
 import json
 import os
 import random
@@ -555,8 +556,36 @@ class Pace(object):
     # outbound action, and its own daily cap. Twenty is the same number connect
     # carries, which is the point: an account cannot withdraw its way past the
     # rate it is allowed to invite at.
+    # "follow" is here and not filed as a read, 2026-09-10. Following a Page is
+    # visible to that Page - its admin sees the follower count move and can see
+    # who - so it reaches somebody, which is what puts an action on this list.
     CAPS = {"comment": 60, "react": 100, "connect": 20, "message": 30, "invite": 5,
-            "withdraw": 20}
+            "withdraw": 20, "follow": 30}
+    # A ROLLING WINDOW AS WELL AS A DAY - design section 2, built 2026-09-10.
+    #
+    # A connection request is limited by LinkedIn per day AND per week, and the
+    # published safe range is 20-40 a day and under 100 in any seven. This tool
+    # sits at the bottom of that range: 20 a day from CAPS, and 100 in any seven
+    # days from here. {kind: (cap, days)}, where `days` INCLUDES today.
+    #
+    # THE RETENTION BELOW IS PART OF THIS CHECK AND NOT HOUSEKEEPING. _save used
+    # to delete every day key older than today, so a rolling sum over such a file
+    # is always exactly the daily count and a weekly cap of 100 can never be
+    # reached however many invitations go out. That is a check whose pass
+    # condition is the absence of data it had itself thrown away - the fifth
+    # instrument of that shape in this repository - so the window and the
+    # retention land as ONE unit and RETAIN_DAYS is asserted against the window
+    # by tests/test_rolling_pace.py rather than left as two numbers that agree
+    # today.
+    #
+    # WHAT IT DOES NOT GUARANTEE: that 100 is LinkedIn's number. Nobody has been
+    # throttled to find out; it is the safe range's lower end, and it is a
+    # ceiling this tool imposes on itself rather than one it has measured. And,
+    # like everything else in this file, it counts what went through this code -
+    # see IT DOES NOT GUARANTEE above.
+    ROLLING_CAPS = {"connect": (100, 7)}
+    # One more day than the longest window, so the window is always complete.
+    RETAIN_DAYS = 8
     GAP = (45, 90)         # seconds between outbound actions
     VIEW_CAP = 80          # OTHER people's profiles/companies + search pages, per day
     VIEW_SELF_CAP = None   # our own profile and our own Pages: counted, NOT capped
@@ -579,9 +608,17 @@ class Pace(object):
             return {}
 
     def _save(self, data):
-        """Replace pace.json atomically. Only ever called holding the lock."""
-        today = time.strftime("%Y-%m-%d")
-        for k in [k for k in data if DAY_KEY.match(k) and k < today]:
+        """Replace pace.json atomically. Only ever called holding the lock.
+
+        KEEPS RETAIN_DAYS OF HISTORY, and that is a change made on 2026-09-10.
+        This used to delete every day key that was not today's, which is fine
+        for a daily cap and fatal for a rolling one - see ROLLING_CAPS. It is
+        still a WINDOW and not an accumulation: a file that grows forever is a
+        different defect from one that keeps nothing, and neither is wanted.
+        """
+        floor = (datetime.date.today()
+                 - datetime.timedelta(days=self.RETAIN_DAYS - 1)).strftime("%Y-%m-%d")
+        for k in [k for k in data if DAY_KEY.match(k) and k < floor]:
             del data[k]
         fd, tmp = tempfile.mkstemp(prefix="pace-", dir=STATE_DIR)
         try:
@@ -593,17 +630,60 @@ class Pace(object):
             raise
 
     def _reserve(self, kind, cap, what):
-        """Check the cap and take a slot, as ONE atomic step. Returns the count
-        after the reservation; dies over the cap without taking one."""
+        """Check the caps and take a slot, as ONE atomic step. Returns the count
+        after the reservation; dies over either cap without taking one.
+
+        BOTH CAPS ARE CHECKED INSIDE THE ONE LOCK, for the reason ruling R15
+        gives about the daily one: a check outside the critical section is a
+        check two runs can both pass. And they are AND, not OR - a quiet week
+        does not buy a twenty-first invitation today, and a quiet day does not
+        buy a hundred-and-first this week.
+        """
         with self._lock():
             data = self._load()
             day = data.setdefault(time.strftime("%Y-%m-%d"), {})
             n = day.get(kind, 0)
             if cap is not None and n >= cap:
                 die("daily cap reached for %s (%d today, cap %d). Tomorrow." % (what, n, cap))
+            rolling = self.ROLLING_CAPS.get(kind)
+            if rolling is not None:
+                limit, days = rolling
+                over = self._rolling(data, kind, days)
+                if over >= limit:
+                    die("the rolling %d-day cap for %s is reached (%d in the last %d days, "
+                        "cap %d; %d of them today). This one is not about today and waiting "
+                        "for midnight will not clear it - the window moves a day at a time."
+                        % (days, what, over, days, limit, n))
             day[kind] = n + 1
             self._save(data)
             return n + 1
+
+    def _rolling(self, data, kind, days):
+        """How many of `kind` are recorded in the last `days` day keys, TODAY
+        INCLUDED. Read from `data` rather than reloading, so the caller's one
+        atomic critical section stays one.
+
+        The days are named by date arithmetic rather than by taking whatever
+        keys the file happens to hold: a key from a month ago must not count
+        towards this week, and a file that has been pruned must not be read as a
+        quiet week - it is read as the days it actually has, which is the honest
+        answer and also the conservative one only by accident. See the note on
+        a fresh machine in ROLLING_CAPS.
+        """
+        today = datetime.date.today()
+        total = 0
+        for back in range(days):
+            key = (today - datetime.timedelta(days=back)).strftime("%Y-%m-%d")
+            total += (data.get(key) or {}).get(kind, 0)
+        return total
+
+    def rolling(self, kind):
+        """How many of `kind` this machine has recorded inside its rolling
+        window, for a caller that wants to report the number rather than be
+        refused by it. None for a kind with no rolling cap."""
+        if kind not in self.ROLLING_CAPS:
+            return None
+        return self._rolling(self._load(), kind, self.ROLLING_CAPS[kind][1])
 
     def _stamp(self, field):
         with self._lock():

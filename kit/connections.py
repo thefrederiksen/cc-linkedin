@@ -548,3 +548,848 @@ def _restriction(dump):
     return ("not-stated-on-screen: LinkedIn showed no period on the withdraw surface on "
             "2026-09-10, so this tool does not name one. Treat a withdrawal as spending the "
             "ability to invite this person again for a while and verify before relying on it.")
+
+
+# ===========================================================================
+# THE REST OF PHASE 3: connect, invitations, follow / unfollow, invite-to-follow.
+# Measured 2026-09-10; docs/phase-3-survey-2.md is what the measurements mean.
+# ===========================================================================
+
+# Whatever dialog is on screen, in BOTH implementations. The withdraw
+# confirmation is a NATIVE <dialog> with an implicit role; the custom-invite
+# modal is a <div role="dialog">. A probe for either one alone reports "no
+# dialog appeared" while the other sits on screen intercepting every click -
+# which is exactly what happened three times on 2026-09-10.
+ANY_DIALOG_JS = r"""
+(sel) => {
+  const out = [];
+  for (const d of document.querySelectorAll(sel)) {
+    const b = d.getBoundingClientRect();
+    if (b.width < 20 || b.height < 12) continue;
+    const t = (d.innerText || '').replace(/\s+/g, ' ').trim();
+    if (!t) continue;
+    out.push({
+      tag: d.tagName, role: d.getAttribute('role') || null,
+      labelledby: d.getAttribute('aria-labelledby') || null,
+      label: d.getAttribute('aria-label') || null,
+      text: t.slice(0, 900),
+      buttons: [...d.querySelectorAll('button, a[role="button"]')].map(x => ({
+        aria: x.getAttribute('aria-label') || null,
+        text: (x.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 60),
+        disabled: !!x.disabled})).slice(0, 20),
+    });
+  }
+  return out.slice(0, 8);
+}
+"""
+
+NOTE_BOX_JS = r"""
+(sel) => {
+  const b = document.querySelector(sel);
+  if (!b) return null;
+  return {value: b.value || '', len: (b.value || '').length,
+          maxlength: b.getAttribute('maxlength'),
+          focused: document.activeElement === b};
+}
+"""
+
+RECEIVED_ROWS_JS = r"""
+(sel) => {
+  const clean = t => (t || '').replace(/\s+/g, ' ').trim();
+  const out = [];
+  for (const b of document.querySelectorAll(sel.accept)) {
+    let row = b, person = null;
+    for (let up = 0; up < 10 && row; up++) {
+      row = row.parentElement;
+      if (!row) break;
+      const p = row.querySelector('a[href*="/in/"]');
+      if (p) { person = p; break; }
+    }
+    const times = [...(row ? row.querySelectorAll(sel.time) : [])].map(t => ({
+      datetime: t.getAttribute('datetime') || null, text: clean(t.innerText)}));
+    out.push({
+      label: b.getAttribute('aria-label') || '',
+      profile: person ? person.getAttribute('href') : null,
+      name_on_link: person ? clean(person.innerText) : null,
+      row_text: clean(row ? row.innerText : ''),
+      times: times,
+    });
+  }
+  return out;
+}
+"""
+
+# Which filter's rows are on screen. See RECEIVED_FILTER_RADIO in selectors.
+FILTERS_JS = r"""
+(sel) => [...document.querySelectorAll(sel)].map(e => ({
+  text: (e.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 40),
+  checked: e.getAttribute('aria-checked'),
+}))
+"""
+
+FOLLOW_JS = r"""
+(sel) => {
+  const scope = document.querySelector(sel.card) || document;
+  const all = [...document.querySelectorAll(sel.button)];
+  const inCard = all.filter(b => scope.contains(b));
+  const pick = inCard.length ? inCard : [];
+  return {
+    total_on_page: all.length,
+    in_top_card: inCard.length,
+    top_card_present: !!document.querySelector(sel.card),
+    controls: pick.map(b => ({
+      pressed: b.getAttribute('aria-pressed'),
+      label: b.getAttribute('aria-label') || '',
+      text: (b.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 40),
+      following_class: (b.className || '').split(/\s+/).indexOf(sel.following) >= 0,
+      disabled: !!b.disabled,
+    })),
+  };
+}
+"""
+
+PAGE_INVITE_JS = r"""
+(sel) => {
+  const clean = t => (t || '').replace(/\s+/g, ' ').trim();
+  const dialogs = [...document.querySelectorAll(sel.dialog)].filter(d => {
+    const b = d.getBoundingClientRect();
+    return b.width > 200 && b.height > 100 && clean(d.innerText);
+  });
+  const d = dialogs.find(x => clean(x.innerText).indexOf(sel.name) >= 0) || null;
+  if (!d) return {found: false, dialogs: dialogs.length,
+                  texts: dialogs.map(x => clean(x.innerText).slice(0, 120))};
+  const buttons = [...d.querySelectorAll('button')].map(b => ({
+    aria: b.getAttribute('aria-label') || null,
+    text: clean(b.innerText).slice(0, 40), disabled: !!b.disabled}));
+  return {
+    found: true,
+    text: clean(d.innerText).slice(0, 900),
+    options: d.querySelectorAll(sel.option).length,
+    selects: [...d.querySelectorAll('[aria-label^="Select "]')].map(
+      b => b.getAttribute('aria-label')).slice(0, 60),
+    checked: [...d.querySelectorAll(sel.checkbox)].filter(c => c.checked).length,
+    buttons: buttons.slice(0, 20),
+  };
+}
+"""
+
+
+def _dialogs(br, where):
+    """Every dialog on screen, in both implementations. An EMPTY result on a
+    surface where one has been measured is a broken instrument, never a clean
+    page - see the note on DIALOG_ANY in kit/selectors.py."""
+    return br.page.evaluate(ANY_DIALOG_JS, S.DIALOG_ANY)
+
+
+# ------------------------------------------------------------------- connect
+
+def connect(a):
+    """Send one person an invitation. STAGED by default: it opens the invitation,
+    types the note, proves NOTHING was sent, and dismisses."""
+    from . import people as P
+
+    slug = _slug(a.url)
+    if a.submit and not a.expect_name:
+        die("--expect-name is REQUIRED with --submit (design rule 0.3). A URL can be a typo "
+            "and a typo lands on a real different person, and an invitation cannot be "
+            "unsent - withdrawing one costs that person up to three weeks.")
+    note = _note_text(a)
+    pace = Pace()
+    dump = {"slug_asked_for": slug, "when": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "submit": bool(a.submit), "note_chars": len(note or "")}
+    try:
+        _connect_run(a, slug, note, pace, dump, P)
+    finally:
+        if a.dump:
+            with open(a.dump, "w", encoding="utf-8") as f:
+                json.dump(dump, f, indent=1, ensure_ascii=False)
+            log("wrote %s" % a.dump)
+
+
+def _note_text(a):
+    if a.note and a.note_file:
+        die("pass --note or --note-file, not both")
+    if a.note_file:
+        with open(a.note_file, encoding="utf-8") as f:
+            return f.read().strip("\n")
+    return a.note
+
+
+def _connect_run(a, slug, note, pace, dump, P):
+    with Browser(a.port) as br:
+        # 1. THE PROFILE, through read-profile's own resolver. Amendment A1: the
+        # invite control is an <a> named "Invite <Name> to connect" and the word
+        # "Connect" identifies nothing on this page - the right-hand rail's
+        # suggestion cards are full of it. That resolver already gets this right
+        # on all three measured shapes (on the card, behind More, absent), and a
+        # second implementation here would be a second opinion that drifts.
+        who = P.resolve_invite(br, pace, a.url)
+        dump["profile"] = {k: who[k] for k in
+                           ("name", "degree", "can_connect", "can_connect_reason",
+                            "connect_via", "invitation_pending")}
+        name = who["name"]
+        log("profile %s: %r, degree %s, can_connect=%s via %s"
+            % (slug, name, who["degree"], who["can_connect"], who["connect_via"]))
+
+        if who["invitation_pending"]:
+            die("an invitation to %s is already outstanding - the profile says so: %s. "
+                "Sending another is not possible, and this verb says that rather than "
+                "clicking something to find out." % (name, who["can_connect_reason"]))
+        if who["can_connect"] is not True or not who["connect_url"]:
+            die("this profile offers no invitation to send: %s. Nothing was pressed."
+                % who["can_connect_reason"])
+
+        # RULE 0.3, FIRST NAMING: the name on the top card the invitation was
+        # resolved from, against what the caller said they expected.
+        if a.expect_name is not None:
+            if (name or "").strip().lower() != a.expect_name.strip().lower():
+                die("--expect-name is %r and this profile's top card says %r. These are two "
+                    "different people and nothing was pressed." % (a.expect_name, name))
+
+        # 2. THE CUSTOM-INVITE PAGE. Measured 2026-09-10: it is a plain GET and
+        # it SENDS NOTHING - proved by counting the Sent tab's own People pill
+        # before and after, 39 and 39. It renders a dialog offering "Add a note"
+        # and "Send without a note", and there is no Send on it at all.
+        pace.before_view("the custom-invite page for %s" % slug)
+        final = br.read(who["connect_url"], "the custom-invite page", settle=7)
+        pace.after_view()
+        if S.ON_CUSTOM_INVITE not in final:
+            die("asked for the invitation page and landed on %s. Nothing was pressed." % final)
+        modal = _invite_modal(br, dump, "on landing")
+
+        # RULE 0.3, SECOND NAMING, off the surface being acted on: the modal
+        # states "Personalize your invitation to <Name> by adding a note", so
+        # the person is named again by the page that is about to send to them.
+        if a.expect_name is not None and a.expect_name.strip():
+            if a.expect_name.strip().lower() not in (modal["text"] or "").lower():
+                die("--expect-name is %r and the invitation dialog does not name that person "
+                    "(it reads %r). Nothing was pressed."
+                    % (a.expect_name, (modal["text"] or "")[:160]))
+        dump["modal_named_the_expected_person"] = bool(a.expect_name)
+
+        limit = None
+        typed = None
+        if note is not None:
+            limit, typed = _add_note(br, note, dump)
+
+        if not a.submit:
+            _staged_connect(br, pace, slug, name, note, dump)
+            print(json.dumps({"kind": "connect-staged", "person": "/in/" + slug,
+                              "name": name, "note_chars": len(note or ""),
+                              "note_limit_on_the_page": limit,
+                              "note_read_back": typed}, ensure_ascii=True))
+            print("RESULT connect-staged person=/in/%s name=%r note_chars=%d "
+                  "note_limit_stated=%s still_connectable=true not_in_sent_tab=true "
+                  "pressed=nothing"
+                  % (slug, name, len(note or ""), limit))
+            return
+
+        # -- the irreversible part ------------------------------------------
+        want = S.INVITE_SEND if note is not None else S.INVITE_SEND_WITHOUT_NOTE
+        btn = br.page.get_by_role("button", name=re.compile(r"^%s$" % re.escape(want), re.I))
+        if btn.count() != 1:
+            die("expected exactly one control named %r on the invitation dialog and found "
+                "%d. NOTHING WAS SENT - the other control on this dialog sends immediately "
+                "with no confirmation at all." % (want, btn.count()))
+        if btn.first.is_disabled():
+            die("the invitation dialog's %r is disabled. Nothing was sent." % want)
+        pace.before("connect")
+        # A CLICK, and the reason is the same as withdraw's: this is a dialog
+        # control on a surface where the keyboard was measured to do nothing on
+        # the withdraw anchor, and locator.click() hit-tests - it refuses if the
+        # element at that point is not this one. On this dialog the neighbour is
+        # "Send without a note", so landing on the wrong control sends a
+        # different invitation rather than none.
+        btn.first.click(timeout=15000)
+        time.sleep(ACTIVATE_SETTLE)
+        pace.after("connect")
+        dump["what_appeared_after_send"] = _dialogs(br, "after sending")
+
+        # THE PROOF IS THE PROFILE AND THE SENT TAB, not the absence of an error.
+        after = P.resolve_invite(br, pace, a.url)
+        sent = SentList(br, pace).load()
+        in_sent = sent.find(slug) is not None
+        dump["pending_after"] = after["invitation_pending"]
+        dump["in_sent_tab_after"] = in_sent
+        problems = []
+        if not after["invitation_pending"]:
+            problems.append("the profile does not say an invitation is pending (%s)"
+                            % after["can_connect_reason"])
+        if not in_sent:
+            problems.append("the invitation is not on the Sent tab (%d rows, and the page "
+                            "agrees the list is %s long)" % (len(sent.rows), sent.pill))
+        if problems:
+            die("the invitation may or may not have been sent: %s. Check it by hand before "
+                "running this again." % "; ".join(problems))
+        print(json.dumps({"kind": "connected", "person": "/in/" + slug, "name": name,
+                          "note_chars": len(note or ""), "outstanding": len(sent.rows)},
+                         ensure_ascii=True))
+        print("RESULT connected person=/in/%s name=%r note_chars=%d pending=true "
+              "outstanding=%d" % (slug, name, len(note or ""), len(sent.rows)))
+
+
+def _invite_modal(br, dump, where):
+    """The custom-invite dialog, identified by what LABELS it.
+
+    Measured 2026-09-10: it is a <div role="dialog" aria-labelledby=
+    "send-invite-modal">. `dialog[open]` matches nothing here - that is the
+    withdraw confirmation's shape - so both forms are searched and the one that
+    carries this label is the one acted on. An empty result on this page is a
+    broken instrument: the dialog is what the page renders on landing.
+    """
+    found = _dialogs(br, where)
+    dump.setdefault("dialogs", {})[where] = found
+    mine = [d for d in found
+            if (d.get("labelledby") or "") == S.INVITE_MODAL_LABELLEDBY]
+    if len(mine) != 1:
+        die("the invitation page %s shows %d dialog(s) labelled %r, and exactly one was "
+            "expected. What is on screen: %s. Nothing was pressed."
+            % (where, len(mine), S.INVITE_MODAL_LABELLEDBY,
+               json.dumps([d.get("text", "")[:120] for d in found])[:400]))
+    return mine[0]
+
+
+def _add_note(br, note, dump):
+    """Open the note box, ENFORCE THE LIMIT THE PAGE STATES, and type.
+
+    THE LIMIT IS READ OFF THE PAGE, NEVER REMEMBERED - design 4.1 asks for
+    exactly this and it was right to: the design remembered 200 and the page
+    says 300. The textarea carries NO maxlength, so the browser does not enforce
+    it either; a 400-character note goes in and is rejected or truncated at
+    submit time, which is the one moment a caller cannot see.
+    """
+    add = br.page.get_by_role("button", name=re.compile(r"^%s$" % re.escape(S.INVITE_ADD_NOTE),
+                                                        re.I))
+    if add.count() != 1:
+        die("expected exactly one %r control on the invitation dialog and found %d. Nothing "
+            "was pressed." % (S.INVITE_ADD_NOTE, add.count()))
+    add.first.click(timeout=15000)
+    time.sleep(ACTIVATE_SETTLE)
+    modal = _invite_modal(br, dump, "after Add a note")
+
+    m = S.NOTE_LIMIT_SENTENCE.search(modal["text"] or "")
+    counter = S.NOTE_COUNTER.search(modal["text"] or "")
+    limit = int(m.group(1).replace(",", "")) if m else None
+    if limit is None and counter:
+        limit = int(counter.group(2).replace(",", ""))
+    if limit is None:
+        die("the note dialog states no character limit, and this verb will not fall back on "
+            "a remembered one - the design remembered 200 and the page said 300. It reads "
+            "%r. Nothing was typed." % (modal["text"] or "")[:200])
+    dump["note_limit_stated_on_the_page"] = limit
+    log("the page states a note limit of %d characters" % limit)
+    if len(note) > limit:
+        die("the note is %d characters and this page states a limit of %d. LinkedIn does not "
+            "enforce it in the browser - the box has no maxlength - so a longer note is "
+            "rejected or silently cut at the moment it is sent, which is the one moment "
+            "nobody can see. Shorten it." % (len(note), limit))
+
+    box = br.page.locator(S.NOTE_BOX)
+    if box.count() != 1:
+        die("%d elements match the note box (%s). Nothing was typed."
+            % (box.count(), S.NOTE_BOX))
+    box.first.focus()
+    # ONE insertText FOR THE WHOLE NOTE, newlines included, and NOT the per-line
+    # path the message composer uses. This is a real <textarea>: Input.insertText
+    # puts a newline in it as a newline and fires no key events at all, so there
+    # is no Enter to be careful about. The composer is a contenteditable inside a
+    # form with a submit button, which is a different element with a different
+    # hazard, and each gets the path its own shape earns.
+    br.page.keyboard.insert_text(note)
+    time.sleep(0.4)
+    got = br.page.evaluate(NOTE_BOX_JS, S.NOTE_BOX)
+    if got is None or got["value"] != note:
+        die("the note did not arrive in the box as written: %d characters asked for, %s in "
+            "the box. Nothing was sent."
+            % (len(note), "none" if got is None else got["len"]))
+    # THE PAGE'S OWN READBACK. It publishes N/300 and it updates as you type, so
+    # this is a second, independent statement of how many characters LinkedIn
+    # believes it has - free, and not derived from the same DOM read.
+    after = _invite_modal(br, dump, "after typing the note")
+    c = S.NOTE_COUNTER.search(after["text"] or "")
+    stated = int(c.group(1).replace(",", "")) if c else None
+    dump["note_counter_on_the_page"] = stated
+    if stated is not None and stated != len(note):
+        die("the note box holds %d characters and the page's own counter says %d. Those are "
+            "two readings of the same thing and they disagree; nothing was sent."
+            % (len(note), stated))
+    log("note typed: %d characters, and the page's counter agrees" % len(note))
+    return limit, got["len"]
+
+
+def _staged_connect(br, pace, slug, name, note, dump):
+    """RULE 0.1. A staged run PROVES the pre-action state survived.
+
+    "We did not send it" is a claim of absence and an absence certifies itself,
+    so this dismisses, RE-READS THE PROFILE FROM SCRATCH, and re-reads the Sent
+    tab. Two independent surfaces have to agree that no invitation exists: the
+    profile still offers one, and the invitation manager does not list one.
+    """
+    from . import people as P
+
+    dismiss = br.page.get_by_role("button", name=re.compile(
+        r"^%s$" % re.escape(S.INVITE_DISMISS), re.I))
+    if dismiss.count():
+        dismiss.first.click(timeout=10000)
+        time.sleep(1.0)
+    dump["dialogs_after_dismiss"] = _dialogs(br, "after dismiss")
+
+    again = P.resolve_invite(br, pace, "https://www.linkedin.com/in/%s/" % slug)
+    sent = SentList(br, pace).load()
+    in_sent = sent.find(slug) is not None
+    dump["staged_check"] = {"can_connect": again["can_connect"],
+                            "invitation_pending": again["invitation_pending"],
+                            "in_sent_tab": in_sent,
+                            "outstanding": len(sent.rows), "pill": sent.pill}
+    problems = []
+    if again["invitation_pending"]:
+        problems.append("the profile now says an invitation is PENDING")
+    if again["can_connect"] is not True:
+        problems.append("the profile no longer offers an invitation (%s)"
+                        % again["can_connect_reason"])
+    if in_sent:
+        problems.append("an invitation to /in/%s is now on the Sent tab" % slug)
+    if problems:
+        die("STAGED RUN: the surface did not survive untouched - %s. A staged run that "
+            "cannot prove the pre-action state is a FAILURE, and if an invitation really "
+            "did go out it is on the Sent tab and can be withdrawn - at the cost of up to "
+            "three weeks before %s can be invited again." % ("; ".join(problems), name))
+    log("staged: %r is still invitable and is not on the Sent tab" % name)
+
+
+# --------------------------------------------------------------- invitations
+
+def invitations(a):
+    """The invitations OTHER PEOPLE have sent us. Read-only in fact: this verb
+    presses nothing, and the two controls on the page that would change another
+    person's world - Accept and Ignore - are out of scope for Phase 3."""
+    limit = max(1, min(int(a.limit or 25), 100))
+    pace = Pace()
+    with Browser(a.port) as br:
+        pace.before_self_view("our own invitation manager, Received tab")
+        final = br.read(S.INVITATIONS_RECEIVED, "the invitation manager's Received tab",
+                        settle=9)
+        pace.after_view()
+        if S.ON_INVITATION_MANAGER not in final:
+            die("asked for the Received tab and landed on %s" % final)
+
+        rows = br.page.evaluate(RECEIVED_ROWS_JS,
+                                {"accept": 'button[aria-label^="Accept"]',
+                                 "time": S.RECEIVED_ROW_TIME})
+        body = br.page.evaluate("() => document.body ? document.body.innerText.slice(0, 8000) : ''")
+        pills = {k.title(): int(v.replace(",", ""))
+                 for k, v in S.RECEIVED_COUNT_PILL.findall(body or "")}
+        which = _active_filter(br, pills)
+        stated = pills.get(which)
+
+        # A4, NARROWED, AND THIS IS THE ONE EXCEPTION TO THE ZERO-ROWS RULE IN
+        # THIS TOOLKIT. It is earned only by the page publishing a number to
+        # check the parse against, and the number is a PER-FILTER PILL: the
+        # header reads "Focused (1) Verified (1)" and there is no "N pending
+        # invitations" sentence anywhere - it was searched for and is absent. So
+        # the parse is compared with the pill of the SAME filter whose rows are
+        # on screen, and IF THAT PILL CANNOT BE READ the exception does not
+        # apply and zero rows is a FAIL like everywhere else.
+        if stated is None:
+            die("the Received tab states no count for the %r filter (the pills it does state "
+                "are %s), so a parse of %d row(s) cannot be checked against anything. A "
+                "count that cannot be read is a broken instrument, not a licence to trust "
+                "the parse - and with no count, zero rows is a failure."
+                % (which, json.dumps(pills), len(rows)))
+        if len(rows) != stated:
+            die("the Received tab says %s (%d) and %d row(s) were parsed. Either the list "
+                "was read before it finished loading or the row selector has moved."
+                % (which, stated, len(rows)))
+        if not rows and stated == 0:
+            log("no invitations received, and the page's own %s pill agrees" % which)
+
+        out = []
+        for r in rows[:limit]:
+            m = S.RECEIVED_ACCEPT_ARIA.match(r["label"] or "")
+            times = r["times"] or []
+            out.append({
+                "kind": "invitation", "name": (m.group(1) if m else r["name_on_link"]),
+                "profile_url": _abs_profile(r["profile"]),
+                # DESIGN 4.6 ASKS FOR `note` AND `when` AND THIS PAGE STATES
+                # NEITHER. Measured 2026-09-10 on the one invitation this
+                # account had outstanding: the row carries the person, their
+                # headline, Ignore and Accept, and ZERO <time> elements. So both
+                # fields are looked for and reported as null when the row does
+                # not state them - and `note` being null MUST NOT be read as
+                # "this person sent no note". It means the row did not say. The
+                # day a row carries either, this reports it without a change.
+                "note": _row_note(r),
+                "when": (times[0]["text"] if times else None),
+                "when_datetime": (times[0]["datetime"] if times else None),
+                "headline": _row_headline(r, m.group(1) if m else r["name_on_link"]),
+            })
+            print(json.dumps(out[-1], ensure_ascii=True))
+        with_note = sum(1 for r in out if r["note"])
+        with_when = sum(1 for r in out if r["when"])
+        print("RESULT invitations rows=%d of=%d filter=%s page_says=%d with_note=%d "
+              "with_when=%d pressed=nothing"
+              % (len(out), len(rows), which, stated, with_note, with_when))
+
+
+def _active_filter(br, pills):
+    """Which filter's rows are on screen.
+
+    Measured 2026-09-10: `Focused (1)` is a plain BUTTON with no aria-checked at
+    all, and `Verified (1)` is a RADIO carrying aria-checked="false". There is
+    no attribute anywhere that says "Focused is on" - what there is, is a
+    positive way to say no filter is: no radio is checked. So an unchecked page
+    means the landing set, one checked radio names its own filter, and two
+    checked is a page state this was not written against.
+    """
+    radios = br.page.evaluate(FILTERS_JS, S.RECEIVED_FILTER_RADIO)
+    on = [r for r in radios if (r.get("checked") or "").lower() == "true"]
+    if len(on) > 1:
+        die("%d filters are switched on at once on the Received tab (%s). Which set of rows "
+            "is on screen cannot be decided, so neither can the count they should be checked "
+            "against." % (len(on), json.dumps([r["text"] for r in on])))
+    if len(on) == 1:
+        m = S.RECEIVED_COUNT_PILL.search(on[0]["text"] or "")
+        if not m:
+            die("the filter that is switched on reads %r, which states no count. A4's "
+                "exception is earned by the page publishing a number and this one does not."
+                % on[0]["text"])
+        return m.group(1).title()
+    if S.RECEIVED_DEFAULT_FILTER not in pills:
+        die("no filter is switched on, so the rows on screen are the landing set - and the "
+            "page states no %r count for it (it states %s). Without a number to check "
+            "against, this refuses."
+            % (S.RECEIVED_DEFAULT_FILTER, json.dumps(pills)))
+    return S.RECEIVED_DEFAULT_FILTER
+
+
+def _row_note(row):
+    """A note, if the row states one. See the comment at the call site: on
+    2026-09-10 no row on this account carried one, so this returns null and
+    that null means "the row did not say", not "there was no note"."""
+    text = row.get("row_text") or ""
+    m = re.search(r"[“\"](.{3,300}?)[”\"]", text)
+    return m.group(1).strip() if m else None
+
+
+def _row_headline(row, name):
+    text = (row.get("row_text") or "").strip()
+    if name and text.startswith(name):
+        text = text[len(name):]
+    text = re.sub(r"\s*(Ignore|Accept)\s*$", "", text.strip())
+    text = re.sub(r"\s*(Ignore|Accept)\s*", " ", text).strip()
+    return text or None
+
+
+def _abs_profile(href):
+    if not href:
+        return None
+    if href.startswith("http"):
+        return href.split("?")[0]
+    return "https://www.linkedin.com" + ("" if href.startswith("/") else "/") + href.split("?")[0]
+
+
+# --------------------------------------------------------- follow / unfollow
+
+def follow(a):
+    _set_follow(a, True)
+
+
+def unfollow(a):
+    _set_follow(a, False)
+
+
+def _set_follow(a, want):
+    """Flip a company page's Follow control, and assert it flipped AFTER A
+    RELOAD.
+
+    THREE INDEPENDENT SIGNALS AGREE ON THE STATE and all three are read:
+    aria-pressed, the `is-following` class token, and the accessible name. Any
+    disagreement is a FAIL - a control whose three signals disagree is one this
+    code cannot read, and pressing it would be a guess about somebody's page.
+    """
+    key = _company_key(a.url)
+    pace = Pace()
+    dump = {"company": key, "want": "following" if want else "not following",
+            "when": time.strftime("%Y-%m-%d %H:%M:%S")}
+    try:
+        with Browser(a.port) as br:
+            before = _follow_state(br, pace, key, "before")
+            dump["state_before"] = _plain(before)
+            if before["following"] == want:
+                print(json.dumps({"kind": "follow", "company": key,
+                                  "following": before["following"],
+                                  "changed": False}, ensure_ascii=True))
+                print("RESULT %s company=%s following=%s changed=false pressed=nothing"
+                      % ("follow" if want else "unfollow", key, before["following"]))
+                return
+            # FOLLOWING IS OUTBOUND. It is visible to the Page - a Page admin
+            # sees their follower count move and can see who - so it takes the
+            # 45-90 second gap and a daily cap like every other outbound act,
+            # rather than being filed as a read because it looks like one.
+            pace.before("follow")
+            # THE KEYBOARD, and here the house rule holds rather than being the
+            # exception withdraw needed. That control is an <a> with a live href
+            # and Enter followed the link instead of running the page's handler;
+            # this one is a real <button> with aria-pressed, which is precisely
+            # the element a keystroke activates. The assertion after the reload
+            # is what would catch it if that reasoning is wrong.
+            br.press(before["locator"], "the Follow control on %s" % key)
+            time.sleep(ACTIVATE_SETTLE)
+            pace.after("follow")
+            after = _follow_state(br, pace, key, "after")
+            dump["state_after"] = _plain(after)
+            if after["following"] != want:
+                die("the Follow control on %s still reads %r after being pressed and the "
+                    "page reloaded. Nothing about this page changed."
+                    % (key, after["name"]))
+            print(json.dumps({"kind": "follow", "company": key,
+                              "following": after["following"], "changed": True,
+                              "was": before["following"]}, ensure_ascii=True))
+            print("RESULT %s company=%s following=%s was=%s changed=true"
+                  % ("follow" if want else "unfollow", key, after["following"],
+                     before["following"]))
+    finally:
+        if a.dump:
+            with open(a.dump, "w", encoding="utf-8") as f:
+                json.dump({k: v for k, v in dump.items()}, f, indent=1, ensure_ascii=False)
+            log("wrote %s" % a.dump)
+
+
+def _plain(state):
+    """A follow state without its Playwright locator, so it can be written to
+    the dump file."""
+    return {k: v for k, v in state.items() if k != "locator"}
+
+
+def _company_key(url):
+    v = (url or "").strip()
+    if not v:
+        die("no company given")
+    m = re.search(r"/(?:company|school|showcase)/([^/?#]+)", v)
+    key = (m.group(1) if m else v).strip("/").lower()
+    if not key or "/" in key:
+        die("cannot read a company key out of %r" % url)
+    return key
+
+
+def _follow_state(br, pace, key, when):
+    """Read the state off the TOP CARD only, from all three signals."""
+    url = S.COMPANY_MEMBER_VIEW % key
+    from .browser import is_own_page
+    if is_own_page(key):
+        pace.before_self_view("our own Page %s (%s the follow)" % (key, when))
+    else:
+        pace.before_view("company page %s (%s the follow)" % (key, when))
+    final = br.read(url, "the company page %s" % key, settle=7)
+    pace.after_view()
+    # One company URL redirected to /posts/?feedView=all and another stayed put,
+    # measured on the same night, so what is asserted is the KEY surviving the
+    # redirect rather than the whole URL matching what was asked for.
+    if (S.COMPANY_KEY_IN_URL % key) not in final.lower():
+        die("asked for the company page %s and landed on %s" % (key, final))
+    got = br.page.evaluate(FOLLOW_JS, {"card": S.COMPANY_TOP_CARD, "button": S.FOLLOW_BUTTON,
+                                       "following": S.FOLLOW_STATE_FOLLOWING})
+    if not got["top_card_present"]:
+        die("no top card on the company page %s (%s). Follow controls for OTHER "
+            "organisations sit further down this page on recommendation cards, so a search "
+            "that is not scoped to the top card can flip the wrong Page."
+            % (key, S.COMPANY_TOP_CARD))
+    if len(got["controls"]) != 1:
+        die("expected exactly one Follow control on %s's top card and found %d (the page "
+            "holds %d in total, the rest on recommendation cards). Nothing was pressed."
+            % (key, len(got["controls"]), got["total_on_page"]))
+    c = got["controls"][0]
+    by_pressed = (c["pressed"] or "").lower() == "true"
+    by_class = bool(c["following_class"])
+    by_name = bool(S.FOLLOW_NAME_FOLLOWING.match((c["label"] or c["text"] or "").strip()))
+    if not (by_pressed == by_class == by_name):
+        die("the Follow control on %s disagrees with itself about its own state: "
+            "aria-pressed says %s, the %r class token says %s, and its name %r says %s. "
+            "A control this code cannot read is not one to press."
+            % (key, by_pressed, S.FOLLOW_STATE_FOLLOWING, by_class,
+               c["label"] or c["text"], by_name))
+    loc = br.page.locator(S.COMPANY_TOP_CARD).locator(S.FOLLOW_BUTTON)
+    return {"following": by_pressed, "name": c["label"] or c["text"],
+            "pressed_attr": c["pressed"], "class_token": by_class,
+            "locator": loc.first, "url": final}
+
+
+# ---------------------------------------------------------- invite-to-follow
+
+def invite_to_follow(a):
+    """Invite one or more of our connections to follow a Page we administer.
+
+    THE PROOF IS THE CREDIT COUNT AND NOT A ROW THAT SAYS "Invited". A credit is
+    the thing that is actually spent; the page's own "N/50 credits available"
+    line is read before and after and must fall by exactly the number invited.
+    """
+    key = _company_key(a.page)
+    people = [p.strip() for p in (a.name or []) if p.strip()]
+    if not people:
+        die("--name is required, once per person: the accessible name of the row control is "
+            "'Select <Full Name>', so a person is picked BY NAME and never by position in a "
+            "list of twenty that reorders.")
+    if len(people) > MAX_INVITES_PER_RUN:
+        die("%d people asked for and this verb spends at most %d credits in one run. The "
+            "Page's whole monthly budget is 50." % (len(people), MAX_INVITES_PER_RUN))
+    pace = Pace()
+    dump = {"page": key, "people": len(people), "submit": bool(a.submit),
+            "when": time.strftime("%Y-%m-%d %H:%M:%S")}
+    try:
+        _invite_run(a, key, people, pace, dump)
+    finally:
+        if a.dump:
+            with open(a.dump, "w", encoding="utf-8") as f:
+                json.dump(dump, f, indent=1, ensure_ascii=False)
+            log("wrote %s" % a.dump)
+
+
+MAX_INVITES_PER_RUN = 5
+
+
+def _invite_run(a, key, people, pace, dump):
+    with Browser(a.port) as br:
+        state = _invite_dialog(br, pace, key, "before")
+        before = state["credits"]
+        dump["credits_before"] = before
+        dump["refill"] = state["refill"]
+        log("the Page states %s of %s credits available, refilling %s"
+            % (before, state["total"], state["refill"]))
+        if before is None:
+            die("the invite dialog states no credit count, and the credit is the only thing "
+                "that proves an invitation was actually spent. Nothing was selected.")
+        if before < len(people):
+            die("%d people asked for and the Page has %d credit(s) left (refill %s). "
+                "Nothing was selected." % (len(people), before, state["refill"]))
+
+        picked = []
+        for who in people:
+            picked.append(_pick(br, who))
+        dump["selected"] = picked
+        after_pick = br.page.evaluate(PAGE_INVITE_JS, _invite_sel())
+        dump["checked_after_picking"] = after_pick.get("checked")
+        if after_pick.get("checked") != len(people):
+            die("%d people were asked for and the dialog has %d checkbox(es) ticked. "
+                "Nothing was invited." % (len(people), after_pick.get("checked")))
+
+        if not a.submit:
+            # RULE 0.1: prove the pre-action state survived. Dismiss, RELOAD the
+            # dialog from its URL, and read the credit line again - the number
+            # that would have moved if anything had been spent.
+            br.page.keyboard.press("Escape")
+            time.sleep(1.0)
+            again = _invite_dialog(br, pace, key, "after staging")
+            dump["credits_after_staging"] = again["credits"]
+            if again["credits"] != before:
+                die("STAGED RUN: the Page's credits went from %s to %s. A staged run must "
+                    "spend nothing." % (before, again["credits"]))
+            if again["checked"]:
+                die("STAGED RUN: the reloaded dialog still has %d row(s) ticked, so this run "
+                    "left a selection behind." % again["checked"])
+            print(json.dumps({"kind": "invite-to-follow-staged", "page": key,
+                              "people": picked, "credits": before,
+                              "credits_total": state["total"]}, ensure_ascii=True))
+            print("RESULT invite-to-follow-staged page=%s people=%d credits=%s unchanged=true "
+                  "refill=%r pressed=nothing"
+                  % (key, len(picked), before, state["refill"]))
+            return
+
+        # -- the irreversible part ------------------------------------------
+        btn = br.page.get_by_role("button", name=S.PAGE_INVITE_SUBMIT)
+        visible = [btn.nth(i) for i in range(btn.count()) if btn.nth(i).is_visible()]
+        if len(visible) != 1:
+            die("expected exactly one visible Invite button on the dialog and found %d. "
+                "Nothing was invited." % len(visible))
+        if visible[0].is_disabled():
+            die("the dialog's Invite button is disabled with %d row(s) ticked. Nothing was "
+                "invited." % len(people))
+        for _ in people:
+            pace.before("invite")
+        visible[0].click(timeout=15000)
+        time.sleep(ACTIVATE_SETTLE)
+        for _ in people:
+            pace.after("invite")
+
+        after = _invite_dialog(br, pace, key, "after inviting")
+        dump["credits_after"] = after["credits"]
+        if after["credits"] != before - len(people):
+            die("the Page's credits went from %s to %s, and %d invitation(s) should have "
+                "taken it to %s. THE CREDIT IS THE THING THAT IS ACTUALLY SPENT, so this "
+                "does not report a success it cannot see."
+                % (before, after["credits"], len(people), before - len(people)))
+        print(json.dumps({"kind": "invited-to-follow", "page": key, "people": picked,
+                          "credits_before": before, "credits_after": after["credits"]},
+                         ensure_ascii=True))
+        print("RESULT invited-to-follow page=%s people=%d credits=%s->%s refill=%r"
+              % (key, len(picked), before, after["credits"], after["refill"]))
+
+
+def _invite_sel():
+    return {"dialog": S.PAGE_INVITE_DIALOG, "name": S.PAGE_INVITE_DIALOG_NAME,
+            "option": S.PAGE_INVITE_OPTION, "checkbox": S.PAGE_INVITE_CHECKBOX}
+
+
+def _invite_dialog(br, pace, key, when):
+    """Open (or re-open) the Page's invite dialog and read its credit line.
+
+    THE DIALOG IS NOT FOUND BY ITS ACCESSIBLE NAME, and that is a correction to
+    a measurement taken seven hours earlier: the first survey recorded
+    aria-label="Invite to follow" and the second pass, same account and same
+    Page, found aria-label=null with those words as the heading only. So it is
+    found by role and CONFIRMED by what it says about itself - the heading, and
+    the credits line.
+    """
+    url = S.PAGE_INVITE_URL % key
+    from .browser import is_own_page
+    if is_own_page(key):
+        pace.before_self_view("our own Page's invite dialog (%s)" % when)
+    else:
+        # A Page we do not administer has no invite dialog at all, so this will
+        # fail below - but the view is counted honestly on the way in.
+        pace.before_view("a Page's invite dialog (%s)" % when)
+    final = br.read(url, "the Page's invite dialog", settle=8)
+    pace.after_view()
+    if S.PAGE_INVITE_QUERY not in final:
+        die("asked for the invite dialog and landed on %s, which does not carry %r. "
+            "?invite=true redirects from /admin/ to /admin/dashboard/ and that is expected; "
+            "losing the parameter is not." % (final, S.PAGE_INVITE_QUERY))
+    got = br.page.evaluate(PAGE_INVITE_JS, _invite_sel())
+    if not got.get("found"):
+        die("no dialog on %s states %r (%d dialog(s) on screen: %s). Nothing was selected."
+            % (final, S.PAGE_INVITE_DIALOG_NAME, got.get("dialogs", 0),
+               json.dumps(got.get("texts", []))[:300]))
+    m = S.PAGE_INVITE_CREDITS.search(got["text"] or "")
+    r = S.PAGE_INVITE_REFILL.search(got["text"] or "")
+    return {"credits": int(m.group(1).replace(",", "")) if m else None,
+            "total": int(m.group(2).replace(",", "")) if m else None,
+            "refill": r.group(1).strip() if r else None,
+            "options": got.get("options"), "checked": got.get("checked"),
+            "text": got["text"], "url": final}
+
+
+def _pick(br, who):
+    """Tick ONE person, found by the control that NAMES THEM.
+
+    The row's checkbox is a bare `input.ember-checkbox` with no label at all and
+    twenty of them are on screen before anybody has searched. What names the
+    person is the row control's accessible name, "Select <Full Name>" - so that
+    is what is matched, exactly, and two matches is ambiguity with no outcome.
+    """
+    search = br.page.locator(S.PAGE_INVITE_DIALOG).locator(S.PAGE_INVITE_SEARCH)
+    if search.count():
+        search.first.fill("")
+        search.first.type(who, delay=20)
+        time.sleep(2.5)
+    want = re.compile(r"^Select %s$" % re.escape(who), re.I)
+    btn = br.page.get_by_role("button", name=want)
+    n = btn.count()
+    if n == 0:
+        btn = br.page.get_by_label(want)
+        n = btn.count()
+    if n != 1:
+        die("expected exactly one control named 'Select %s' in the invite dialog and found "
+            "%d. A credit is spent on a person, so a name that does not identify exactly "
+            "one row has no outcome here." % (who, n))
+    btn.first.click(timeout=15000)
+    time.sleep(0.8)
+    return who

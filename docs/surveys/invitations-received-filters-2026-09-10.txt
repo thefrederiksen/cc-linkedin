@@ -1,0 +1,271 @@
+# survey invitations-received-filters
+# taken   2026-09-10 07:39:03
+# request https://www.linkedin.com/mynetwork/invitation-manager/received/
+# subject tokens redacted literally: 21
+# final   https://www.linkedin.com/mynetwork/invitation-manager/received/
+# rendering react ([data-urn] count=0)
+# signed-in probes {".global-nav__me": 0, "button.global-nav__primary-link-me-menu-trigger": 0, "img.global-nav__me-photo": 0, "[data-test-global-nav-me]": 0, "nav.global-nav": 0, ".global-nav__nav": 0, "#global-nav": 0, "header.global-nav": 0, "[data-view-name=\"navigation-me\"]": 0}
+# 'Me' controls    []
+# title   "<redacted len=29>"
+# body    "<redacted len=300>"
+
+== ACCESSIBILITY (994 nodes in the tree) ==
+  heading        "0 notifications"
+  button         "LinkedIn"
+  StaticText     "0 notifications"
+  button         "Skip to search"
+  button         "Skip to main content"
+  button         "<redacted len=23>"
+  button         "Skip to aside"
+  region         "<redacted len=15>"
+  StaticText     "Skip to search"
+  StaticText     "Skip to main content"
+  StaticText     "<redacted len=23>"
+  StaticText     "Skip to aside"
+  button         "<redacted len=15>"
+  textbox        "Search"
+  button         "<redacted len=12>"
+  link           "<redacted len=30>"
+  button         "<redacted len=19>"
+  button         "<redacted len=11>"
+  radio          "<redacted len=12>"
+  heading        "<redacted len=12>"
+  button         "<redacted len=24>"
+  link           "<redacted len=31>"
+  link           "<redacted len=25>"
+  link           "<redacted len=30>"
+  link           "<redacted len=34>"
+  button         "Me"
+  StaticText     "<redacted len=12>"
+  StaticText     "<redacted len=9>"
+  StaticText     "<redacted len=18>"
+  heading        "<redacted len=19>"
+  link           "<redacted len=288>"
+  link           "<redacted len=100>"
+  link           "<redacted len=198>"
+  link           "<redacted len=102>"
+  link           "<redacted len=165>"
+  link           "<redacted len=119>"
+  link           "<redacted len=204>"
+  link           "<redacted len=90>"
+  link           "<redacted len=89>"
+  link           "<redacted len=225>"
+  link           "<redacted len=183>"
+  link           "<redacted len=110>"
+  link           "<redacted len=146>"
+  link           "<redacted len=127>"
+  link           "<redacted len=111>"
+  link           "<redacted len=159>"
+  link           "<redacted len=157>"
+  link           "<redacted len=158>"
+  link           "<redacted len=112>"
+  link           "<redacted len=146>"
+  link           "About"
+  link           "<redacted len=13>"
+  link           "<redacted len=11>"
+  button         "<redacted len=15>"
+  link           "<redacted len=10>"
+  link           "<redacted len=11>"
+  button         "<redacted len=17>"
+  link           "<redacted len=20>"
+  link           "More"
+  StaticText     "<redacted len=27>"
+  StaticText     "<redacted len=12>"
+  StaticText     "<redacted len=31>"
+  button         "<redacted len=12>"
+  StaticText     "Home"
+  StaticText     "<redacted len=10>"
+  StaticText     "Jobs"
+  StaticText     "Messaging"
+  StaticText     "Notifications"
+  StaticText     "Me"
+  checkbox       "<redacted len=11>"
+  checkbox       "<redacted len=12>"
+  button         "<redacted len=50>"
+  button         "<redacted len=33>"
+  StaticText     "<redacted len=19>"
+  button         "<redacted len=27>"
+  button         "<redacted len=37>"
+  button         "<redacted len=38>"
+  button         "<redacted len=32>"
+  button         "<redacted len=38>"
+  button         "<redacted len=44>"
+  button         "<redacted len=33>"
+  button         "<redacted len=28>"
+  button         "<redacted len=26>"
+  button         "<redacted len=38>"
+  button         "<redacted len=29>"
+  button         "<redacted len=36>"
+  button         "<redacted len=32>"
+  button         "<redacted len=29>"
+  button         "<redacted len=32>"
+  button         "<redacted len=37>"
+  button         "<redacted len=35>"
+  button         "<redacted len=30>"
+  button         "<redacted len=30>"
+  button         "<redacted len=32>"
+  button         "<redacted len=80>"
+  button         "<redacted len=80>"
+  link           "<redacted len=8>"
+  link           "<redacted len=4>"
+  StaticText     "<redacted len=11>"
+  link           "<redacted len=22>"
+  StaticText     "<redacted len=103>"
+  StaticText     "<redacted len=6>"
+  StaticText     "<redacted len=6>"
+  StaticText     "<redacted len=9>"
+  StaticText     "<redacted len=204>"
+  StaticText     "<redacted len=36>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=19>"
+  StaticText     "<redacted len=33>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=20>"
+  StaticText     "<redacted len=101>"
+  StaticText     "<redacted len=28>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=14>"
+  StaticText     "<redacted len=45>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=20>"
+  StaticText     "<redacted len=56>"
+  StaticText     "<redacted len=39>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=26>"
+  StaticText     "<redacted len=47>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=107>"
+  StaticText     "<redacted len=37>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=10>"
+  StaticText     "<redacted len=50>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=8>"
+  StaticText     "<redacted len=23>"
+  StaticText     "<redacted len=29>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=20>"
+  StaticText     "<redacted len=119>"
+  StaticText     "<redacted len=36>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=11>"
+  StaticText     "<redacted len=95>"
+  StaticText     "<redacted len=36>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=18>"
+  StaticText     "<redacted len=17>"
+  StaticText     "<redacted len=28>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=14>"
+  StaticText     "<redacted len=52>"
+  StaticText     "<redacted len=36>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=11>"
+  StaticText     "<redacted len=40>"
+  StaticText     "<redacted len=36>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=14>"
+  StaticText     "<redacted len=25>"
+  StaticText     "<redacted len=37>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=19>"
+  StaticText     "<redacted len=54>"
+  StaticText     "<redacted len=38>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=17>"
+  StaticText     "<redacted len=57>"
+  StaticText     "<redacted len=36>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=12>"
+  StaticText     "<redacted len=65>"
+  StaticText     "<redacted len=39>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=12>"
+  StaticText     "<redacted len=31>"
+  StaticText     "<redacted len=36>"
+  StaticText     "Connect"
+  StaticText     "<redacted len=14>"
+  StaticText     "<redacted len=61>"
+  StaticText     "<redacted len=36>"
+  StaticText     "Connect"
+  StaticText     "About"
+  StaticText     "<redacted len=13>"
+  StaticText     "<redacted len=11>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=10>"
+  StaticText     "<redacted len=11>"
+  StaticText     "<redacted len=17>"
+  StaticText     "<redacted len=20>"
+  StaticText     "More"
+  StaticText     "<redacted len=80>"
+  button         "<redacted len=28>"
+  button         "<redacted len=15>"
+  StaticText     "<redacted len=80>"
+  StaticText     "<redacted len=8>"
+  StaticText     "<redacted len=4>"
+  StaticText     "<redacted len=16>"
+  StaticText     "<redacted len=15>"
+  StaticText     "<redacted len=13>"
+
+== JS PROBES ==
+  (() => [...document.querySelectorAll("[role=radio],[role=tab],[role=button]")].map(e=>({role:e.getAttribute("role"), checked:e.getAttribute("aria-checked"), selected:e.getAttribute("aria-selected"), pressed:e.getAttribute("aria-pressed"), label:e.getAttribute("aria-label"), text:(e.innerText||"").replace(/\s+/g," ").trim().slice(0,60)})).filter(e=>e.text||e.label).slice(0,25))()
+    [
+     {
+      "role": "button",
+      "checked": null,
+      "selected": null,
+      "pressed": null,
+      "label": null,
+      "text": "<redacted len=11>"
+     },
+     {
+      "role": "radio",
+      "checked": "false",
+      "selected": null,
+      "pressed": null,
+      "label": null,
+      "text": "<redacted len=12>"
+     },
+     {
+      "role": "button",
+      "checked": null,
+      "selected": null,
+      "pressed": null,
+      "label": null,
+      "text": "<redacted len=15>"
+     },
+     {
+      "role": "button",
+      "checked": null,
+      "selected": null,
+      "pressed": null,
+      "label": null,
+      "text": "<redacted len=17>"
+     }
+    ]
+  (() => { const r=/\b(Focused|Verified|Other|People)\s*\((\d[\d,]*)\)/gi; const t=document.body.innerText; const out=[]; let m; while((m=r.exec(t))) out.push([m[1],m[2]]); return out; })()
+    [
+     [
+      "<redacted len=7>",
+      "1"
+     ],
+     [
+      "Verified",
+      "1"
+     ]
+    ]
+  (() => ({rows: document.querySelectorAll("button[aria-label^=\"Accept\"]").length}))()
+    {
+     "rows": 1
+    }
+
+== DOM OUTLINE of main (7 nodes, depth<=4) ==
+  main#workspace.f59fbc39.c3bcac2f._38232876.e193d4ed.c39f4aba._4c0d7f95
+    div._6376d83e.d1b6db25.bd04e45f._78cbe4ff._9dc21ff9._96f7ce15
+      div.aa99edaa._2664f753.c39f4aba.cd7b4533._6a6103b1._25472c6d
+        section._584fdf8e.c33289f9._0be12a3c._93e2ccf0  aria-label="<redacted len=15>"
+          section.ab5d2150._3320b76a._066f0933.a7c0df65.ea6b618d._93e2ccf0
+        aside._584fdf8e._2be77876.dba054c0._93e2ccf0  aria-label="Aside"
+          div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
+
