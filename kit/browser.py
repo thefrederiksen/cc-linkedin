@@ -87,6 +87,19 @@ def close_file_dialogs(where):
 
 # ---------------------------------------------------------------- the lock
 
+def _read_lock_record(path):
+    """Read a lock file's bytes. One named step, on purpose.
+
+    RULING R3.3 as amended, 2026-09-10: whether this raises, and with what, is
+    the difference between "the record is broken" and "I could not look". Giving
+    it a name keeps that distinction visible at the one place it is decided, and
+    lets a test make the open fail the way Windows does without reaching inside
+    the lock's own logic.
+    """
+    with open(path, encoding="utf-8") as f:
+        return f.read()
+
+
 class FileLock(object):
     """Mutual exclusion around one file, held by a sentinel beside it.
 
@@ -115,19 +128,43 @@ class FileLock(object):
         self.what = what
 
     def _holder(self):
-        """(holder, why it is unreadable). A lock we cannot read is broken."""
+        """What the lock file says, as one of four verdicts.
+
+        RULING R3.3 AS AMENDED, 2026-09-10, and the distinction below is the
+        whole point of this method. It used to ask one question - "can I read
+        it?" - and treat every no as evidence that the record was broken. Two
+        different nos were being collapsed:
+
+          * the file was OPENED and its bytes are not a valid record. THAT is
+            evidence, and it is exactly what the atomic link-into-place
+            guarantee buys: a lock file that exists has complete bytes, so bytes
+            that do not parse mean a broken record. Reclaimable, as before.
+          * the file could not be OPENED. That says nothing whatever about its
+            content - on Windows it is routinely a sharing violation or a
+            pending delete, which is somebody else being perfectly healthy - and
+            treating it as evidence meant reclaiming a live holder's lock. A
+            failure to read is not a reading of failure.
+
+        Returns (verdict, holder, detail):
+          "held"       - a valid record; `holder` is it
+          "broken"     - opened and read, content invalid. Reclaimable.
+          "gone"       - not there any more; the holder released it between our
+                         failed link and this read. Just try the link again.
+          "unreadable" - could not be opened. NOT a verdict about the content.
+        """
         try:
-            with open(self.path, encoding="utf-8") as f:
-                raw = f.read()
+            raw = _read_lock_record(self.path)
+        except FileNotFoundError:
+            return "gone", None, "it is no longer there"
         except OSError as exc:
-            return None, "it cannot be opened (%s)" % str(exc).splitlines()[0][:60]
+            return "unreadable", None, str(exc).splitlines()[0][:70]
         try:
             holder = json.loads(raw)
         except ValueError:
-            return None, "it does not parse as JSON (%r)" % raw[:60]
+            return "broken", None, "it does not parse as JSON (%r)" % raw[:60]
         if not isinstance(holder, dict) or not holder.get("pid"):
-            return None, "it names no process (%r)" % raw[:60]
-        return holder, None
+            return "broken", None, "it names no process (%r)" % raw[:60]
+        return "held", holder, None
 
     # Seconds between attempts while somebody else holds it. Short by default:
     # this class guards a state file whose critical section is a read, an
@@ -145,9 +182,18 @@ class FileLock(object):
             os.close(fd)
         return tmp
 
+    # How many CONSECUTIVE attempts to read the lock record may fail to OPEN it
+    # before we say so out loud. It is a logging threshold and nothing more: one
+    # unreadable attempt or a hundred, this class never reclaims on an open
+    # failure. Small, because a sharing violation on Windows clears in
+    # milliseconds and anything that does not clear is worth a line in the log.
+    unreadable_before_saying_so = 5
+
     def __enter__(self):
         deadline = time.time() + self.wait
         told = False
+        said_unreadable = False
+        unreadable_run = 0
         tmp = self._sentinel()
         try:
             while True:
@@ -155,27 +201,69 @@ class FileLock(object):
                     os.link(tmp, self.path)
                     return self
                 except FileExistsError:
-                    holder, unreadable = self._holder()
-                    if unreadable:
-                        log("browser lock at %s is BROKEN: %s. A lock record is written whole or "
-                            "not at all, so this one cannot be a healthy holder; taking it over."
-                            % (self.path, unreadable))
-                        _discard(self.path)
-                        continue
-                    pid = holder.get("pid")
-                    if not _pid_alive(pid):
-                        log("browser lock held by dead pid %s; taking it over" % pid)
-                        _discard(self.path)
-                        continue
-                    if not told:
-                        log("waiting for %s: another run holds it (pid %s since %s, %s)"
-                            % (self.what, pid, holder.get("since"),
-                               " ".join(holder.get("argv", []))))
-                        told = True
+                    pass
+                except OSError as exc:
+                    # RULING R3.3 as amended. Windows answers a link whose
+                    # destination has a delete pending on it with a sharing
+                    # violation rather than FileExistsError, so catching only
+                    # FileExistsError let PermissionError(13) escape __enter__ to
+                    # the caller - and __enter__ raising means the `with` never
+                    # begins, which is the failure mode R3.1 exists to stop. It
+                    # is contention, not a broken lock: wait, try again, and
+                    # never read it as licence to reclaim.
                     if time.time() > deadline:
-                        die("gave up waiting for %s after %ds; pid %s still holds it"
-                            % (self.what, self.wait, pid))
+                        die("gave up trying to take %s after %ds; its lock file could not be "
+                            "created and the last attempt said: %s"
+                            % (self.what, self.wait, str(exc).splitlines()[0][:70]))
                     time.sleep(self.poll)
+                    continue
+
+                verdict, holder, detail = self._holder()
+
+                if verdict == "gone":
+                    # The holder let go between our link and our read. Nobody
+                    # holds it now, so the next link attempt simply takes it.
+                    continue
+
+                if verdict == "unreadable":
+                    # NEVER reclaimed. Fail closed: treat it as HELD and wait.
+                    unreadable_run += 1
+                    if unreadable_run >= self.unreadable_before_saying_so and not said_unreadable:
+                        log("%s at %s could not be read on %d attempts in a row (%s). That is "
+                            "not evidence about what is in it, so it is being treated as HELD "
+                            "and waited for, not taken over."
+                            % (self.what, self.path, unreadable_run, detail))
+                        said_unreadable = True
+                    if time.time() > deadline:
+                        die("gave up waiting for %s after %ds; its lock file could not be read "
+                            "(%s), so it was treated as held rather than reclaimed"
+                            % (self.what, self.wait, detail))
+                    time.sleep(self.poll)
+                    continue
+
+                unreadable_run = 0
+
+                if verdict == "broken":
+                    log("%s at %s is BROKEN: %s. A lock record is written whole or not at all, "
+                        "so a record that WAS READ and does not parse cannot be a healthy "
+                        "holder; taking it over." % (self.what, self.path, detail))
+                    _discard(self.path)
+                    continue
+
+                pid = holder.get("pid")
+                if not _pid_alive(pid):
+                    log("%s held by dead pid %s; taking it over" % (self.what, pid))
+                    _discard(self.path)
+                    continue
+                if not told:
+                    log("waiting for %s: another run holds it (pid %s since %s, %s)"
+                        % (self.what, pid, holder.get("since"),
+                           " ".join(holder.get("argv", []))))
+                    told = True
+                if time.time() > deadline:
+                    die("gave up waiting for %s after %ds; pid %s still holds it"
+                        % (self.what, self.wait, pid))
+                time.sleep(self.poll)
         finally:
             _discard(tmp)
 

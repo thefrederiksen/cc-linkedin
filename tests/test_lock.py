@@ -284,6 +284,176 @@ class AnUnreadableLockIsBroken(LockCase):
         lock.__exit__(None, None, None)
         self.assertEqual(os.listdir(self.dir), [])
 
+# ================================ R3.3 AS AMENDED, 2026-09-10 =================
+#
+# The original rule was "a lock we cannot READ is broken". It earned that from
+# the atomic link-into-place guarantee: a lock file that exists has complete
+# bytes, so bytes that do not parse mean a broken record. That argument is about
+# CONTENT and it is sound. It says NOTHING about a failure to OPEN the file, and
+# the code applied it to both - so on Windows a transient sharing violation
+# (delete-pending, someone else mid-release) made a run announce
+#
+#     lock is BROKEN ... taking it over
+#
+# and reclaim a lock a LIVE holder was still inside. R15's own forty-thread test
+# then lost an increment. Measured on almost every run: see
+# docs/evidence/lock-steals-itself-on-windows.txt.
+#
+# THE AMENDED RULE, the Architect's, 2026-09-10:
+#   * "broken" means the file WAS opened and read and its content is not a valid
+#     record. That alone is reclaimable, exactly as before.
+#   * ANY failure to open is not evidence about the content. Retry a bounded
+#     number of times with a short backoff; if it persists, treat the lock as
+#     HELD and wait. FAIL CLOSED. Never reclaim on an open failure.
+#
+# A failure to read is not a reading of failure.
+
+
+class _Unreadable(object):
+    """Makes reading the lock record fail, the way Windows does when the file is
+    open elsewhere or has a delete pending on it."""
+
+    def __init__(self, exc, times=None, real=None):
+        self.exc, self.times, self.calls = exc, times, 0
+        # The REAL reader, captured before the swap. Reaching for
+        # B._read_lock_record here would call this object again.
+        self.real = real or B._read_lock_record
+
+    def __call__(self, path):
+        self.calls += 1
+        if self.times is None or self.calls <= self.times:
+            raise self.exc
+        return self.real(path)
+
+
+class AnOpenFailureIsNotEvidenceAboutTheContent(LockCase):
+
+    def setUp(self):
+        LockCase.setUp(self)
+        self._read = B._read_lock_record
+        self.logged = []
+        self._log = B.log
+        B.log = lambda msg: self.logged.append(msg)
+
+    def tearDown(self):
+        B._read_lock_record = self._read
+        B.log = self._log
+        LockCase.tearDown(self)
+
+    def _held_by_a_live_process(self):
+        with open(self.lock_path, "w") as f:
+            json.dump({"pid": os.getpid(), "since": "now", "argv": ["selftest"]}, f)
+
+    def test_a_lock_that_cannot_be_opened_is_never_reclaimed(self):
+        """THE DEFECT, stated as a test. A live holder, and every attempt to read
+        who it is answers with a sharing violation."""
+        self._held_by_a_live_process()
+        mine = self.holder()
+        B._read_lock_record = _Unreadable(PermissionError(13, "Access is denied"))
+        lock = B.BrowserLock(self.port, wait=0.4)
+        lock.poll = 0.02
+        with self.assertRaises(SystemExit):
+            lock.__enter__()
+        self.assertTrue(self.held(), "the lock was taken from a holder we simply could not read")
+        self.assertEqual(self.holder(), mine, "the holder's own record was overwritten")
+
+    def test_it_does_not_call_a_healthy_lock_broken(self):
+        """The log line is half the defect: 'BROKEN ... taking it over' is
+        printed today for a lock that is perfectly fine."""
+        self._held_by_a_live_process()
+        B._read_lock_record = _Unreadable(PermissionError(13, "Access is denied"))
+        lock = B.BrowserLock(self.port, wait=0.4)
+        lock.poll = 0.02
+        with self.assertRaises(SystemExit):
+            lock.__enter__()
+        said = " ".join(self.logged).lower()
+        self.assertNotIn("broken", said, "an unreadable lock was announced as broken: %s" % said)
+        self.assertIn("could not be read", said,
+                      "the log does not say which of the two cases it saw: %s" % said)
+
+    def test_a_transient_unreadability_resolves_without_anybody_reclaiming(self):
+        """It reads on a later attempt - the ordinary case - and what it finds
+        then is a live holder, which is waited for."""
+        self._held_by_a_live_process()
+        B._read_lock_record = _Unreadable(PermissionError(13, "Access is denied"),
+                                          times=2, real=self._read)
+        lock = B.BrowserLock(self.port, wait=0.4)
+        lock.poll = 0.02
+        with self.assertRaises(SystemExit):
+            lock.__enter__()
+        self.assertTrue(self.held())
+        self.assertNotIn("broken", " ".join(self.logged).lower())
+
+    def test_a_lock_that_vanished_is_simply_acquired(self):
+        """FileNotFoundError is the holder RELEASING it between our failed link
+        and our read. Nothing is broken and nothing is reclaimed - the next link
+        attempt just succeeds."""
+        self._held_by_a_live_process()
+
+        def vanish(path):
+            os.remove(path)
+            raise FileNotFoundError(2, "No such file or directory")
+
+        B._read_lock_record = vanish
+        lock = B.BrowserLock(self.port, wait=5)
+        lock.poll = 0.02
+        lock.__enter__()
+        self.assertEqual(self.holder()["pid"], os.getpid())
+        self.assertNotIn("broken", " ".join(self.logged).lower())
+        lock.__exit__(None, None, None)
+
+    def test_content_that_does_not_parse_is_STILL_reclaimed(self):
+        """The control. The amendment narrows nothing about content: R3.3's
+        original rule stands, and it is what makes a genuinely wedged lock
+        recoverable. If this goes red the fix has overshot."""
+        with open(self.lock_path, "w") as f:
+            f.write('{"pid": 12')
+        lock = B.BrowserLock(self.port, wait=5)
+        lock.__enter__()
+        self.assertEqual(self.holder()["pid"], os.getpid())
+        self.assertIn("broken", " ".join(self.logged).lower(),
+                      "a genuinely broken record must still say so")
+        lock.__exit__(None, None, None)
+
+
+class TheAcquisitionPathSurvivesEveryOSError(LockCase):
+    """os.link's destination can answer with a sharing violation rather than
+    FileExistsError while somebody else is mid-release. __enter__ caught only
+    FileExistsError, so that escaped to the caller as
+    PermissionError(13, 'Access is denied') - which is symptom 2 in the
+    evidence file."""
+
+    def setUp(self):
+        LockCase.setUp(self)
+        self._link = os.link
+
+    def tearDown(self):
+        os.link = self._link
+        LockCase.tearDown(self)
+
+    def test_a_sharing_violation_on_the_link_does_not_escape(self):
+        calls = []
+
+        def flaky(src, dst):
+            calls.append(1)
+            if len(calls) <= 3:
+                raise PermissionError(13, "Access is denied")
+            return self._link(src, dst)
+
+        os.link = flaky
+        lock = B.BrowserLock(self.port, wait=5)
+        lock.poll = 0.02
+        lock.__enter__()                       # must not raise PermissionError
+        self.assertEqual(self.holder()["pid"], os.getpid())
+        lock.__exit__(None, None, None)
+
+    def test_a_link_that_never_works_gives_up_loudly_rather_than_raising_oserror(self):
+        os.link = lambda src, dst: (_ for _ in ()).throw(PermissionError(13, "Access is denied"))
+        lock = B.BrowserLock(self.port, wait=0.2)
+        lock.poll = 0.02
+        with self.assertRaises(SystemExit):
+            lock.__enter__()
+
 
 if __name__ == "__main__":
     unittest.main()
