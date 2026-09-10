@@ -1,0 +1,36 @@
+FAIL: test_a_company_path_resolves_to_nothing (tests.test_identity.ResolveFromTheLandedPage.test_a_company_path_resolves_to_nothing)
+AssertionError: 'urn:li:activity:123456789' is not None
+FAIL: test_a_login_wall_carrying_the_post_in_its_query_resolves_to_nothing (tests.test_identity.ResolveFromTheLandedPage.test_a_login_wall_carrying_the_post_in_its_query_resolves_to_nothing)
+AssertionError: 'urn:li:share:7503446054340755456' is not None
+FAIL: test_a_page_that_states_no_identity_is_not_resolved (tests.test_identity.ResolveFromTheLandedPage.test_a_page_that_states_no_identity_is_not_resolved)
+AssertionError: 'urn:li:share:7503446054340755456' is not None
+FAIL: test_a_school_path_resolves_to_nothing (tests.test_identity.ResolveFromTheLandedPage.test_a_school_path_resolves_to_nothing)
+AssertionError: 'urn:li:activity:123456789' is not None
+FAIL: test_a_urn_in_a_query_parameter_does_not_beat_the_page (tests.test_identity.ResolveFromTheLandedPage.test_a_urn_in_a_query_parameter_does_not_beat_the_page)
+AssertionError: 'urn:li:activity:7409603631332831232' != 'urn:li:share:7503446054340755456'
+FAIL: test_an_earlier_motif_in_the_slug_does_not_beat_the_page (tests.test_identity.ResolveFromTheLandedPage.test_an_earlier_motif_in_the_slug_does_not_beat_the_page)
+AssertionError: 'urn:li:activity:7409603631332831232' != 'urn:li:share:7503446054340755456'
+FAIL: test_another_host_resolves_to_nothing (tests.test_identity.ResolveFromTheLandedPage.test_another_host_resolves_to_nothing)
+AssertionError: 'urn:li:share:123456789' is not None
+FAIL: test_digits_that_do_not_end_the_id_segment_are_not_an_id (tests.test_identity.ResolveFromTheLandedPage.test_digits_that_do_not_end_the_id_segment_are_not_an_id)
+AssertionError: 'urn:li:share:123' is not None
+FAIL: test_the_page_and_the_path_must_agree (tests.test_identity.ResolveFromTheLandedPage.test_the_page_and_the_path_must_agree)
+AssertionError: 'urn:li:share:222222222222222222' is not None
+FAIL: test_two_stated_identities_are_ambiguity_not_a_first_match (tests.test_identity.ResolveFromTheLandedPage.test_two_stated_identities_are_ambiguity_not_a_first_match)
+AssertionError: 'urn:li:share:7503446054340755456' is not None
+FAIL: test_no_cards_at_all (tests.test_identity.TheAnyCardFallbackIsGated.test_no_cards_at_all)
+AssertionError: True is not false
+FAIL: test_one_card_and_the_page_states_nothing (tests.test_identity.TheAnyCardFallbackIsGated.test_one_card_and_the_page_states_nothing)
+AssertionError: True is not false
+FAIL: test_one_card_but_the_page_names_a_different_post (tests.test_identity.TheAnyCardFallbackIsGated.test_one_card_but_the_page_names_a_different_post)
+AssertionError: True is not false
+FAIL: test_several_cards_is_never_a_fallback (tests.test_identity.TheAnyCardFallbackIsGated.test_several_cards_is_never_a_fallback)
+AssertionError: True is not false
+FAIL: test_a_urn_loose_in_a_query_parameter_is_a_failure (tests.test_identity.UrnOfIsAnchoredAndSingular.test_a_urn_loose_in_a_query_parameter_is_a_failure)
+AssertionError: SystemExit not raised
+FAIL: test_a_urn_on_another_host_is_a_failure (tests.test_identity.UrnOfIsAnchoredAndSingular.test_a_urn_on_another_host_is_a_failure)
+AssertionError: SystemExit not raised
+FAIL: test_two_different_urns_in_one_input_is_a_failure (tests.test_identity.UrnOfIsAnchoredAndSingular.test_two_different_urns_in_one_input_is_a_failure)
+AssertionError: SystemExit not raised
+Ran 24 tests in 0.002s
+FAILED (failures=17)
