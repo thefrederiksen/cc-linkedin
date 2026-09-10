@@ -101,7 +101,12 @@ class TheCommittedDumpsCarryNoIdentifiers(unittest.TestCase):
         self.assertTrue(LONG_NUMBER.search("x" + fake + "x"))
         self.assertTrue(LONG_NUMBER.search("id=expanded" + fake + "FeedType"))
         self.assertFalse(LONG_NUMBER.search("/company/107519091"))   # the owner's Page: 9 digits
-        self.assertFalse(LONG_NUMBER.search("/company/37553728"))    # an org id: 8 digits
+        # A SYNTHETIC 8-digit id, not one lifted from the dumps. The line below
+        # used to carry a real third-party organization id, put back into the
+        # repository by the very test that exists to keep such ids out of it -
+        # exactly the failure this test class's docstring warns about, committed
+        # in the same file that warns about it.
+        self.assertFalse(LONG_NUMBER.search("/company/12345678"))    # 8 digits: below the rule
         self.assertTrue(REAL_SHORT_LINK.search("https://lnkd.in/" + FABRICATED_CODE))
         self.assertTrue(REAL_SHORT_LINK.search(
             "url=https%3A%2F%2Flnkd%2Ein%2F" + FABRICATED_CODE))

@@ -1,8 +1,8 @@
 # Inspection slice 4: claims, safety, and what leaked
 
 Independent static inspection updated through committed HEAD
-`a5fb8ff57d03c7e693ddabd932cb8c05cea968b5` on 2026-09-09. I did not open
-LinkedIn or run a verb. I inspected the current 62-file tracked tree and all 48
+`5ccb942c6bee494c60f1962b1b3f2051cf6b1085` on 2026-09-09. I did not open
+LinkedIn or run a verb. I inspected the current 63-file tracked tree and all 49
 commits reachable from the local refs. Per the brief, I
 did not assess the URN resolver, `kit/selftest.py`, or the read verbs' extraction
 logic; I did inspect their side effects and the claims made about them.
@@ -142,7 +142,7 @@ two shapes absent, not that the tree contains no third-party identifiers.
 
 ### What I did not find
 
-Apart from that company ID, in the current 62 tracked files I found no
+Apart from that company ID, in the current 63 tracked files I found no
 unredacted third-party `/in/` slug, `ACoA...` member ID, email address,
 LinkedIn-style `@handle`, personal name, headline, real message body, real
 invitation note, resolvable short link, or real post/content ID. The only
@@ -161,7 +161,7 @@ target.
 
 All eight survey files were introduced together in commit
 `1173f451a8dd2633a4fd0ac21e840f15cb86c30d`; the later R13/R17/R18 commits
-redact those same files in place. No commit in the current 48-commit reachable
+redact those same files in place. No commit in the current 49-commit reachable
 history contains an earlier dump with the reported ten raw profile URLs. This
 supports `docs/phase-2-report.md:183-187`'s specific claim that the first pass was
 caught before commit.
@@ -323,3 +323,22 @@ language. R15 makes cap reservations cross-process safe for
 a valid, stable-date file; gaps, malformed state, midnight, and timezone changes
 remain fail-open. Several facts labelled MEASURED are still not reproducible
 from the committed evidence.
+
+---
+
+## Redaction note, added by the Architect after this review was written
+
+The real organization id this review names as its one remaining finding has been
+replaced here with a synthetic `12345678`, for the same reason the finding
+existed: this repository is public. The finding itself is untouched and still
+says exactly what it said - a real third-party identifier had been reintroduced
+by `tests/test_no_leak.py`, as a negative control, in the file whose whole
+purpose is keeping such identifiers out, and the test could not catch it because
+it looks for 15-or-more digit runs and this id is eight.
+
+That is now fixed at the source as well: the negative control is a synthetic id
+and carries a comment saying why.
+
+Recorded rather than done quietly, as with the same note on
+`docs/inspection-slice-1-urn.md`. No finding, wording, severity or confidence
+has been changed in either.
