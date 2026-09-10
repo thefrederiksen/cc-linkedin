@@ -54,6 +54,36 @@ tried to break it.** Codex is preferred; Gemini or Grok are acceptable. Landing
 without one is the owner's call to make explicitly, not an omission to drift
 into.
 
+### The independent inspection HAS NOW BEEN DONE (2026-09-09 night)
+
+Run as `codex exec` in the FOREGROUND first, then in the background under a
+narrow exception the owner granted when asked (a real review overruns the
+10-minute foreground tool limit; the exception covers Codex producing a WRITTEN
+REVIEW and nothing else). `session spawn --agent Codex` is still broken from the
+Architect's session and is filed as thefrederiksen/devthrottle#2802.
+
+Four passes, model gpt-5.6-sol, a different agent family from the Claude Code
+sessions that built this:
+
+* `docs/inspection-slice-1-urn.md` - the urn resolver. CRITICAL.
+* `docs/inspection-slice-2-selftest.md` - can the self-test fail. Six proved ways it cannot.
+* `docs/inspection-slice-3-verbs.md` - the read verbs. Eight findings, one critical.
+* `docs/inspection-slice-4-claims.md` - claims, read-only-in-fact, and the PUBLIC-REPO leak check. **Still running as of 21:50.**
+
+The Architect's rulings on all of it: `docs/rulings-inspection-2026-09-09.md`,
+R1 to R12. Those rulings are what gets built, not the findings directly.
+
+Headline: `search-posts --resolve` infers a post id from a URL string rather
+than reading it off the page, and `kit/comments.py` then falls back from the
+card for the requested urn to THE FIRST ARBITRARY POST CARD on the page. A
+wrong-but-well-formed permalink therefore reaches the verbs that comment, react
+and delete. Second: the browser lock is not released on several failure paths
+and a half-written lock file is never reclaimed, which wedges every session on
+this machine.
+
+Cleared on inspection: the member-analytics widget genuinely cannot reach a
+`stats` number.
+
 ### What the fix pass did (commits `815aa38`, `9df1163`, `3ce9fa4`)
 
 Driving the live site by hand found two defects in `read-profile` that nine
