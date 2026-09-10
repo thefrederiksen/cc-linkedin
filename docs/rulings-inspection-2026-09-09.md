@@ -387,3 +387,42 @@ look" as "there is nothing there". Each one converts an absence of evidence into
 evidence of absence, and each one was invisible until something tried to make it
 fail. This one was mine, written into a ruling while I was busy naming the same
 defect in other people's code.
+
+---
+
+## R20. Fixtures live on the machine, not in the repository and not in nobody's hands
+
+**The hole, and it is mine.** Phase 2's design says the fixture profiles must
+never be committed, because this repository is public and the people are real.
+That part is right and it stands. What it never said is where they should live
+instead - so they lived in a Manager's head, and when that Manager was reaped
+the values went with it. The third seat in a row then had to pay the discovery
+cost again, out of the daily view cap, to find a profile of the same shape.
+
+A rule that forbids the only recorded place without naming another one is not a
+privacy rule, it is an amnesia generator.
+
+**Ruling:**
+
+1. Fixtures live in `%LOCALAPPDATA%/cc-linkedin/selftest-fixtures.json`, beside
+   `pace.json`, on the machine and outside git. They are never committed and the
+   path is never inside the repository, so there is nothing to gitignore wrongly
+   and nothing to leak.
+2. **The repository documents the SHAPE, the machine holds the VALUES.** The
+   shape is the part that carries the engineering meaning and it belongs in the
+   design document: "a profile whose invitation sits behind the More menu AND
+   whose top card states no employer" is what the row is for. Who that is
+   carries none of it.
+3. The selftest reads the file when the flags are not passed, and **still fails
+   rather than skips** when it has neither. R9 is untouched: nothing is skipped,
+   ever.
+4. Whoever discovers a fixture writes it there, with what was measured about it,
+   so the discovery cost is paid once by the fleet rather than once per seat.
+
+**A datum recorded for the next seat, deliberately without the URL:** the
+profile the Architect used by hand on 2026-09-09 was a genuine D-shape and is
+now PENDING, because a real connection request was sent to it at the owner's
+instruction. It is therefore no longer usable for `can_connect: true`, and it is
+now the only known fixture for a state nothing else reaches - a pending
+invitation, where `can_connect` must be false with a reason and with no invite
+URL. The URL is in the local fixtures file where it belongs.
