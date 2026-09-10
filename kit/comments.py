@@ -29,21 +29,36 @@ import json
 import re
 import time
 
+from . import identity as ID
 from . import selectors as S
 from .browser import Browser, Pace, log, die
 
-ACTIVITY = re.compile(r"urn:li:(?:activity|ugcPost|share):\d+")
-
 
 def urn_of(url):
-    m = ACTIVITY.search(url)
-    if not m:
-        die("not a post permalink (no urn:li:activity in it): %s" % url)
-    return m.group(0)
+    """The one post this string names. Anchored, and exactly one - ruling R2.1.
+
+    This used to be an unanchored substring search, so any string with a
+    urn-shaped run anywhere in it was accepted as an identity and the FIRST such
+    run won. See kit/identity.py.
+    """
+    return ID.urn_of(url, die)
 
 
 def permalink(urn):
-    return "https://www.linkedin.com/feed/update/%s/" % urn
+    return ID.permalink(urn)
+
+
+# What the page says its own identity is: the data-urn on each post card it
+# renders, plus the canonical URL it publishes for itself. Read before the
+# card_any fallback is even considered - ruling R2.2.
+IDENTITY_JS = r"""
+(cardSel) => {
+  const urns = [...document.querySelectorAll(cardSel)]
+      .map(e => (e.getAttribute('data-urn') || '').trim()).filter(Boolean);
+  const canon = document.querySelector('link[rel="canonical"]');
+  return urns.concat([canon ? (canon.getAttribute('href') || '').trim() : '']).filter(Boolean);
+}
+"""
 
 
 # ---------------------------------------------------------------- the post
@@ -81,9 +96,28 @@ class Post(object):
         else:
             die("LinkedIn kept serving the new rendering; comment rows are not mapped there yet")
         if self.variant == "ember":
-            self.card = self.page.locator(S.EMBER["card"].format(urn=self.urn)).first
-            if self.card.count() == 0:
-                self.card = self.page.locator(S.EMBER["card_any"]).first
+            exact = self.page.locator(S.EMBER["card"].format(urn=self.urn))
+            if exact.count():
+                self.card = exact.first
+            else:
+                # THE FALLBACK THAT WAS THE DEFECT (ruling R2.2). This used to be
+                # unconditional: the card for the urn we asked for was not found,
+                # so the FIRST ARBITRARY POST CARD on the page was acted on
+                # instead - commented on, reacted to, deleted. On a permalink page
+                # it is usually right, which is exactly why nobody noticed. It is
+                # allowed now only when the page holds exactly one post card AND
+                # the page's own stated identity is the urn that was asked for.
+                anyc = self.page.locator(S.EMBER["card_any"])
+                n = anyc.count()
+                said = self.page.evaluate(IDENTITY_JS, S.EMBER["card_any"])
+                if not ID.may_use_any_card(n, said, self.urn):
+                    die("no post card for %s on %s. The page holds %d post card(s) and states "
+                        "its identity as %s. Refusing to act on whatever post is on the page "
+                        "instead of the one that was asked for."
+                        % (self.urn, self.url, n, ", ".join(ID.distinct(said)) or "nothing"))
+                log("the exact card is not in the DOM, but the page holds one post card and "
+                    "states it is %s - acting on that one" % self.urn)
+                self.card = anyc.first
         else:
             self.card = self.page.locator("main")
         log("post loaded (%s rendering)" % self.variant)

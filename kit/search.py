@@ -49,31 +49,54 @@ CONTENT SEARCH - AND WHY THERE IS NO PERMALINK
     an assumption dressed as a proof.
 
   So the record carries `share_url` (the lnkd.in link, always present) and
-  `permalink` (the real urn:li:activity URL, or null). There is deliberately no
+  `permalink` (the real urn:li:activity URL, or null). The permalink is READ OFF
+  THE PAGE THE SHORT LINK LANDS ON and never inferred from that page's URL -
+  ruling R1, 2026-09-09, and the reason is in kit/identity.py. The record also
+  carries `stated_by_the_page`, which is what the page said its own identity
+  was, so a caller can see the measurement rather than trust the conclusion.
+  There is deliberately no
   field called `url`: a caller reaching for one and silently getting a shortener
   is the same fail-open shape as an empty read. `--resolve` follows the short
   link IN THE BROWSER - never by an HTTP request made outside it, which is the
   shape of the thing the owner shut down - and is hard-capped at 10 rows.
 """
 import json
-import re
 import time
 
+from . import identity as ID
 from . import selectors as S
 from .browser import Browser, Pace, log, die
 
 PEOPLE_URL = "https://www.linkedin.com/search/results/people/?keywords=%s"
 CONTENT_URL = "https://www.linkedin.com/search/results/content/?keywords=%s"
-ACTIVITY = re.compile(r"urn:li:(?:activity|ugcPost|share):\d+")
-# MEASURED 2026-09-09: a lnkd.in short link does NOT land on /feed/update/. It
-# lands on the human-readable post page, /posts/<slug>_<words>-<kind>-<id>-<hash>,
-# where <kind> is activity, share or ugcPost. The id is in the path, not in a
-# urn, so the urn has to be rebuilt from it. Three consecutive cards resolved to
-# ...-share-7495007268124495872-..., ...-share-7503446054340755456-... and
-# ...-ugcPost-7409603631332831232-...; Phase 1's verbs accept all three kinds.
-POSTS_PATH = re.compile(r"-(activity|share|ugcPost)-(\d+)", re.I)
-URN_KIND = {"activity": "activity", "share": "share", "ugcpost": "ugcPost"}
 RESOLVE_CAP = 10          # ruling 1, amendment 3
+
+# WHAT THE LANDED PAGE SAYS ABOUT ITSELF -------------------------- ruling R1
+# MEASURED 2026-09-09: a lnkd.in short link does NOT land on /feed/update/. It
+# lands on the human-readable post page, /posts/<slug>_<words>-<kind>-<id>-<hash>.
+# The urn used to be REBUILT from that string, which is not a reading of
+# anything - see kit/identity.py and docs/inspection-slice-1-urn.md. It is now
+# read off the page, and the path only gets to agree.
+#
+# NOT SURVEYED. R1 asks which of these three the landed post page actually
+# carries, and that needs the live site; the view cap was spent when this was
+# written. So the census below is returned WITH the candidates and printed when
+# a page states nothing, and the first live run performs the survey by running.
+IDENTITY_JS = r"""
+(cardSel) => {
+  const urns = [...document.querySelectorAll(cardSel)]
+      .map(e => (e.getAttribute('data-urn') || '').trim()).filter(Boolean);
+  const canon = document.querySelector('link[rel="canonical"]');
+  const og = document.querySelector('meta[property="og:url"]');
+  const canonical = canon ? (canon.getAttribute('href') || '').trim() : '';
+  const ogUrl = og ? (og.getAttribute('content') || '').trim() : '';
+  return {said: urns.concat([canonical, ogUrl]).filter(Boolean),
+          census: 'post cards with a data-urn=' + urns.length
+                  + ', canonical=' + (canonical || 'none')
+                  + ', og:url=' + (ogUrl || 'none')
+                  + ', any [data-urn] at all=' + document.querySelectorAll('[data-urn]').length};
+}
+"""
 
 PEOPLE_JS = r"""
 (sel) => [...document.querySelectorAll(sel.item)].map(li => {
@@ -237,7 +260,8 @@ def search_posts(a):
             rows.append({"kind": "post_result", "rank": rank, "author": c["author"] or None,
                          "text": c["text"] or None, "when": c["when"],
                          "share_url": share, "share_error": err,
-                         "permalink": None, "resolve_error": None})
+                         "permalink": None, "resolve_error": None,
+                         "stated_by_the_page": None})
         missing = [r["rank"] for r in rows if not r["share_url"]]
         if len(missing) == len(rows):
             die("not one of the %d cards for %r gave up a link through 'Copy link to post'. "
@@ -253,26 +277,25 @@ def search_posts(a):
                 # In the browser, never as an HTTP request made outside it. A post
                 # permalink is not a profile and notifies nobody, so this costs a
                 # navigation and NOT a view against the read cap.
+                #
+                # br.read, not br.goto (R1.5): the signed-in assertion runs on
+                # this navigation like every other read. An authwall carrying a
+                # post path in its redirect query used to be parsed as a post.
                 try:
-                    br.goto(r["share_url"], settle=5)
-                    dest = br.page.url
+                    dest = br.read(r["share_url"], "the post behind %s" % r["share_url"], settle=5)
+                    page = br.page.evaluate(IDENTITY_JS, S.EMBER["card_any"])
+                except SystemExit:
+                    raise
                 except Exception as exc:
                     r["resolve_error"] = str(exc).splitlines()[0][:120]
                     continue
-                urn = None
-                m = ACTIVITY.search(dest)
-                if m:
-                    urn = m.group(0)
-                else:
-                    m = POSTS_PATH.search(dest)
-                    if m:
-                        urn = "urn:li:%s:%s" % (URN_KIND[m.group(1).lower()], m.group(2))
+                urn, err = ID.resolve_post_identity(dest, page["said"])
+                r["stated_by_the_page"] = page["said"] or None
                 if urn:
-                    r["permalink"] = "https://www.linkedin.com/feed/update/%s/" % urn
+                    r["permalink"] = ID.permalink(urn)
                     resolved += 1
                 else:
-                    r["resolve_error"] = ("the short link went to %s, which carries neither a "
-                                          "urn nor a -<kind>-<id> path" % dest[:140])
+                    r["resolve_error"] = "%s. The page carried: %s" % (err, page["census"])
 
         for r in rows:
             print(json.dumps(r, ensure_ascii=True))

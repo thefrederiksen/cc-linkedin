@@ -2,3 +2,5 @@ __pycache__/
 *.pyc
 *.png
 *.mismatch.txt
+.temp/
+.claude/sounds/
