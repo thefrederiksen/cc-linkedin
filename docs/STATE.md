@@ -18,7 +18,7 @@ Last updated: 2026-09-09, 20:30, by the Manager of the Phase 2 fix pass
 * On main already: Phase 0 (posting, scheduling), Phase 1 (comments, replies,
   reactions, deletes, selftest).
 
-## Phase 2 - BUILT, INSPECTED, TWO DEFECTS FOUND AND FIXED; VERIFICATION UNFINISHED
+## Phase 2 - BUILT, NOT INSPECTED, TWO DEFECTS FOUND AND FIXED; VERIFICATION UNFINISHED
 
 Verbs: `read-profile`, `read-company`, `search-people`, `search-posts`,
 `notifications`, `stats`. Design settled in `docs/phase-2-design.md`, amended by
@@ -31,10 +31,28 @@ rather than trusted.
 | Survey | done - `tools/survey.py`, eight dumps in `docs/surveys/`, redacted |
 | Modules | done - `kit/people.py`, `kit/search.py`, `kit/account.py` |
 | Selftest block | done, then rebuilt by the fix pass - see below |
-| Codex inspection | done |
+| Independent inspection | **NEVER HAPPENED - see below. Do not record it as done.** |
 | Hand-driving the live site | done by the Architect; it found what the suite could not |
 | Phase 2 fix pass | **code done and pushed; proof unfinished - THIS is the open work** |
 | Pull request | not opened - the Architect lands it |
+
+### The independent inspection has NOT been done
+
+`docs/inspection-phase-2-brief.md` exists and is the mandate. No inspector ever
+read it. Two Codex sessions were spawned for it (`af3d4f12`, `3aced9e2`); both
+times `session spawn` printed a session id and the usual "Message it" footer,
+and both times the session never appeared in `session list`, never ran, and
+never wrote a line. Filed as thefrederiksen/devthrottle#2802.
+
+The Architect reported the inspection as running, twice, on the strength of that
+returned id. It was not running. That is why this row now says what it says: a
+spawn that returns an id is a promise, not a fact, and the only proof an
+inspection happened is a review file with findings in it.
+
+**Phase 2 does not land on main until a genuinely different agent family has
+tried to break it.** Codex is preferred; Gemini or Grok are acceptable. Landing
+without one is the owner's call to make explicitly, not an omission to drift
+into.
 
 ### What the fix pass did (commits `815aa38`, `9df1163`, `3ce9fa4`)
 
