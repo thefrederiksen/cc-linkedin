@@ -1,0 +1,17 @@
+ERROR: test_a_half_written_lock_file_is_reclaimed (tests.test_lock.AnUnreadableLockIsBroken.test_a_half_written_lock_file_is_reclaimed)
+ERROR: test_a_lock_with_no_pid_is_reclaimed (tests.test_lock.AnUnreadableLockIsBroken.test_a_lock_with_no_pid_is_reclaimed)
+ERROR: test_an_empty_lock_file_is_reclaimed (tests.test_lock.AnUnreadableLockIsBroken.test_an_empty_lock_file_is_reclaimed)
+FAIL: test_playwright_stop_raising_does_not_strand_the_lock (tests.test_lock.CleanupReleasesTheLock.test_playwright_stop_raising_does_not_strand_the_lock)
+AssertionError: True is not false : _pw.stop() raising skipped the release
+FAIL: test_a_keyboard_interrupt_during_entry (tests.test_lock.EntryFailuresReleaseTheLock.test_a_keyboard_interrupt_during_entry)
+AssertionError: True is not false
+FAIL: test_create_target_times_out (tests.test_lock.EntryFailuresReleaseTheLock.test_create_target_times_out)
+AssertionError: True is not false : the lock file survived a failure at 'createTarget': C:\Users\soren\AppData\Local\Temp\cc-linkedin-lock-93dnc9xl\browser-9999.lock
+FAIL: test_playwright_will_not_start (tests.test_lock.EntryFailuresReleaseTheLock.test_playwright_will_not_start)
+AssertionError: True is not false : the lock file survived a failure at 'start': C:\Users\soren\AppData\Local\Temp\cc-linkedin-lock-z8cuj7sq\browser-9999.lock
+FAIL: test_the_browser_has_no_context (tests.test_lock.EntryFailuresReleaseTheLock.test_the_browser_has_no_context)
+AssertionError: True is not false : the lock file survived a failure at 'contexts': C:\Users\soren\AppData\Local\Temp\cc-linkedin-lock-yws194lh\browser-9999.lock
+FAIL: test_the_cdp_session_fails (tests.test_lock.EntryFailuresReleaseTheLock.test_the_cdp_session_fails)
+AssertionError: True is not false : the lock file survived a failure at 'cdp-session': C:\Users\soren\AppData\Local\Temp\cc-linkedin-lock-yyynjoh2\browser-9999.lock
+Ran 15 tests in 18.039s
+FAILED (failures=6, errors=3)

@@ -26,6 +26,7 @@ import os
 import random
 import re
 import sys
+import tempfile
 import time
 
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout, Error as PWError
@@ -87,51 +88,98 @@ def close_file_dialogs(where):
 # ---------------------------------------------------------------- the lock
 
 class BrowserLock(object):
-    """One run per Chrome. A second run waits (up to `wait` seconds) and says so."""
+    """One run per Chrome. A second run waits (up to `wait` seconds) and says so.
+
+    RULING R3.3, 2026-09-09. The sentinel is written to a temporary file and then
+    LINKED into place, so the file at `self.path` is complete the instant it
+    exists. os.link is atomic and fails if the destination is already there,
+    which is exactly the claim being made: I have the lock, and here is who I am.
+
+    That matters because of what it makes possible. Before this, the sentinel was
+    created empty and then written, so a crash in between left a file that parsed
+    as `{}`, carried no pid, was never classified as dead, and was therefore never
+    reclaimed by anything: every later session on this machine waited fifteen
+    minutes, gave up, and left it in place for the next one. Now that a partial
+    sentinel cannot exist, a lock file that will not parse is a BROKEN LOCK and
+    is taken over, with a log line saying so.
+
+    Deliberately NOT a grace period. Reclaiming on a timer would let a second run
+    steal the lock from a healthy holder that was merely slow, which is worse
+    than the bug being fixed.
+    """
 
     def __init__(self, port, wait=900):
         os.makedirs(STATE_DIR, exist_ok=True)
         self.path = os.path.join(STATE_DIR, "browser-%d.lock" % port)
         self.wait = wait
-        self.fd = None
 
     def _holder(self):
+        """(holder, why it is unreadable). A lock we cannot read is broken."""
         try:
             with open(self.path, encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return {}
+                raw = f.read()
+        except OSError as exc:
+            return None, "it cannot be opened (%s)" % str(exc).splitlines()[0][:60]
+        try:
+            holder = json.loads(raw)
+        except ValueError:
+            return None, "it does not parse as JSON (%r)" % raw[:60]
+        if not isinstance(holder, dict) or not holder.get("pid"):
+            return None, "it names no process (%r)" % raw[:60]
+        return holder, None
+
+    def _sentinel(self):
+        """A complete lock record in a temporary file, ready to be linked in."""
+        fd, tmp = tempfile.mkstemp(prefix="browser-lock-", dir=STATE_DIR)
+        try:
+            os.write(fd, json.dumps({"pid": os.getpid(), "argv": sys.argv[1:4],
+                                     "since": time.strftime("%Y-%m-%d %H:%M:%S")}).encode())
+        finally:
+            os.close(fd)
+        return tmp
 
     def __enter__(self):
         deadline = time.time() + self.wait
         told = False
-        while True:
-            try:
-                self.fd = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-                os.write(self.fd, json.dumps({"pid": os.getpid(), "argv": sys.argv[1:4],
-                                              "since": time.strftime("%Y-%m-%d %H:%M:%S")}).encode())
-                os.close(self.fd)
-                return self
-            except FileExistsError:
-                holder = self._holder()
-                pid = holder.get("pid")
-                if pid and not _pid_alive(pid):
-                    log("browser lock held by dead pid %s; taking it over" % pid)
-                    os.remove(self.path)
-                    continue
-                if not told:
-                    log("waiting for the browser: another run holds it (pid %s since %s, %s)"
-                        % (pid, holder.get("since"), " ".join(holder.get("argv", []))))
-                    told = True
-                if time.time() > deadline:
-                    die("gave up waiting for the browser after %ds; pid %s still holds it" % (self.wait, pid))
-                time.sleep(3)
+        tmp = self._sentinel()
+        try:
+            while True:
+                try:
+                    os.link(tmp, self.path)
+                    return self
+                except FileExistsError:
+                    holder, unreadable = self._holder()
+                    if unreadable:
+                        log("browser lock at %s is BROKEN: %s. A lock record is written whole or "
+                            "not at all, so this one cannot be a healthy holder; taking it over."
+                            % (self.path, unreadable))
+                        _discard(self.path)
+                        continue
+                    pid = holder.get("pid")
+                    if not _pid_alive(pid):
+                        log("browser lock held by dead pid %s; taking it over" % pid)
+                        _discard(self.path)
+                        continue
+                    if not told:
+                        log("waiting for the browser: another run holds it (pid %s since %s, %s)"
+                            % (pid, holder.get("since"), " ".join(holder.get("argv", []))))
+                        told = True
+                    if time.time() > deadline:
+                        die("gave up waiting for the browser after %ds; pid %s still holds it"
+                            % (self.wait, pid))
+                    time.sleep(3)
+        finally:
+            _discard(tmp)
 
     def __exit__(self, *exc):
-        try:
-            os.remove(self.path)
-        except OSError:
-            pass
+        _discard(self.path)
+
+
+def _discard(path):
+    try:
+        os.remove(path)
+    except OSError:
+        pass
 
 
 def _pid_alive(pid):
@@ -249,40 +297,81 @@ class Browser(object):
     def __init__(self, port=9224):
         self.port = port
         self._pw = None
+        self._locked = False
         self.browser = None
         self.page = None
         self.lock = BrowserLock(port)
 
     def __enter__(self):
+        """RULING R3.1, 2026-09-09. TWO THINGS ABOUT THE ORDER HERE.
+
+        The lock is taken as LATE as it can be: starting Playwright is local work
+        that touches no Chrome, so it happens outside the lock and a failure there
+        never reaches it. Attaching over CDP is the first step that must be
+        exclusive - two Playwright clients on one Chrome block each other's
+        navigations - so the lock is taken immediately before that and not before.
+
+        And the whole of the rest is wrapped, catching BaseException so that a
+        KeyboardInterrupt counts, because if __enter__ does not RETURN then the
+        `with` statement never begins and there is no __exit__ to clean up after
+        it. Every fallible step below - the attach, contexts[0], the CDP session,
+        the createTarget timeout - used to leave the lock file behind and wedge
+        every other session on this machine for fifteen minutes at a time.
+        """
         if open_file_dialogs():
             die("a native 'Open' file dialog is already on screen; close it first")
-        self.lock.__enter__()
         self._pw = sync_playwright().start()
         try:
-            self.browser = self._pw.chromium.connect_over_cdp("http://localhost:%d" % self.port, timeout=15000)
-        except PWError as exc:
-            self.lock.__exit__(None, None, None)
-            die("no Chrome is listening on port %d (%s). Start the signed-in profile first, "
-                "e.g. bh-profiles.ps1 up cencon" % (self.port, str(exc).splitlines()[0]))
-        ctx = self.browser.contexts[0]
-        root = self.browser.new_browser_cdp_session()
-        with ctx.expect_page(timeout=15000) as opened:
-            root.send("Target.createTarget", {"url": "about:blank", "background": True})
-        self.page = opened.value
-        return self
+            self.lock.__enter__()
+            self._locked = True
+            try:
+                self.browser = self._pw.chromium.connect_over_cdp(
+                    "http://localhost:%d" % self.port, timeout=15000)
+            except PWError as exc:
+                die("no Chrome is listening on port %d (%s). Start the signed-in profile first, "
+                    "e.g. bh-profiles.ps1 up cencon" % (self.port, str(exc).splitlines()[0]))
+            if not self.browser.contexts:
+                die("Chrome on port %d has no browser context to open a tab in" % self.port)
+            ctx = self.browser.contexts[0]
+            root = self.browser.new_browser_cdp_session()
+            with ctx.expect_page(timeout=15000) as opened:
+                root.send("Target.createTarget", {"url": "about:blank", "background": True})
+            self.page = opened.value
+            return self
+        except BaseException:
+            self._teardown()
+            raise
 
     def __exit__(self, *exc):
+        """R3.2 and R3.4. The release sits in the innermost `finally` of
+        _teardown, so nothing fallible can come between the last statement and
+        it - _pw.stop() raising used to skip the release on the very next line.
+        The native-dialog check and its die() run AFTER the lock is already
+        gone, never before it."""
         try:
-            if self.page and not self.page.is_closed():
-                self.page.close()
+            self._teardown()
         finally:
+            spawned = close_file_dialogs("the run")
+        if spawned:
+            die("a native 'Open' file dialog was spawned during the run; cancelled it")
+
+    def _teardown(self):
+        """Close what is open and RELEASE THE LOCK, whatever happens on the way."""
+        try:
             try:
-                self.browser.close()
+                if self.page is not None and not self.page.is_closed():
+                    self.page.close()
             finally:
-                self._pw.stop()
+                try:
+                    if self.browser is not None:
+                        self.browser.close()
+                finally:
+                    if self._pw is not None:
+                        self._pw.stop()
+        finally:
+            if self._locked:
                 self.lock.__exit__(None, None, None)
-                if close_file_dialogs("the run"):
-                    die("a native 'Open' file dialog was spawned during the run; cancelled it")
+                self._locked = False
 
     # -- helpers every verb uses --------------------------------------------
 
