@@ -87,7 +87,16 @@ def main():
                 f.write("\n".join(after) + "\n")
 
     if a.check and dirty:
-        print("FAIL %d dump(s) still carry identifiers the redactor knows how to remove." % dirty)
+        # THE MESSAGE NAMES BOTH RULES, because this pass now applies two and
+        # they mean very different things. A line the redactor changed is an
+        # IDENTIFIER in a public repository; a line only the cap changed is one
+        # too long for a person to read, which is a review problem and not a
+        # leak. Saying "identifiers" for both would have this check crying wolf
+        # on its own formatting rule - and a check that overstates what it found
+        # is one people stop believing.
+        print("FAIL %d dump(s) would change: either they carry an identifier the redactor "
+              "knows how to remove, or they carry a line longer than SAFE_LINE_LIMIT. The "
+              "lines are listed above; run this without --check to apply both." % dirty)
         sys.exit(1)
     print("RESULT redact-surveys files=%d changed=%d" % (len(paths), dirty))
 

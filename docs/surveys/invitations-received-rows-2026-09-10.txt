@@ -214,7 +214,7 @@
   [1] button[aria-label^="Ignore"]
 
 == JS PROBES ==
-  (() => { const acc=[...document.querySelectorAll("button[aria-label^=\"Accept\"]")]; return acc.slice(0,6).map((b,i)=>{ let row=b, person=null; for(let up=0;up<10&&row;up++){row=row.parentElement; if(!row)break; const p=row.querySelector("a[href*=\"/in/\"]"); if(p){person=p;break;}} const t=row?(row.innerText||""):""; return {i:i, label:b.getAttribute("aria-label"), profile:person?person.getAttribute("href"):null, rowText:t.replace(/\s+/g," ").trim().slice(0,300), timeEls:[...(row?row.querySelectorAll("time"):[])].map(e=>({dt:e.getAttribute("datetime"), t:(e.innerText||"").trim()})), rowTagChain: row?row.tagName+"."+(row.className||"").slice(0,60):null}; }); })()
+  (() => { const acc=[...document.querySelectorAll("button[aria-label^=\"Accept\"]")]; return acc.slice(0,6).map((b,i)=>{ let row=b, person=null; for(let up=0;up<10&&row;up++){row=row.parentElement; if(!row)break; const p=row.querySelector("a[href*=\"/in/\"]"); if(p){person=p;break;}} const t=row?(row.innerText||""):""; return {i:i, label:b.getAttribute("aria-label"), profile:person?person.getAttribute("href"):null, rowText:t.replace(/\s+/g," ").trim().slice(0,300), timeEls:[...(row?row.querySelectorAll("time"):[])].map(e=>({dt:e.getAttribute("datetime"), t:(e.innerText||"").trim()})), rowTagC... <truncated 73 chars; the whole line is in the unredacted dump>
     [
      {
       "i": 0,

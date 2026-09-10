@@ -137,7 +137,7 @@
   [6] input[role="combobox"]
 
 == JS PROBES ==
-  (() => [...document.querySelectorAll("[role=dialog],[aria-modal=true],dialog")].map(d=>({tag:d.tagName, role:d.getAttribute("role"), label:d.getAttribute("aria-label"), text:(d.innerText||"").replace(/\s+/g," ").trim().slice(0,500), inputs:[...d.querySelectorAll("input")].map(i=>({type:i.type, role:i.getAttribute("role"), label:i.getAttribute("aria-label"), cls:(i.className||"").slice(0,40)})), buttons:[...d.querySelectorAll("button")].map(b=>({text:(b.innerText||"").replace(/\s+/g," ").trim().slice(0,40), aria:b.getAttribute("aria-label"), disabled:b.disabled})).slice(0,15), options:d.querySelectorAll("[role=option]").length})))()
+  (() => [...document.querySelectorAll("[role=dialog],[aria-modal=true],dialog")].map(d=>({tag:d.tagName, role:d.getAttribute("role"), label:d.getAttribute("aria-label"), text:(d.innerText||"").replace(/\s+/g," ").trim().slice(0,500), inputs:[...d.querySelectorAll("input")].map(i=>({type:i.type, role:i.getAttribute("role"), label:i.getAttribute("aria-label"), cls:(i.className||"").slice(0,40)})), buttons:[...d.querySelectorAll("button")].map(b=>({text:(b.innerText||"").replace(/\s+/g," ").trim().slice(0,40), aria:b.getAttribute("aria-label"), disabled:b.disabled})).slice(0,15), options:d.query... <truncated 41 chars; the whole line is in the unredacted dump>
     [
      {
       "tag": "DIV",
