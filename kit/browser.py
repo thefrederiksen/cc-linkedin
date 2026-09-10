@@ -267,7 +267,18 @@ class Pace(object):
 
     def before_view(self, what="page"):
         """One view = one profile, one company page, or one page of search
-        results. Refuses over the daily cap; never touches the outbound clock."""
+        results. Refuses over the daily cap; never touches the outbound clock.
+
+        Every view REGISTERS ITSELF here, by name - ruling R7, 2026-09-09. The
+        selftest used to compare the day's view counter against EXPECTED_VIEWS,
+        a hand-set constant, which made the test its own oracle: retuning the
+        constant made a view-count failure pass, and nothing executable derived
+        the number independently. The constant is gone. What the run believes it
+        viewed is this list; what the pacing file recorded is the counter; and
+        they are compared to each other. A disagreement means either the pacing
+        is wrong or the registry is, and both deserve a red run.
+        """
+        _VIEWS.append({"what": what, "counted": False})
         data = self._load()
         n = data.get(time.strftime("%Y-%m-%d"), {}).get("view", 0)
         if n >= self.VIEW_CAP:
@@ -280,6 +291,8 @@ class Pace(object):
         day["view"] = day.get("view", 0) + 1
         data["last_view"] = time.time()
         self._save(data)
+        if _VIEWS:
+            _VIEWS[-1]["counted"] = True
 
     def _wait(self, last, span, what):
         gap = random.uniform(span[0], span[1])
@@ -287,6 +300,40 @@ class Pace(object):
         if wait > 0:
             log("pacing: %.0fs before the next %s" % (wait, what))
             time.sleep(wait)
+
+
+# ---------------------------------------------------------------- what we viewed
+
+# This process's own record of every view it took, in order. Appended to by
+# Pace.before_view and marked counted by Pace.after_view. It is deliberately
+# process-level rather than per-Pace: a run makes several Pace objects and the
+# question "what did this run view" is about the run.
+_VIEWS = []
+
+
+def views_taken():
+    """The views this process registered and completed, in order."""
+    return [v for v in _VIEWS if v["counted"]]
+
+
+def views_registered():
+    """Every view this process began, completed or not."""
+    return list(_VIEWS)
+
+
+def open_tabs(port):
+    """The URLs of the pages this Chrome has open.
+
+    Read from the DevTools endpoint over localhost - NOT by attaching a second
+    Playwright client, which is the very thing the browser lock exists to
+    prevent, and NOT by opening a tab of our own to count tabs with. Raises if
+    it cannot read; a tab census that cannot be taken is a broken instrument and
+    the caller must fail on it rather than report a tidy zero.
+    """
+    import urllib.request
+    with urllib.request.urlopen("http://localhost:%d/json/list" % port, timeout=8) as r:
+        targets = json.loads(r.read().decode("utf-8"))
+    return [t.get("url", "") for t in targets if t.get("type") == "page"]
 
 
 # ---------------------------------------------------------------- the tab

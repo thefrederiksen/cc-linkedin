@@ -1,0 +1,13 @@
+R8 and R11, watched failing against kit/selftest.py at 47d836b (before the fix).
+Driven directly, so the symptom is visible rather than only the assertion:
+
+OLD: headline = accepted, value='' -> that comparison asserts nothing
+OLD: name     = accepted, value='' -> that comparison asserts nothing
+OLD: location = accepted, value='' -> that comparison asserts nothing
+OLD: company  = accepted, value='' -> that comparison asserts nothing
+OLD: the headline sub-check with headline= against 'Chief Marmalade Offi' -> True
+OLD: every([]) -> True (a row that checked nothing passed)
+
+The fifth line is the whole finding: `"" .lower() in head.lower()` is true for
+every headline there is, so a human-oracle row reported its headline sub-check
+passed while asserting nothing at all.

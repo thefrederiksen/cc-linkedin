@@ -117,6 +117,23 @@ def _expect(spec, flag):
                  (" and does not know " + ", ".join(unknown)) if unknown else "",
                  EXPECT_SYNTAX), flush=True)
         sys.exit(1)
+    # RULING R8. An empty value is a supplied key that asserts nothing. The
+    # inspection proved it on `headline=`: the comparison is a substring test,
+    # and "" is in every string, so the row reported its headline sub-check
+    # passed for any wrong headline at all. The whole point of these rows is that
+    # a person looked at the screen and wrote down what it said; an empty value
+    # means they did not, and the row must say so rather than quietly agreeing
+    # with itself. Unknown keys already failed; empty ones fail the same way.
+    empty = [k for k in EXPECT_KEYS if not got[k]]
+    if empty:
+        print("FAIL %s: %s given with no value. An empty expectation asserts nothing - "
+              "%s would have compared the record against the empty string and passed on "
+              "anything. Write down what the page actually says, or say none where the "
+              "syntax allows it. %s"
+              % (flag, ", ".join("%s=" % k for k in empty),
+                 "the headline check" if "headline" in empty else "that comparison",
+                 EXPECT_SYNTAX), flush=True)
+        sys.exit(1)
     if got["can_connect"].lower() not in ("yes", "no", "none"):
         print("FAIL %s: can_connect reads %r; it is yes, no, or none."
               % (flag, got["can_connect"]), flush=True)
@@ -276,13 +293,32 @@ def _run(name, fn, **kw):
 
 
 def every(subs):
-    """All of these sub-checks passed. Each failure is printed with the value
-    that failed it, because a row that says only "FAILED" sends the next reader
-    back to the browser to find out what it saw."""
+    """All of these sub-checks passed, AND there was at least one of them.
+
+    Each failure is printed with the value that failed it, because a row that
+    says only "FAILED" sends the next reader back to the browser to find out
+    what it saw.
+
+    RULING R11. `all()` over an empty sequence is true, so a row that examined
+    nothing used to report that everything it examined was fine. That is the
+    phase's own zero-rows rule - a read that comes back empty is a failure,
+    never a result - applied to the instrument instead of to the verbs.
+    """
+    subs = list(subs)
+    if not subs:
+        print("        - nothing was checked: a row that examines no sub-checks passes "
+              "because it looked at nothing, which is not a pass", flush=True)
+        return False
     bad = [s for s in subs if not s[1]]
     for name, _, detail in bad:
         print("        - %s: %s" % (name, detail), flush=True)
     return not bad
+
+
+def all_of(subs, at_least_one):
+    """`all(...)` paired with the cardinality assertion R11 requires, as one
+    value. `at_least_one` is the count that makes the `all` mean something."""
+    return bool(at_least_one) and all(subs)
 
 
 def _records(out):
