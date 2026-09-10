@@ -337,3 +337,53 @@ better, because R1 now requires reading the post's identity off the landed page
 rather than from a copied link. If the clipboard route survives at all, its
 side effect is documented in the verb's help text. "Read-only" is a promise
 about the user's world, not only about LinkedIn.
+
+---
+
+## R3.3 AMENDED, 2026-09-10 - a failure to read is not a reading of failure
+
+R3.3 as written said "a lock file that will not parse is a broken lock and is
+reclaimed". The live-proving Manager stopped before spending a single view to
+report that the implementation of it is **fail-open on Windows**, and it is
+right, and the fault is in the ruling.
+
+`_holder()` treats "the file could not be OPENED" identically to "the file was
+read and its record does not parse". On Windows both a transient `Errno 13`
+while a delete is pending and an `Errno 2` for a lock released a moment ago are
+ordinary. So a run logs `lock is BROKEN ... taking it over` and discards a
+LIVE holder's lock. R15's own forty-thread test loses an increment on almost
+every run, and `PermissionError` escapes `__enter__`, which catches only
+`FileExistsError`. It reproduces at HEAD, so it is not a consequence of tonight's
+work.
+
+**Where my reasoning went wrong.** The atomic write-then-rename earns the right
+to trust CONTENT: a file that exists has complete bytes, so bytes that do not
+parse mean a genuinely broken record. It earns NOTHING about a failure to open.
+I carried the conclusion across from one to the other in a single sentence and
+did not notice.
+
+**Amended:**
+
+1. **"Broken" means the file was opened AND read AND its content is not a valid
+   record.** That, and only that, is reclaimable.
+2. **A failure to OPEN is not evidence about the content.** Retry a bounded
+   number of times with a short backoff. If it persists, treat the lock as HELD
+   and wait. **Fail closed.**
+3. Acquisition handles every `OSError`, not only `FileExistsError`.
+4. The log line names which of the two cases it saw. Today it announces a
+   healthy lock as broken, which is how somebody would come to distrust the
+   correct message later.
+
+**Why this outranks every verb in the phase**, and why it is fixed before any
+run: the lock is what stops two Playwright clients driving one Chrome, and the
+machine it can wedge is the one running the fleet and posting the owner's video
+series each morning. A safety mechanism that can steal from a healthy holder is
+worse than the collisions it was built to prevent.
+
+**The pattern, named because it is now three in one night.** A redactor that
+knew eight identifier forms and lost to the ninth. A leak test that could not
+catch the leak it had itself reintroduced. And a lock that reads "I could not
+look" as "there is nothing there". Each one converts an absence of evidence into
+evidence of absence, and each one was invisible until something tried to make it
+fail. This one was mine, written into a ruling while I was busy naming the same
+defect in other people's code.
