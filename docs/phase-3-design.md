@@ -1,5 +1,12 @@
 # Phase 3 design: reaching people
 
+> **AMENDED 2026-09-10. READ `docs/phase-3-amendments.md` FIRST.** The survey
+> measured these surfaces and contradicted this document SIX times, including
+> the invite control's identity, what `read-inbox` can return at all, and how
+> `withdraw` is activated. Where the amendments and this text disagree, the
+> amendments win. This document was written before anything was measured -
+> the correct order, but it makes the text below a hypothesis.
+
 The Architect's settled design, written 2026-09-09 while Phase 2 is under
 inspection. The Manager builds THIS. Where it is silent, decide and write down
 what you decided. Where the live page contradicts it, say so and the Architect
