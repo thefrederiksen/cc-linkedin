@@ -213,7 +213,7 @@
 
 == PROBES ==
   [10] div[role="listitem"]
-  [14] div[role="listitem"] p a[href*="/in/"]
+  [14] div[role="listitem"] p a[href*="/in/<slug>"]
   [23] div[id^="SearchResults"]
 
 == DOM OUTLINE of div[role="list"] (403 nodes, depth<=30) ==
@@ -278,7 +278,7 @@
                     div.b0d70e28._93e2ccf0  data-display-contents=true
                       div._175f6c4b._845acbad._5909bdef._93e2ccf0
                         div.b0d70e28._93e2ccf0  data-display-contents=true
-                          a.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=35>" href=/preload/search-custom-invite/?vanityName=soren-frederiksen-1b740b42
+                          a.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=35>" href=/preload/search-custom-invite/?vanityName=<value>
                             span.dc0cb4c2.be9bc2bf._704ac4e0._25f92bae._6ec7d740.a67ed751
                               svg#connect-small._95106a6a.c234c48b._4daf6ec6._2a907666._5a61b66c._8a2f3f8a  data-supported-dps=16x16 data-token-id=414
                               div.f21fdc59.f255c433.c1768806
@@ -324,7 +324,7 @@
                     div.b0d70e28._93e2ccf0  data-display-contents=true
                       div._175f6c4b._845acbad._5909bdef._93e2ccf0
                         div.b0d70e28._93e2ccf0  data-display-contents=true
-                          a.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=35>" href=/preload/search-custom-invite/?vanityName=sfredk
+                          a.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=35>" href=/preload/search-custom-invite/?vanityName=<value>
                             span.dc0cb4c2.be9bc2bf._704ac4e0._25f92bae._6ec7d740.a67ed751
                               svg#connect-small._95106a6a.c234c48b._4daf6ec6._2a907666._5a61b66c._8a2f3f8a  data-supported-dps=16x16 data-token-id=414
                               div.f21fdc59.f255c433.c1768806
@@ -371,7 +371,7 @@
                     div.b0d70e28._93e2ccf0  data-display-contents=true
                       div._175f6c4b._845acbad._5909bdef._93e2ccf0
                         div.b0d70e28._93e2ccf0  data-display-contents=true
-                          a.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=39>" href=/preload/search-custom-invite/?vanityName=s\xf8ren-lau-frederiksen-6aa1b329
+                          a.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=39>" href=/preload/search-custom-invite/?vanityName=<value>
                             span.dc0cb4c2.be9bc2bf._704ac4e0._25f92bae._6ec7d740.a67ed751
                               svg#connect-small._95106a6a.c234c48b._4daf6ec6._2a907666._5a61b66c._8a2f3f8a  data-supported-dps=16x16 data-token-id=414
                               div.f21fdc59.f255c433.c1768806
@@ -530,7 +530,7 @@
                     div.b0d70e28._93e2ccf0  data-display-contents=true
                       div._175f6c4b._845acbad._5909bdef._93e2ccf0
                         div.b0d70e28._93e2ccf0  data-display-contents=true
-                          a.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=35>" href=/preload/search-custom-invite/?vanityName=s\xf8ren-frederiksen-29647a52
+                          a.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=35>" href=/preload/search-custom-invite/?vanityName=<value>
                             span.dc0cb4c2.be9bc2bf._704ac4e0._25f92bae._6ec7d740.a67ed751
                               svg#connect-small._95106a6a.c234c48b._4daf6ec6._2a907666._5a61b66c._8a2f3f8a  data-supported-dps=16x16 data-token-id=414
                               div.f21fdc59.f255c433.c1768806
@@ -568,7 +568,7 @@
                     div.b0d70e28._93e2ccf0  data-display-contents=true
                       div._175f6c4b._845acbad._5909bdef._93e2ccf0
                         div.b0d70e28._93e2ccf0  data-display-contents=true
-                          a.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=40>" href=/preload/search-custom-invite/?vanityName=sorenb
+                          a.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=40>" href=/preload/search-custom-invite/?vanityName=<value>
                             span.dc0cb4c2.be9bc2bf._704ac4e0._25f92bae._6ec7d740.a67ed751
                               svg#connect-small._95106a6a.c234c48b._4daf6ec6._2a907666._5a61b66c._8a2f3f8a  data-supported-dps=16x16 data-token-id=414
                               div.f21fdc59.f255c433.c1768806

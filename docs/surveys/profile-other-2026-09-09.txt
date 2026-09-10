@@ -1037,7 +1037,7 @@
                               p._9cb3f17d.af1ff144._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
                                 span  "<redacted len=41>"
               div.a9b72b69._347e609e.aa06aed8._25f92bae.b6c5c0ee.dc5ae5ea
-                a._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  href=https://www.linkedin.com/search/results/people/?origin=MEMBER_PROFILE_CANNED_SEARCH&connectionOf=["<memberid>"
+                a._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  href=https://www.linkedin.com/search/results/people/?origin=MEMBER_PROFILE_CANNED_SEARCH&connectionOf=<value>"<memberid>"
                   p._9cb3f17d.af1ff144._704ac4e0._84ce356b._7094a4ce.f21fdc59  "<redacted len=16>"
               a._5909bdef._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01  href=https://www.linkedin.com/search/results/people/?origin=MEMBER_PROFILE_CANNED_SEARCH&network=%5B%22F%22%5D&conn
                 div._704ac4e0.a9b72b69._347e609e.aa06aed8._25f92bae.b6c5c0ee

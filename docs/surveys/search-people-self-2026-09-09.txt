@@ -106,7 +106,7 @@
 
 == PROBES ==
   [1] div[role="listitem"]
-  [1] div[role="listitem"] p a[href*="/in/"]
+  [1] div[role="listitem"] p a[href*="/in/<slug>"]
 
 == DOM OUTLINE of div[role="list"] (36 nodes, depth<=30) ==
   div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee  role=list
