@@ -3,10 +3,16 @@
 Kept current by the Architect. A fresh Manager needs THIS file, `MISSION.md`,
 `phase-2-design.md`, and `cc-devthrottle workflow instructions mission`. Nothing
 else. Not a transcript, not a history. For the Phase 2 FIX pass, add
-`docs/findings-from-live-use-2026-09-09.md` and `docs/phase-2-fixes.md`.
+`docs/findings-from-live-use-2026-09-09.md` and `docs/phase-2-fixes.md`. For the
+INSPECTION fix pass and everything after it, add
+`docs/rulings-inspection-2026-09-09.md` (R1 to R18, what was built) and
+`docs/inspection-fixes.md` (what was done and, in section 4, what is not
+proven).
 
-Last updated: 2026-09-09, 20:30, by the Manager of the Phase 2 fix pass
-(both defects fixed and pushed; verification blocked on the daily view cap).
+Last updated: 2026-09-09 night, by the Manager of the inspection fix pass
+(R1 to R18 built, tested offline and pushed; NOTHING proved on the live site -
+the daily view cap was exhausted for the whole pass and no LinkedIn page was
+opened).
 
 ## Where the work is
 
@@ -31,12 +37,18 @@ rather than trusted.
 | Survey | done - `tools/survey.py`, eight dumps in `docs/surveys/`, redacted |
 | Modules | done - `kit/people.py`, `kit/search.py`, `kit/account.py` |
 | Selftest block | done, then rebuilt by the fix pass - see below |
-| Independent inspection | **NEVER HAPPENED - see below. Do not record it as done.** |
 | Hand-driving the live site | done by the Architect; it found what the suite could not |
-| Phase 2 fix pass | **code done and pushed; proof unfinished - THIS is the open work** |
+| Phase 2 fix pass | code done and pushed |
+| Independent inspection, four passes | done - Codex, 2026-09-09 night |
+| Inspection fix pass, R1 to R18 | **code done, tested offline, pushed. `docs/inspection-fixes.md`** |
+| Live proof of any of it | **NOT STARTED - this is the open work** |
 | Pull request | not opened - the Architect lands it |
 
-### The independent inspection has NOT been done
+### The independent inspection has NOT been done - SUPERSEDED, kept for the record
+
+*This section describes the state on the afternoon of 2026-09-09 and is left
+here because the reason it says what it says is worth keeping. It was overtaken
+that night: see the section immediately after it. Do not act on this one.*
 
 `docs/inspection-phase-2-brief.md` exists and is the mandate. No inspector ever
 read it. Two Codex sessions were spawned for it (`af3d4f12`, `3aced9e2`); both
@@ -114,30 +126,67 @@ Read section 6 of that file before trusting any of it.
 
 ### WHAT REMAINS - a fresh Manager can finish this from cold
 
-Nothing of the fix is left to build. Four things, in this order:
+**Everything the inspection rulings called for is BUILT, committed and pushed.**
+R1 to R18 except R14, which is the owner's. The account is
+`docs/inspection-fixes.md` and its section 4 - what is NOT proven - is the part
+to read first. The fix Manager was told not to start the live runs even if the
+cap had rolled by the time it finished, so it did not.
 
-1. **Watch revert 2 fail.** In `kit/people.py`, put the OLD positional employer
-   read back - the headline and employer as the first and second surviving
-   visible paragraph of the whole top card - run the suite against the
-   `--menu-profile` fixture, and confirm `current.company` comes back as the
-   bare connections count (the symptom is the profile's own connections count
-   sitting in `current.company`) and that
+WHAT IS LEFT IS PROVING IT ON THE LIVE SITE. Nothing has run against LinkedIn:
+not one verb, not one selftest row. In this order:
+
+1. **Read `docs/inspection-fixes.md` section 4 first.** Three things in it will
+   change what a live run looks like and you should not discover them as
+   surprises:
+   * `search-posts --resolve` may come back 0-of-3 resolved with P2-6b RED. R1
+    asks for a survey of what identity a landed post page states, and that survey
+    needs the live site, so it was not done. The code REFUSES to infer a urn from
+    a URL and prints a census of what the page did carry. **That census is the
+    survey result.** Read it, take it to the Architect, and only then decide
+    whether the resolver needs another source.
+   * A clean run is no longer `passed=25`. Rows are renamed and reconciled: 29
+     declared rows, plus one per leftover Page post the sweep finds.
+     `RESULT selftest ... rows=N/M` carries the denominator now.
+   * `--page` and `--page-name` are now REQUIRED and an empty expectation value
+     (`headline=`) now fails the run.
+2. **Watch revert 2 fail** - unchanged from before, and still the one revert
+   never observed. In `kit/people.py`, put the OLD positional employer read back
+   (headline and employer as the first and second surviving visible paragraph of
+   the whole top card), run the suite against the `--menu-profile` fixture, and
+   confirm `current.company` comes back as the bare connections count and that
    P2-10 and P2-2b go RED on `current.company is not a count` and on the
    `company=none` correspondence. Then `git checkout -- kit/people.py` and
-   confirm the tree is clean. Revert 1 has already been watched failing with
-   its exact symptom; `docs/phase-2-fixes.md` section 5 records what was seen
-   and is the model for writing this one up.
-2. **Re-observe revert 1's search controls.** That run crossed the view cap
+   confirm the tree is clean. `docs/phase-2-fixes.md` section 5 is the model for
+   writing it up.
+3. **Re-observe revert 1's search controls.** That run crossed the view cap
    mid-way, so P2-5, P2-6 and P2-9 failed on the cap rather than staying green.
    The P2-10 half of the proof stands; this half does not.
-3. **Three consecutive clean runs**, `passed=25 failed=0`, nothing left behind.
-   One such run of the final build exists (ended 20:05, 2026-09-09); it does not
-   count towards the three unless the Architect says so.
 4. **Implement the `view` / `view_self` split** that
-   `docs/ruling-view-cap-2026-09-09.md` calls for, since that ruling hands it to
-   whoever picks up the next Phase 2 task. Do it BEFORE the three clean runs, so
-   the runs that count are runs of the code that ships - and see the note on
-   `EXPECTED_VIEWS` at the end of this section before touching that constant.
+   `docs/ruling-view-cap-2026-09-09.md` calls for. Do it BEFORE the runs that
+   count, so the runs that count are runs of the code that ships. **The warning
+   that used to sit here about retuning `EXPECTED_VIEWS` no longer applies:
+   ruling R7 DELETED that constant.** Every view registers itself by name and
+   P2-9 compares the pacing file's delta against that registry, so the split
+   changes what the registry records and nothing has to be re-derived by hand.
+   There is a test (`tests/test_selftest_rules.py`) asserting no module-level
+   integer has quietly taken the constant's place; do not add one.
+5. **Three consecutive clean runs**, `failed=0` and `rows=N/N`, nothing left
+   behind. Earlier clean runs do not count: they were runs of different code.
+
+### Before you run anything, run the offline tests
+
+There were none in this repository before 2026-09-09 night. There are 122 now
+and they take about two seconds:
+
+```
+py -3.11 -m unittest discover -s tests -t . -v
+py -3.11 tools/redact_surveys.py --check
+```
+
+They need no browser and no network. If any of them is red, the live run will
+tell you less than the test just did. `tests/test_no_leak.py` is the one that
+matters most: this repository is PUBLIC and that test asserts no committed
+survey dump carries a LinkedIn content id.
 
 ### The fixtures - SHAPES only, values passed at run time and NEVER committed
 

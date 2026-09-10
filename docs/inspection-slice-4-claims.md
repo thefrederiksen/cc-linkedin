@@ -1,8 +1,8 @@
 # Inspection slice 4: claims, safety, and what leaked
 
 Independent static inspection updated through committed HEAD
-`782885c3838fae855683d6a2f324ddce3ba0e62a` on 2026-09-09. I did not open
-LinkedIn or run a verb. I inspected the current 58-file tracked tree and all 47
+`a5fb8ff57d03c7e693ddabd932cb8c05cea968b5` on 2026-09-09. I did not open
+LinkedIn or run a verb. I inspected the current 62-file tracked tree and all 48
 commits reachable from the local refs. Per the brief, I
 did not assess the URN resolver, `kit/selftest.py`, or the read verbs' extraction
 logic; I did inspect their side effects and the claims made about them.
@@ -10,6 +10,10 @@ logic; I did inspect their side effects and the claims made about them.
 R15 was committed while this review was being updated. Section 1 therefore
 audits the reservation/atomic-write implementation now at HEAD, not the earlier
 unlocked implementation that first triggered the ruling.
+
+Follow-on R4/R5 commits touched `kit/account.py` and `kit/people.py`; I rechecked
+their click surfaces and claim-relevant ordering only. Their extraction logic
+remains outside this slice.
 
 No Python interpreter was available (`py -3.11` returned exit 112), so I did
 not execute the new unit tests. The Git/history sweeps and positive controls in
@@ -138,7 +142,7 @@ two shapes absent, not that the tree contains no third-party identifiers.
 
 ### What I did not find
 
-Apart from that company ID, in the current 58 tracked files I found no
+Apart from that company ID, in the current 62 tracked files I found no
 unredacted third-party `/in/` slug, `ACoA...` member ID, email address,
 LinkedIn-style `@handle`, personal name, headline, real message body, real
 invitation note, resolvable short link, or real post/content ID. The only
@@ -157,7 +161,7 @@ target.
 
 All eight survey files were introduced together in commit
 `1173f451a8dd2633a4fd0ac21e840f15cb86c30d`; the later R13/R17/R18 commits
-redact those same files in place. No commit in the current 47-commit reachable
+redact those same files in place. No commit in the current 48-commit reachable
 history contains an earlier dump with the reported ten raw profile URLs. This
 supports `docs/phase-2-report.md:183-187`'s specific claim that the first pass was
 caught before commit.
@@ -177,7 +181,7 @@ button names.
 
 | Verb | PROVED local/browser action | Externally visible possibility |
 |---|---|---|
-| `read-profile` | Navigates to the requested profile; may click only the top-card More menu and About expansion (`kit/people.py:408-431`, `463-482`). | The accepted mission explicitly says other-profile reads leave the ordinary “viewed your profile” trace (`docs/MISSION.md:41-44`). I did not independently exercise that platform effect. |
+| `read-profile` | Navigates to the requested profile; may click only the top-card More menu and About expansion (`kit/people.py:452-475`, `547-566`). | The accepted mission explicitly says other-profile reads leave the ordinary “viewed your profile” trace (`docs/MISSION.md:41-44`). I did not independently exercise that platform effect. |
 | `read-company` | Navigation and DOM reads; no direct write control found. | Server-side access logging is inherent. No person-facing effect is established here. |
 | `search-people` | Navigation and DOM reads; no direct write control found. | No person-facing effect is established here. |
 | `search-posts` | Grants permissions, saves readable clipboard text, opens each card menu, clears/replaces the clipboard, then attempts restoration and permission reset (`kit/search.py:195-300`, `320-338`). Optional resolving adds post navigations. | Readable text is restored on the success path. Non-text/unreadable content and restore/reset failures are reported but do not fail the command. Whether loads count an impression is SUSPECTED. |
@@ -283,6 +287,10 @@ happened; the committed evidence does not let another reader verify them.
 
 ### Accepted slice-4 ruling status - PROVED
 
+* R4's identity/body requirements now match current code: the landed company
+  key is checked before the range is driven or stats DOM is read, and empty or
+  short table bodies fail. This does not change the separate literal
+  “header before any cell is read” discrepancy above.
 * R13/R17/R18: implemented at tip for the headline, short links, long content
   IDs, organization/article/job/map paths, plus positive artifact checks. The
   original objects remain in reachable public history, and the shorter company
@@ -311,7 +319,7 @@ profile URLs was not committed. The current tip is substantially cleaner than
 the inspected tip, but reachable public history still contains the leaked data
 and one third-party company ID remains in the new leak test. “Read-only” is now
 honest in CLI help but still conditional in implementation and broad README
-language. The pending pacing code makes cap reservations cross-process safe for
+language. R15 makes cap reservations cross-process safe for
 a valid, stable-date file; gaps, malformed state, midnight, and timezone changes
 remain fail-open. Several facts labelled MEASURED are still not reproducible
 from the committed evidence.
