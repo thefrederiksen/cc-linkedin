@@ -45,13 +45,13 @@ There is no check here for the LinkedIn host, `/posts/` path, terminal `-kind-id
 Given this final `page.url`:
 
 ```text
-https://www.linkedin.com/posts/example_topic-share-7503446054340755456-987654321?quoted=urn:li:activity:7409603631332831232
+https://www.linkedin.com/posts/example_topic-share-7000000000000000001-987654321?quoted=urn:li:activity:7000000000000000002
 ```
 
-the terminal path shape names `urn:li:share:7503446054340755456`, but `ACTIVITY.search(dest)` runs first and finds the query value. The emitted result is therefore:
+the terminal path shape names `urn:li:share:7000000000000000001`, but `ACTIVITY.search(dest)` runs first and finds the query value. The emitted result is therefore:
 
 ```text
-https://www.linkedin.com/feed/update/urn:li:activity:7409603631332831232/
+https://www.linkedin.com/feed/update/urn:li:activity:7000000000000000002/
 ```
 
 That is a well-formed permalink for B derived from a URL whose `/posts/` path names A. `resolve_error` remains null and `resolved` is incremented. This is a deterministic counterexample to correspondence; whether LinkedIn currently emits an unescaped quoted-URN query parameter is not established by this repository.
@@ -61,10 +61,10 @@ That is a well-formed permalink for B derived from a URL whose `/posts/` path na
 Given:
 
 ```text
-https://www.linkedin.com/posts/example-activity-7409603631332831232_topic-share-7503446054340755456-987654321
+https://www.linkedin.com/posts/example-activity-7000000000000000002_topic-share-7000000000000000001-987654321
 ```
 
-there is no full URN, so `POSTS_PATH.search(dest)` returns the **first** match, `-activity-7409603631332831232`. It never reaches the terminal `-share-7503446054340755456-987654321`. It again emits B while the prescribed terminal path shape names A.
+there is no full URN, so `POSTS_PATH.search(dest)` returns the **first** match, `-activity-7000000000000000002`. It never reaches the terminal `-share-7000000000000000001-987654321`. It again emits B while the prescribed terminal path shape names A.
 
 A bare numeric run in the slug or words does **not** break this regex by itself: it must occur in a `-activity-<digits>`, `-share-<digits>`, or `-ugcPost-<digits>` motif. The all-digit trailing hash `987654321` also does not by itself confuse the capture; the preceding hyphen ends `\d+`. These are useful controls, but neither rescues the unanchored first-match parser. The regex also fails to require a hyphen or end-of-string after the digits, so even `-share-123abc` is accepted as share `123`.
 
@@ -133,3 +133,28 @@ The bad value is precise and plausible, so downstream validation does not contai
 **Proved:** the parser admits the two wrong-target counterexamples above, does not validate the landing, reports ambiguous extraction as success, and downstream code/tests do not compare the target with the originating result.
 
 **Suspected, not proved here:** current LinkedIn redirects may expose nested post URLs or quoted URNs in query parameters; current slug generation may produce an earlier kind-plus-digits motif; and repost/document/newsletter/video/article URL IDs may have semantics that differ from the assumed `URN_KIND` mapping. Those require live examples or authoritative fixtures, neither of which was available without violating the no-LinkedIn instruction.
+
+---
+
+## Redaction note, added by the Architect after this review was written
+
+**Two post identifiers in this review were real.** The inspector built its
+counterexamples on ids lifted from `docs/surveys/search-posts-2026-09-09.txt`,
+which at the time still carried them, and this repository is PUBLIC. They have
+been replaced with `7000000000000000001` and `7000000000000000002` - same shape,
+same digit count, same behaviour under every regex discussed above, belonging to
+nobody.
+
+Nothing else was changed. No finding, wording, severity or confidence has been
+touched, and the counterexamples work exactly as the inspector wrote them.
+
+Editing an independent inspector's own review is not something to do quietly, so
+it is recorded here rather than done silently: the alternative was leaving two
+real people's posts identifiable in a public repository, and a review that had
+to be sanitised is worth less than a person's post staying private.
+
+The same ids being here at all is the finding one level down. The redactor had
+been taught the `urn:li:share:<id>` form and these ids also appear as bare
+`shareId=<id>` inside a DOM element name, so they survived the first pass. That
+is why the rule is now a SHAPE rule - every run of 15 or more digits, whatever
+surrounds it - rather than another list of known forms.
