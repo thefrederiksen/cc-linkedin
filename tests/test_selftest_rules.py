@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from kit import selftest as T
 
 GOOD = ("name=A Person; headline=some words; location=Toronto, Ontario, Canada; "
-        "company=Acme; degree=2nd; primary=Message; can_connect=yes; connections=205")
+        "company=Acme; degree=2nd; primary=Message; can_connect=yes; connections=418")
 
 
 class AnEmptyExpectationIsAFailure(unittest.TestCase):
@@ -25,7 +25,7 @@ class AnEmptyExpectationIsAFailure(unittest.TestCase):
     def test_a_good_expectation_parses(self):
         got = T._expect(GOOD, "--other-expect")
         self.assertEqual(got["name"], "A Person")
-        self.assertEqual(got["connections"], "205")
+        self.assertEqual(got["connections"], "418")
 
     def test_an_empty_headline_is_refused(self):
         with self.assertRaises(SystemExit):

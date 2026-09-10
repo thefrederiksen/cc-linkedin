@@ -301,7 +301,7 @@
                     span.label-16dp  aria-label="<redacted len=36>"  "<redacted len=7>"
                     h4.t-14.t-black--light.t-bold.mr1.mt1  "Headquarters"
                     p.t-14.t-black--light.t-normal.break-words  "<redacted len=22>"
-                    a#ember62.ember-view.mt2.t-14.t-black.t-bold  href=https://www.bing.com/maps?where=Toronto%2C%20ON%20M6S2J8%2C%20CA
+                    a#ember62.ember-view.mt2.t-14.t-black.t-bold  href=<map url>
                       span.link-without-visited-state  "<redacted len=14>"
                       span.visually-hidden  "<redacted len=40>"
                       svg.link-without-visited-state.v-align-middle.ml1  role=none data-supported-dps=16x16 data-test-icon=link-external-small

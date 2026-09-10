@@ -1,10 +1,17 @@
 # Inspection slice 4: claims, safety, and what leaked
 
-Independent static inspection of `47d836b47dd1a02bedb78a83fbbd4a697c179b02`
-on 2026-09-09. I did not open LinkedIn or run a verb. I inspected the current
-tracked tree and all 34 commits reachable from the local refs. Per the brief, I
+Independent static inspection updated through committed HEAD
+`1efa02df27470e29b1fba88099d3f6adde8e1e4b` on 2026-09-09. I did not open
+LinkedIn or run a verb. I inspected the current tracked tree and all 38 commits
+reachable from the local refs. Per the brief, I
 did not assess the URN resolver, `kit/selftest.py`, or the read verbs' extraction
 logic; I did inspect their side effects and the claims made about them.
+
+At the final read, another session had uncommitted edits in `kit/browser.py` and
+`kit/selftest.py`. I did not modify them. The `browser.py` delta registers views
+for the self-test; it does not lock or atomically save `pace.json`, so the pacing
+findings apply to both committed HEAD and that worktree delta. All other findings
+below are stated against committed HEAD.
 
 `PROVED` means the result follows from committed code, artifacts, or Git
 history. `SUSPECTED` means the code creates the opportunity but the external
@@ -16,23 +23,22 @@ effect was not observed here.
 |---:|---|---|---|
 | 1 | HIGH - outbound caps can be exceeded while the file says they were obeyed | PROVED | `pace.json` has an unlocked, non-atomic check/action/account sequence and fails open on read or write damage. |
 | 2 | HIGH - a public repository can identify people and content that were meant to be anonymous | PROVED | The redactor removed profile slugs and names but left a distinctive third-party headline, organization/content URLs, post IDs/URNs, a job ID, and an address. |
-| 3 | HIGH - an accepted operational-safety ruling is not in the implementation | PROVED | The current browser lock still has every defect accepted in inspection ruling R3: early acquisition, non-atomic contents, and release paths that fallible cleanup can skip. |
-| 4 | MEDIUM - a command advertised as read-only overwrites user state and changes browser permissions | PROVED | `search-posts` clears/replaces the system clipboard and grants clipboard permissions to the default browser context without resetting them. |
-| 5 | MEDIUM - “MEASURED” and ruling language is stronger than its evidence or code | PROVED | The renderer classifier demonstrably mislabels classic pages; repeated-load and fixture claims have no committed repeat evidence; `share_url` and signed-in invariants are not enforced as claimed. |
-| 6 | MEDIUM - some reads can be visible to other people or counted by LinkedIn | PROVED navigation; external result partly SUSPECTED | `read-profile` deliberately opens another person's profile, which the accepted design says leaves a “viewed your profile” trace. Notification-seen and content-impression effects were not measured. |
+| 3 | MEDIUM - a command advertised as read-only overwrites user state and changes browser permissions | PROVED | `search-posts` clears/replaces the system clipboard and grants clipboard permissions to the default browser context without resetting them. |
+| 4 | MEDIUM - “MEASURED” and ruling language is stronger than its evidence or code | PROVED | The renderer classifier demonstrably mislabels classic pages; repeated-load and fixture claims have no committed repeat evidence; `share_url` and signed-in invariants are not enforced as claimed. |
+| 5 | MEDIUM - some reads can be visible to other people or counted by LinkedIn | PROVED navigation; external result partly SUSPECTED | `read-profile` deliberately opens another person's profile, which the accepted design says leaves a “viewed your profile” trace. Notification-seen and content-impression effects were not measured. |
 
 ## 1. `pace.json` is not a cross-process safety boundary - PROVED
 
 `Pace` says its file makes caps hold “across sessions and agents”
-(`kit/browser.py:152-159`). It does not provide that property.
+(`kit/browser.py:200-207`). It does not provide that property.
 
 ### Two writers
 
-`before()` loads and checks (`kit/browser.py:202-209`), the caller performs the
+`before()` loads and checks (`kit/browser.py:250-257`), the caller performs the
 external action, and `after()` separately reloads, increments, and saves
-(`kit/browser.py:211-216`). There is no reservation, file lock, compare-and-swap,
+(`kit/browser.py:259-264`). There is no reservation, file lock, compare-and-swap,
 or atomic update. `_save()` truncates the live file and writes JSON directly
-(`kit/browser.py:187-192`).
+(`kit/browser.py:235-240`).
 
 Concrete interleaving at a comment count of 59:
 
@@ -46,8 +52,8 @@ on an old snapshot after B saved a comment increment. `last_outbound` and
 `last_view` are subject to the same lost-update race, so spacing can fail too.
 
 The per-browser lock is only an incidental partial defence. `BrowserLock` is
-keyed by CDP port (`kit/browser.py:89-95`) and is held around a normal `Browser`
-run (`kit/browser.py:246-283`). Two cooperative commands on the same port are
+keyed by CDP port (`kit/browser.py:90-114`) and is held around a normal `Browser`
+run (`kit/browser.py:294-374`). Two cooperative commands on the same port are
 serialized. Different ports have different locks while all `Pace` instances use
 the same `pace.json`; a direct/out-of-band writer is also outside that lock.
 Nothing in `Pace` itself serializes its global file.
@@ -59,14 +65,14 @@ is sleeping; the first does not recheck before acting.
 ### Crash and damaged-file cases
 
 The outbound callers perform the real action before `Pace.after()`
-(`kit/comments.py:285-287`, `303-305`, `332-345`). Profile/company/search
+(`kit/comments.py:319-321`, `337-339`, `366-379`). Profile/company/search
 navigations likewise occur between `before_view()` and `after_view()`. A crash,
 timeout, process kill, or exception in that interval leaves a real action or
 view uncounted. Restarting can repeat it without encountering the cap.
 
 A crash or competing write after the `"w"` open can leave `pace.json` empty or
 partial. `_load()` catches every exception and returns `{}`
-(`kit/browser.py:180-185`), treating corruption, permission failure, and missing
+(`kit/browser.py:228-233`), treating corruption, permission failure, and missing
 data alike as a clean zero. The next successful `after()` overwrites the damaged
 file with reset counters. This is a fail-open safety instrument.
 
@@ -79,7 +85,7 @@ no timezone is recorded.
   happens after the action.
 * If midnight falls after `after()` creates yesterday's bucket but before
   `_save()` recomputes `today`, `_save()` deletes the increment it is about to
-  persist as an old key (`kit/browser.py:188-190`).
+  persist as an old key (`kit/browser.py:236-238`).
 * A wait can cross midnight without another cap check on the day in which the
   action actually occurs.
 * Moving the OS clock/timezone forward produces a new empty date bucket early
@@ -103,7 +109,8 @@ first profile-URL leak was caught before commit is supported by Git history.
 |---|---|---|
 | `docs/phase-2-fixes.md:36-45`, `205-216` | Profile D's distinctive HR/job-search headline plus 205 connections, identified as a measured third-party profile | This is prose outside the survey redactor. It directly contradicts the file's lines 10-13. |
 | `kit/search.py:38-42` | Three exact `lnkd.in` post short links copied from three measured cards | The links are handwritten into a module docstring. Following one can recover the content and author. |
-| `kit/search.py:68-74` and `docs/inspection-slice-1-urn.md:48-67` | Exact measured post IDs in `share`/`ugcPost` URL shapes | The IDs were retained as examples and later copied into inspection evidence. |
+| `kit/search.py:75-79` and `docs/inspection-slice-1-urn.md:48-67` | Exact measured post IDs in `share`/`ugcPost` URL shapes | The IDs were retained as examples and later copied into inspection evidence. |
+| `tests/test_identity.py:20-45`, `89-103` and `docs/evidence/watched-failing-identity.txt:4-20` | The same real measured post IDs copied into regression fixtures and watched-failure output | These new copies arrived after the first inspection pass; redacting only the original prose would leave the identifiers at the tip. |
 | `docs/surveys/search-posts-2026-09-09.txt:381-400`, `495`, `732-737`, `797-825`, `887-918` | Organization slugs, three encoded `lnkd.in` links, a job ID, article paths, and a quoted-post URN | Query-value redaction hides selected parameters, not identifiers embedded inside a parameter or path. |
 | `docs/surveys/notifications-2026-09-09.txt:492-497`, `552-588` | Numeric organization IDs, event post URNs, and an identifying article slug | Company/content paths are outside the three redacted identifier forms. |
 | `docs/surveys/stats-2026-09-09.txt:3-4`, `244-269`, `573-586` | The administered Page ID and its exact post/activity identifiers | These appear to be owner/project fixtures rather than third-party data, but the “safe dump” still preserves stable identifiers. |
@@ -124,7 +131,7 @@ to the hidden content and actors.
 
 ### What I did not find
 
-In the current 40 tracked files I found no unredacted third-party `/in/` slug,
+In the current 48 tracked files I found no unredacted third-party `/in/` slug,
 `ACoA...` member ID, email address, LinkedIn-style `@handle`, personal name, real
 message body, or real invitation note. The only concrete profile URL is the
 owner's; `/in/someone/` and ellipses are examples. Candidate capitalized
@@ -144,7 +151,8 @@ All eight current survey files were introduced together in commit
 `1173f451a8dd2633a4fd0ac21e840f15cb86c30d`; no other reachable commit changes
 `docs/surveys` or `tools/survey.py`. The current dumps use `<slug>`, `<memberid>`,
 and `<value>` where those three patterns apply. Thus, in the 34-commit local
-reachable history, there is no committed earlier dump containing the reported
+reachable history at the first inspection point—and still in the current
+38-commit history—there is no committed earlier dump containing the reported
 ten profile URLs. This supports `docs/phase-2-report.md:183-187`'s specific claim
 that the first pass was caught before commit.
 
@@ -165,7 +173,7 @@ button names.
 | `read-profile` | Navigates to the requested profile; may click only the top-card More menu and About expansion (`kit/people.py:357-380`, `420-431`). | The accepted mission explicitly says other-profile reads leave the ordinary “viewed your profile” trace (`docs/MISSION.md:41-44`). I did not independently exercise that platform effect. |
 | `read-company` | Navigation and DOM reads; no direct write control found. | Server-side access logging is inherent. No person-facing effect is established here. |
 | `search-people` | Navigation and DOM reads; no direct write control found. | No person-facing effect is established here. |
-| `search-posts` | Grants permissions, clears the clipboard, opens each card menu, clicks “Copy link to post,” and reads the clipboard (`kit/search.py:177-219`). Optional resolving adds post navigations. | Clipboard loss is direct. Whether search/result/post loads count an impression is SUSPECTED; the repository supplies no network or before/after measurement. |
+| `search-posts` | Grants permissions, clears the clipboard, opens each card menu, clicks “Copy link to post,” and reads the clipboard (`kit/search.py:192-242`). Optional resolving adds post navigations. | Clipboard loss is direct. Whether search/result/post loads count an impression is SUSPECTED; the repository supplies no network or before/after measurement. |
 | `notifications` | Navigates and evaluates card DOM; it does not click a card (`kit/account.py:93-130`). The captured post-load DOM still contains two `nt-card--unread` cards (`docs/surveys/notifications-2026-09-09.txt:188-210`, `242`). | Marking a page/card as “seen,” clearing a badge, or sending a server acknowledgement on load remains SUSPECTED. A single after-load dump is not a before/after or network trace. |
 | `stats` | Opens the range control, selects a preset, and can press the first page-global visible button named Update (`kit/account.py:225-278`). | No social write is shown. Persistence of the selected analytics range/account preference is SUSPECTED and unmeasured. |
 
@@ -177,14 +185,14 @@ the commands do not alter state or create an externally visible trace.
 
 `search-posts` sends `Browser.grantPermissions` for the LinkedIn origin with
 `clipboardReadWrite` and `clipboardSanitizedWrite`, without a
-`browserContextId` (`kit/search.py:211-219`). In the Chrome DevTools Protocol,
+`browserContextId` (`kit/search.py:234-242`). In the Chrome DevTools Protocol,
 omitting that ID targets the default browser context; the command grants the
 listed permissions and rejects the others for the origin. Permission reset is
 a separate `Browser.resetPermissions` operation. See the official
 [CDP Browser domain](https://chromedevtools.github.io/devtools-protocol/tot/Browser/).
 
 The code never sends that reset. It attaches to an existing browser's default
-context (`kit/browser.py:246-280`), closes the created page, and disconnects; it
+context (`kit/browser.py:294-374`), closes the created page, and disconnects; it
 does not terminate the signed-in Chrome process or destroy its default context.
 The permission override is therefore left in that context for later work. This
 inspection does not establish survival across a full Chrome restart.
@@ -236,12 +244,12 @@ happened; the committed evidence does not let another reader verify them.
   `docs/rulings-phase-2.md:25-29`), and the ruling requires every row to have a
   non-empty author and `share_url` (`docs/rulings-phase-2.md:43-49`). Production
   code emits `author: None` and/or `share_url: None` per row and fails only when
-  every row lacks a share URL (`kit/search.py:234-245`). The self-test ruling is
+  every row lacks a share URL (`kit/search.py:257-269`). The self-test ruling is
   outside this slice; the production/output claim is still false.
 * `assert_signed_in` claims its matching button is the global navigation's
-  identity control and exists only when signed in (`kit/browser.py:297-313`),
+  identity control and exists only when signed in (`kit/browser.py:386-402`),
   but the locator is page-global and not scoped to a navigation element
-  (`kit/browser.py:315-322`). Any visible role=button with the same accessible
+  (`kit/browser.py:404-411`). Any visible role=button with the same accessible
   name satisfies it. The phase report itself says the broken-selector test
   proved only that the guard fires, not that an authwall lacks the assumed
   control (`docs/phase-2-report.md:172-175`).
@@ -252,13 +260,24 @@ happened; the committed evidence does not let another reader verify them.
   or reporting rows, and both header and cells come from the same table, so the
   intended wrong-table protection exists. The literal “before any cell is read”
   claim does not.
-* The accepted inspection ruling R3 requires last/exception-safe lock
-  acquisition and release plus atomic lock-file creation. Current code acquires
-  the lock before Playwright/CDP setup (`kit/browser.py:256-270`), writes the
-  lock body directly after `O_EXCL` (`kit/browser.py:105-114`), treats unreadable
-  contents as `{}` and waits (`kit/browser.py:98-128`), and can skip release if
-  cleanup raises (`kit/browser.py:274-285`). The ruling is accepted but not
-  implemented at this revision.
+* Accepted inspection ruling R3 now matches committed code. `BrowserLock`
+  prepares a complete sentinel and atomically links it into place, and treats an
+  unreadable sentinel as broken (`kit/browser.py:116-175`). `Browser.__enter__`
+  starts local Playwright work before taking the lock and tears down on every
+  `BaseException` (`kit/browser.py:305-343`); `_teardown()` releases in its outer
+  `finally` (`kit/browser.py:345-374`). This clears the R3 mismatch present at
+  the original inspection point. It does not lock `pace.json`; the locks solve
+  different problems.
+
+### Newly accepted slice-4 rulings are not yet implemented - PROVED
+
+Committed HEAD adds R13 (redact the leak), R15 (make pace read-modify-write
+mutually excluded and atomic), and R16 (restore the clipboard and reset its
+permission) at `docs/rulings-inspection-2026-09-09.md:245-339`. It changes only
+the report and ruling document relative to the preceding R3 commit. The leaked
+values remain at the locations catalogued above; `Pace` remains unchanged; and
+`search-posts` still clears the clipboard, grants permission, and never restores
+either. These rulings are accepted decisions, not current implementation.
 
 ### Claims with direct support found
 

@@ -16,10 +16,16 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from kit import identity as I
 
-# The real post the URL is about, in both hand-built cases below.
-REAL = "urn:li:share:7503446054340755456"
+# The post the URL is about, in both hand-built cases below.
+#
+# THE IDS HERE ARE FABRICATED, deliberately. The inspection's own write-up used
+# three ids measured off real cards; this repository is PUBLIC and a post id is a
+# stable lookup key to a real person's post, so nothing here reuses them (ruling
+# R13). The defect is about the SHAPE of the string, and a made-up id has the
+# same shape.
+REAL = "urn:li:share:7000000000000000111"
 # The other post, whose id is loose in the string where the parser can find it.
-OTHER = "urn:li:activity:7409603631332831232"
+OTHER = "urn:li:activity:7000000000000000222"
 
 
 class ResolveFromTheLandedPage(unittest.TestCase):
@@ -27,7 +33,7 @@ class ResolveFromTheLandedPage(unittest.TestCase):
 
     def test_a_urn_in_a_query_parameter_does_not_beat_the_page(self):
         # inspection-slice-1, "Concrete breaking input 1".
-        dest = ("https://www.linkedin.com/posts/example_topic-share-7503446054340755456"
+        dest = ("https://www.linkedin.com/posts/example_topic-share-7000000000000000111"
                 "-987654321?quoted=" + OTHER)
         urn, err = I.resolve_post_identity(dest, [REAL])
         self.assertIsNone(err, err)
@@ -35,14 +41,14 @@ class ResolveFromTheLandedPage(unittest.TestCase):
 
     def test_an_earlier_motif_in_the_slug_does_not_beat_the_page(self):
         # inspection-slice-1, "Concrete breaking input 2".
-        dest = ("https://www.linkedin.com/posts/example-activity-7409603631332831232"
-                "_topic-share-7503446054340755456-987654321")
+        dest = ("https://www.linkedin.com/posts/example-activity-7000000000000000222"
+                "_topic-share-7000000000000000111-987654321")
         urn, err = I.resolve_post_identity(dest, [REAL])
         self.assertIsNone(err, err)
         self.assertEqual(urn, REAL)
 
     def test_a_page_that_states_no_identity_is_not_resolved(self):
-        dest = "https://www.linkedin.com/posts/example_topic-share-7503446054340755456-987654321"
+        dest = "https://www.linkedin.com/posts/example_topic-share-7000000000000000111-987654321"
         urn, err = I.resolve_post_identity(dest, [])
         self.assertIsNone(urn)
         self.assertIn("stated no identity", err)
@@ -86,11 +92,11 @@ class ResolveFromTheLandedPage(unittest.TestCase):
         self.assertIsNone(urn)
 
     def test_a_clean_post_url_agreeing_with_the_page_resolves(self):
-        dest = ("https://www.linkedin.com/posts/somebody_some-words-share-7495007268124495872"
+        dest = ("https://www.linkedin.com/posts/somebody_some-words-share-7000000000000000333"
                 "-AbCd?utm_source=share")
-        urn, err = I.resolve_post_identity(dest, ["urn:li:share:7495007268124495872"])
+        urn, err = I.resolve_post_identity(dest, ["urn:li:share:7000000000000000333"])
         self.assertIsNone(err, err)
-        self.assertEqual(urn, "urn:li:share:7495007268124495872")
+        self.assertEqual(urn, "urn:li:share:7000000000000000333")
 
     def test_a_feed_update_url_agreeing_with_the_page_resolves(self):
         dest = "https://www.linkedin.com/feed/update/%s/" % REAL
@@ -100,7 +106,7 @@ class ResolveFromTheLandedPage(unittest.TestCase):
 
     def test_a_login_wall_carrying_the_post_in_its_query_resolves_to_nothing(self):
         dest = ("https://www.linkedin.com/uas/login?session_redirect="
-                "%2Fposts%2Fexample-share-7503446054340755456-abcd")
+                "%2Fposts%2Fexample-share-7000000000000000111-abcd")
         urn, err = I.resolve_post_identity(dest, [])
         self.assertIsNone(urn)
 

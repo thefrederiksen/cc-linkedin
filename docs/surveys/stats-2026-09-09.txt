@@ -570,7 +570,7 @@
                           div#ember124.ember-view
                 tbody.org-update-engagement-table__table-body--high-height
                     td#row-0.org-update-engagement-table__table-cell.display-flex.justify-center.flex-column
-                      a#org-update-engagement-table__table-cell-title-link-0.ember-view.link-without-visited-state  href=/company/107519091/admin/post-analytics/urn:li:activity:7503499656291622912/
+                      a#org-update-engagement-table__table-cell-title-link-0.ember-view.link-without-visited-state  href=/company/107519091/admin/post-analytics/urn:li:activity:<id>/
                         div#ember126.ember-view.lt-line-clamp.lt-line-clamp--multi-line.break-words  "<redacted len=119>"
                       div.display-flex.mt1.org-update-engagement-table__metadata-row
                         span.mr1  "Posted by"

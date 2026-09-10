@@ -185,6 +185,18 @@ claim.
   `href` and `aria-label` went through whole. Caught before anything was
   committed; the redactor now covers attributes and header lines, and all eight
   dumps were retaken.
+
+  **AND THAT FIX WAS NARROWER THAN THIS PARAGRAPH READS.** Added 2026-09-09
+  night, under ruling R13. Retaking the dumps fixed the specific
+  profile-slug/member-id/query leak and nothing else: the redactor still knew
+  only those three forms, so organisation slugs and numeric ids, post and event
+  urns, a job id, article paths, three shortened post links and a precise
+  postal-code map URL all went into the committed dumps and stayed there. The
+  fourth independent inspection pass found them
+  (`docs/inspection-slice-4-claims.md` section 2). `tools/survey.py` has been
+  taught those forms and `tools/redact_surveys.py` applies them to the committed
+  dumps; `--check` proves a dump is clean. A near miss that gets written up as
+  caught is how the next reader stops looking.
 * The first full selftest scored 32 passed / 1 failed, and the one failure was
   row P2-3 behaving correctly - the refusal was counted once as a failed step
   and once as a passed check.
@@ -198,7 +210,10 @@ claim.
 ## Files
 
 * `tools/survey.py` and the eight dumps under `docs/surveys/` - the measurement
-  the selectors were written from, redacted for a public repository.
+  the selectors were written from, with the identifier forms listed in
+  `tools/survey.py` redacted. Not "safe": redacted of the forms it knows, which
+  is a narrower claim and the true one. `tools/redact_surveys.py --check` says
+  whether a dump still carries one of them.
 * `kit/people.py`, `kit/search.py`, `kit/account.py` - the six verbs.
 * `kit/selectors.py` - every new selector with the date it was measured, and the
   member-analytics trap as a dated negative note.

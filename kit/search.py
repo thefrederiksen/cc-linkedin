@@ -37,9 +37,12 @@ CONTENT SEARCH - AND WHY THERE IS NO PERMALINK
     INSIDE a card, not to the card itself. a[href*="urn:li:activity"] counts 0.
   * The card's control menu does offer "Copy link to post". It is a menuitem
     with no href: it writes to the clipboard. Read back through granted
-    clipboard permission, for three consecutive cards, it returned
-    https://lnkd.in/p/gb95KeRa, https://lnkd.in/p/gJm39pjw and
-    https://lnkd.in/p/gSCBypgw. A shortener. No activity id anywhere in it.
+    clipboard permission, for three consecutive cards, it returned three
+    distinct https://lnkd.in/p/<8 characters> links. A shortener. No activity id
+    anywhere in it. The three exact links were written out here until 2026-09-09
+    and have been taken out: this repository is PUBLIC, and following one of them
+    recovers the post and its author. The SHAPE is the measured fact; the code is
+    somebody's post (ruling R13).
   * The document that renders the page does embed six activity urns, one per
     card. They cannot be attached to a card with confidence: the per-card DOM
     token (div#expanded<token>FeedType_FLAGSHIP_SEARCH) either appears in the

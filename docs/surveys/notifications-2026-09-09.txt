@@ -489,12 +489,12 @@
                   article.nt-card.nt-card--with-hover-states  aria-label="<redacted len=12>" data-nt-card-index=6 data-view-name=notification-card-container
                     div.nt-card__container.align-items-center
                       div.nt-card__left-rail
-                        a  aria-label="<redacted len=20>" href=/company/37553728 data-view-name=notification-card-image
+                        a  aria-label="<redacted len=20>" href=/company/<company> data-view-name=notification-card-image
                           div.ivm-image-view-model
                             div.ivm-view-attr__img-wrapper
                               img#ember89.ivm-view-attr__img--centered.EntityPhoto-square-3.evi-image.lazy-image.ember-view
                       div.display-flex.flex-column.flex-grow-1.mr2
-                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/video/event/urn:li:ugcPost:7503224046847729665
+                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/video/event/urn:li:ugcPost:<id>
                           span.nt-card__text--3-line
                             span  "<redacted len=119>"
                               strong  "<redacted len=15>"
@@ -549,12 +549,12 @@
                   article.nt-card.nt-card--with-hover-states  aria-label="<redacted len=12>" data-nt-card-index=8 data-view-name=notification-card-container
                     div.nt-card__container.align-items-center
                       div.nt-card__left-rail
-                        a  aria-label="<redacted len=13>" href=/company/1038 data-view-name=notification-card-image
+                        a  aria-label="<redacted len=13>" href=/company/<company> data-view-name=notification-card-image
                           div.ivm-image-view-model
                             div.ivm-view-attr__img-wrapper
                               img#ember107.ivm-view-attr__img--centered.EntityPhoto-square-3.evi-image.lazy-image.ember-view
                       div.display-flex.flex-column.flex-grow-1.mr2
-                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/video/event/urn:li:ugcPost:7503470263934652416
+                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/video/event/urn:li:ugcPost:<id>
                           span.nt-card__text--3-line
                             span  "<redacted len=119>"
                               strong  "<redacted len=8>"
@@ -585,7 +585,7 @@
                           div.ivm-view-attr__img-wrapper
                             img#ember116.ivm-view-attr__img--centered.EntityPhoto-square-3.evi-image.lazy-image.ember-view
                       div.display-flex.flex-column.flex-grow-1.mr2
-                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/pulse/chatgpt%2Dsolved%2D1%2Dmillion%2Dmath%2Dproblem%2Dgenai%2Dworks%2D1sirf
+                        a.nt-card__headline.nt-card__text--word-wrap.t-black.t-normal.text-body-small  href=/pulse/<article>
                           span.nt-card__text--3-line  "<redacted len=64>"
                             span.white-space-pre
                             strong  "<redacted len=11>"

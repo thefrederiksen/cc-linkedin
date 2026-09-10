@@ -378,7 +378,7 @@
                                 span._176c917b._93e2ccf0  "Feed post"
                               div._0e9f1760.a9b72b69._347e609e.aa06aed8._4bd14a34.b6c5c0ee
                                   div._175f6c4b._845acbad._5909bdef._93e2ccf0
-                                    a.e262696c.fb322ee5._2a5ecc3d.a795ad8a.fd291ed6.a7c0df65  href=https://www.linkedin.com/company/mindzie/
+                                    a.e262696c.fb322ee5._2a5ecc3d.a795ad8a.fd291ed6.a7c0df65  href=https://www.linkedin.com/company/<company>/
                                       figure._51bda835._4782fa6a._9de19505._7694cd9c._704ac4e0.ea6b618d
                                 div._704ac4e0.e262696c.fb322ee5.dbbefc9c._827208dc._481fafa3
                                   div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
@@ -388,7 +388,7 @@
                                       div._175f6c4b._845acbad._5909bdef.e07139b3.fd291ed6.a7c0df65
                                     div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._5575a1cd
                                       p._9cb3f17d._2bc3f589._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
-                                    a._845acbad._1d45b150._382c7b22._6b42a0cd._5a6b3e95.e8b5a029  href=https://www.linkedin.com/company/mindzie/
+                                    a._845acbad._1d45b150._382c7b22._6b42a0cd._5a6b3e95.e8b5a029  href=https://www.linkedin.com/company/<company>/
                                       div._704ac4e0._175f6c4b._691d1cb4._93e2ccf0  aria-label="<redacted len=59>"
                                 button.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=81>"
                                   span.dc0cb4c2.be9bc2bf._704ac4e0._25f92bae._6ec7d740.a67ed751
@@ -397,7 +397,7 @@
                                 span.f3e0add4._34a03237._320058e5.bb4c3e87.ea6b618d._0ddc677d  data-testid=expandable-text-box  "<redacted len=119>"
                                   span.b7a0bafa._93e2ccf0
                                   span._4b00d036._93e2ccf0
-                                    a.f255c433._550e4f00  href=https://www.linkedin.com/safety/go/?url=https%3A%2F%2Flnkd%2Ein%2FgAVcRPh4&urlhash=<value>&mt=<value>&isSdui=t
+                                    a.f255c433._550e4f00  href=https://www.linkedin.com/safety/go/?url=<value>&urlhash=<value>&mt=<value>&isSdui=t
                                       strong  "<redacted len=24>"
                                   span.b7a0bafa._93e2ccf0
                                   button._61528840.a28c5b59.c3c99690.ebe231bd.fcf7c895._01d4b4d6  data-testid=expandable-text-button
@@ -492,7 +492,7 @@
                                 button.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe
                                   span.dc0cb4c2.be9bc2bf._704ac4e0._25f92bae._6ec7d740.a67ed751
                                     span._9cb3f17d.d607a97b.dcaa7c96.f21fdc59.f255c433.c1768806  "<redacted len=16>"
-                              a.d5da413f._8960915e._382c7b22._6b42a0cd._5a6b3e95.e8b5a029  href=https://www.linkedin.com/jobs/view/4463573262/?trackingId=<value>&isJobSearch=false
+                              a.d5da413f._8960915e._382c7b22._6b42a0cd._5a6b3e95.e8b5a029  href=https://www.linkedin.com/jobs/view/<jobid>/?trackingId=<value>&isJobSearch=false
                                 div._970c3eec.a3ae5bd9._78b9637d._9045876d._3e48ce65._40a1473a
                                   div.a9b72b69._347e609e.aa06aed8._4bd14a34._130bfecf._925446d0
                                     figure._51bda835._4782fa6a._9de19505._7694cd9c.ea6b618d._23c51670
@@ -729,12 +729,12 @@
                                     a.f255c433._550e4f00  href=https://www.linkedin.com/search/results/all/?keywords=<value>&origin=HASH_TAG_FROM_FEED
                                       strong  "<redacted len=17>"
                                   button._61528840.a28c5b59.c3c99690.ebe231bd.fcf7c895._01d4b4d6  data-testid=expandable-text-button
-                              a._845acbad._69919e25._382c7b22._6b42a0cd._5a6b3e95.e8b5a029  href=https://www.linkedin.com/pulse/%E0%A6%AF%E0%A6%B0-%E0%A6%AF%E0%A7%9F-%E0%A6%B8%E0%A6%87-%E0%A6%AC%E0%A6%9D-%E0
+                              a._845acbad._69919e25._382c7b22._6b42a0cd._5a6b3e95.e8b5a029  href=https://www.linkedin.com/pulse/<article>
                                 div._704ac4e0._175f6c4b._93e2ccf0
                                   div._970c3eec.a3ae5bd9._78b9637d._9045876d._3e48ce65._40a1473a
-                                    a._69919e25._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01  href=https://www.linkedin.com/pulse/%E0%A6%AF%E0%A6%B0-%E0%A6%AF%E0%A7%9F-%E0%A6%B8%E0%A6%87-%E0%A6%AC%E0%A6%9D-%E0
+                                    a._69919e25._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01  href=https://www.linkedin.com/pulse/<article>
                                       figure._51bda835._704ac4e0.ea6b618d.ef5dd24d.f2ca19aa._93e2ccf0
-                                    a._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  href=https://www.linkedin.com/pulse/%E0%A6%AF%E0%A6%B0-%E0%A6%AF%E0%A7%9F-%E0%A6%B8%E0%A6%87-%E0%A6%AC%E0%A6%9D-%E0
+                                    a._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  href=https://www.linkedin.com/pulse/<article>
                                       div._970c3eec._704ac4e0.afc9c46f.fd4f607c._0e9f1760._47512947
                               div._0e9f1760._47512947.a9b72b69._347e609e.af62721a._25f92bae
                                 a._704ac4e0._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01  href=https://www.linkedin.com/search/results/content/?keywords=<value>
@@ -794,7 +794,7 @@
                                 span._176c917b._93e2ccf0  "Feed post"
                               div._0e9f1760.a9b72b69._347e609e.aa06aed8._4bd14a34.b6c5c0ee
                                   div._175f6c4b._845acbad._5909bdef._93e2ccf0
-                                    a.e262696c.fb322ee5._2a5ecc3d.a795ad8a.fd291ed6.a7c0df65  href=https://www.linkedin.com/company/pex-network/
+                                    a.e262696c.fb322ee5._2a5ecc3d.a795ad8a.fd291ed6.a7c0df65  href=https://www.linkedin.com/company/<company>/
                                       figure._51bda835._4782fa6a._9de19505._7694cd9c._704ac4e0.ea6b618d
                                 div._704ac4e0.e262696c.fb322ee5.dbbefc9c._827208dc._481fafa3
                                   div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
@@ -804,7 +804,7 @@
                                       div._175f6c4b._845acbad._5909bdef.e07139b3.fd291ed6.a7c0df65
                                     div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._5575a1cd
                                       p._9cb3f17d._2bc3f589._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
-                                    a._845acbad._1d45b150._382c7b22._6b42a0cd._5a6b3e95.e8b5a029  href=https://www.linkedin.com/company/pex-network/
+                                    a._845acbad._1d45b150._382c7b22._6b42a0cd._5a6b3e95.e8b5a029  href=https://www.linkedin.com/company/<company>/
                                       div._704ac4e0._175f6c4b._691d1cb4._93e2ccf0  aria-label="<redacted len=11>"
                                 button.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=41>"
                                   span.dc0cb4c2.be9bc2bf._704ac4e0._25f92bae._6ec7d740.a67ed751
@@ -812,17 +812,17 @@
                               p._9cb3f17d.af1ff144._977e2c13._904777d2._0e9f1760._47512947
                                 span.f3e0add4._34a03237._320058e5.bb4c3e87.ea6b618d._0ddc677d  data-testid=expandable-text-box  "<redacted len=120>"
                                   span._4b00d036._93e2ccf0
-                                    a.f255c433._550e4f00  href=https://www.linkedin.com/company/mindzie/
+                                    a.f255c433._550e4f00  href=https://www.linkedin.com/company/<company>/
                                   span.b7a0bafa._93e2ccf0
                                   span.b7a0bafa._93e2ccf0
                                   span._4b00d036._93e2ccf0
-                                    a.f255c433._550e4f00  href=https://www.linkedin.com/company/alibaba-cloud-computing-company/
+                                    a.f255c433._550e4f00  href=https://www.linkedin.com/company/<company>/
                                   span.b7a0bafa._93e2ccf0
                                   span._4b00d036._93e2ccf0
                                     a.f255c433._550e4f00  href=https://www.linkedin.com/in/<slug>/
                                   span.b7a0bafa._93e2ccf0
                                   span._4b00d036._93e2ccf0
-                                    a.f255c433._550e4f00  href=https://www.linkedin.com/safety/go/?url=https%3A%2F%2Flnkd%2Ein%2FeCeeH6iQ&urlhash=<value>&mt=<value>&isSdui=t
+                                    a.f255c433._550e4f00  href=https://www.linkedin.com/safety/go/?url=<value>&urlhash=<value>&mt=<value>&isSdui=t
                                       strong  "<redacted len=24>"
                                   button._61528840.a28c5b59.c3c99690.ebe231bd.fcf7c895._01d4b4d6  data-testid=expandable-text-button
                               a._845acbad._69919e25._382c7b22._6b42a0cd._5a6b3e95.e8b5a029  href=https://www.linkedin.com/search/results/content/?keywords=<value>
@@ -884,7 +884,7 @@
                                 span._176c917b._93e2ccf0  "Feed post"
                               div._0e9f1760.a9b72b69._347e609e.aa06aed8._4bd14a34.b6c5c0ee
                                   div._175f6c4b._845acbad._5909bdef._93e2ccf0
-                                    a.e262696c.fb322ee5._2a5ecc3d.a795ad8a.fd291ed6.a7c0df65  href=https://www.linkedin.com/company/mindzie/
+                                    a.e262696c.fb322ee5._2a5ecc3d.a795ad8a.fd291ed6.a7c0df65  href=https://www.linkedin.com/company/<company>/
                                       figure._51bda835._4782fa6a._9de19505._7694cd9c._704ac4e0.ea6b618d
                                 div._704ac4e0.e262696c.fb322ee5.dbbefc9c._827208dc._481fafa3
                                   div._970c3eec.a9b72b69._23bc1528.aa06aed8._55d4291a.b6c5c0ee
@@ -894,7 +894,7 @@
                                       div._175f6c4b._845acbad._5909bdef.e07139b3.fd291ed6.a7c0df65
                                     div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._5575a1cd
                                       p._9cb3f17d._2bc3f589._0cb5e7a0._320058e5.bb4c3e87.ea6b618d
-                                    a._845acbad._1d45b150._382c7b22._6b42a0cd._5a6b3e95.e8b5a029  href=https://www.linkedin.com/company/mindzie/
+                                    a._845acbad._1d45b150._382c7b22._6b42a0cd._5a6b3e95.e8b5a029  href=https://www.linkedin.com/company/<company>/
                                       div._704ac4e0._175f6c4b._691d1cb4._93e2ccf0  aria-label="<redacted len=59>"
                                 button.ad6ec31a.ec2ae639._6ec7d740.a67ed751.f255c433.bd49adbe  aria-label="<redacted len=81>"
                                   span.dc0cb4c2.be9bc2bf._704ac4e0._25f92bae._6ec7d740.a67ed751
@@ -902,7 +902,7 @@
                               p._9cb3f17d.af1ff144._977e2c13._904777d2._0e9f1760._47512947
                                 span.f3e0add4._34a03237._320058e5.bb4c3e87.ea6b618d._0ddc677d  data-testid=expandable-text-box
                                   span._4b00d036._93e2ccf0
-                                    a.f255c433._550e4f00  href=https://www.linkedin.com/safety/go/?url=https%3A%2F%2Flnkd%2Ein%2FgjneWbwr&urlhash=<value>&mt=<value>&isSdui=t
+                                    a.f255c433._550e4f00  href=https://www.linkedin.com/safety/go/?url=<value>&urlhash=<value>&mt=<value>&isSdui=t
                                       strong  "<redacted len=24>"
                               div._970c3eec.a3ae5bd9._78b9637d._9045876d._3e48ce65._40a1473a
                                 div._646eaa08._47512947.a9b72b69._347e609e.aa06aed8._4bd14a34
@@ -915,7 +915,7 @@
                                       div._481fafa3._175f6c4b._845acbad._5909bdef._5df5673d._93e2ccf0
                                       div._84ce356b._7094a4ce._6eff3ba2.bd49adbe.c040c3a6._5575a1cd
                                       a._845acbad._1d45b150._382c7b22._6b42a0cd._5a6b3e95.e8b5a029  href=https://www.linkedin.com/in/<slug>/
-                                a._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  href=https://www.linkedin.com/feed/update/urn:li:ugcPost:7426785131320852480/
+                                a._382c7b22._6b42a0cd._5a6b3e95.e8b5a029._0d3bca01._1ce84daa  href=https://www.linkedin.com/feed/update/urn:li:ugcPost:<id>/
                                   p._9cb3f17d.af1ff144._704ac4e0._977e2c13._904777d2._646eaa08
                                     span.f3e0add4._34a03237._320058e5.bb4c3e87.ea6b618d._0ddc677d  data-testid=expandable-text-box  "<redacted len=120>"
                                       span._4b00d036._93e2ccf0

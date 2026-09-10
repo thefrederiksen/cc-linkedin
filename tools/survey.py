@@ -18,12 +18,26 @@ same background tab every verb takes - and dumps what is actually there:
     and the first 120 characters of each node's own text.
 
 TWO DUMPS, ON PURPOSE. This repository is PUBLIC.
-  * --out writes the SAFE dump: every piece of page text and every accessible
-    name is emitted only if it matches the generic user-interface vocabulary
-    below; anything else becomes "<redacted len=N>". The length is what a
-    selector needs; the words are somebody's name. The safe dump is committed.
+  * --out writes the REDACTED dump, and it is the one that is committed. Every
+    piece of page text and every accessible name is emitted only if it matches
+    the generic user-interface vocabulary below; anything else becomes
+    "<redacted len=N>". The length is what a selector needs; the words are
+    somebody's name. Identifiers inside hrefs and labels are replaced by their
+    shape - see IDENTIFIERS below for exactly which forms.
   * --full-out writes everything, unredacted, for the person writing the
     selectors to read. It goes to a scratch directory and is NEVER committed.
+
+  IT IS NOT CALLED THE SAFE DUMP, AND THAT IS DELIBERATE (ruling R13.4,
+  2026-09-09). It used to be. The fourth inspection pass then found that the
+  redactor knew three forms - /in/ slugs, ACoA member ids, and a fixed list of
+  query parameters - and nothing else, so organisation slugs and numeric ids,
+  post and event urns, a job id, article paths, three shortened post links and a
+  precise postal-code map URL were all sitting in the committed dumps. The word
+  "safe" was true of the three forms it knew and false of the artefact, and a
+  name that overstates what a thing does is how the next person stops checking.
+  What it does now is REDACT THE FORMS LISTED BELOW. Anything not on that list
+  is not covered, and a new surface deserves a fresh look before its dump is
+  committed.
 
 Nothing here clicks, types, or submits. The only interaction is expanding a
 "see more" control when --expand is given, because a collapsed About section
@@ -75,24 +89,75 @@ paragraph StaticText time definition term group
 """.split())
 
 
+# ---------------------------------------------------------------- IDENTIFIERS
+#
+# THE FORMS THIS REDACTOR KNOWS. Ruling R13.2, 2026-09-09: it used to know three
+# and the committed dumps leaked the rest. Each rule keeps the SHAPE - the path,
+# the urn kind, the parameter name - because that is what a selector is written
+# against, and drops the value, because that is what identifies somebody. A
+# stable lookup key to hidden content is not anonymous just because the name
+# beside it was redacted.
+#
+# The owner's OWN Page is kept on purpose: it is public, it is in these documents
+# by intent, and a dump of his own Page's analytics that cannot say which Page it
+# is has lost the thing it was taken for.
+OWN = ("107519091", "centerconsulting-inc")
+
 SLUG = re.compile(r"(/in/)[^/?\"\s]+")
 MEMBER_ID = re.compile(r"ACoA[A-Za-z0-9_-]{8,}")
-QUERY_VALUE = re.compile(r"([?&](?:profileUrn|recipient|keywords|fsd_profile|trackingId|urlhash|mt)=)[^&\"\s]+", re.I)
+QUERY_VALUE = re.compile(
+    r"([?&](?:profileUrn|recipient|keywords|fsd_profile|trackingId|urlhash|mt|url)=)[^&\"\s]+",
+    re.I)
+# An organisation, by slug or by numeric id, on any of the paths that carry one.
+ORG_PATH = re.compile(r"(/(?:company|school|showcase|organization)/)([A-Za-z0-9._%-]+)", re.I)
+# Any urn that names a thing: a post, a share, an event, a comment, an org, a
+# profile. The KIND stays - a selector is written against urn:li:activity - and
+# the id goes.
+URN = re.compile(r"(urn:li:[A-Za-z_]+:)\(?[A-Za-z0-9%_,:.()-]+\)?")
+JOB = re.compile(r"(/jobs/view/)[A-Za-z0-9._%-]+", re.I)
+ARTICLE = re.compile(r"(/pulse/|/newsletters/|/events/|/groups/|/posts/)[^\"\s?&]+", re.I)
+# A shortened post link, plain or percent-encoded inside another URL. Following
+# one recovers the post and its author, which is exactly what a short link is
+# for and exactly why three of them had no business in a public docstring.
+SHORT_LINK = re.compile(r"lnkd(?:\.|%2E)in(?:/|%2F)[A-Za-z0-9_/%-]+", re.I)
+# A map or address URL. The one that was committed carried a postal code.
+MAP_URL = re.compile(r"https?://[^\"\s]*(?:maps|/maps/|geo/)[^\"\s]*", re.I)
 
 
-def redact_attr(value):
-    """An href or an aria-label from the safe dump: keep the SHAPE, drop the person.
+def _org(m):
+    return m.group(1) + (m.group(2) if m.group(2).lower() in OWN else "<company>")
 
-    A profile slug, a member id and a tracking parameter each name somebody. The
-    path and the parameter names are what a selector is written against, so they
-    stay; the values do not.
+
+def redact_identifiers(value):
+    """Keep the SHAPE of every identifier in this string, drop the value.
+
+    Applied to hrefs and accessible names as a survey is written, and applied to
+    the already-committed dumps in place by tools/redact_surveys.py - one
+    definition, so the dumps and any future survey are redacted by the same
+    rules rather than by two lists that drift apart.
     """
     if not value:
         return value
-    v = SLUG.sub(lambda m: m.group(1) + "<slug>", value)
+    v = MAP_URL.sub("<map url>", value)
+    # BEFORE the short-link rule, so a short link nested inside a url= parameter
+    # is taken out with the parameter rather than half-redacted inside it.
+    v = QUERY_VALUE.sub(lambda m: m.group(1) + "<value>", v)
+    v = SHORT_LINK.sub("lnkd.in/<shortlink>", v)
+    v = SLUG.sub(lambda m: m.group(1) + "<slug>", v)
     v = MEMBER_ID.sub("<memberid>", v)
+    v = ORG_PATH.sub(_org, v)
+    v = URN.sub(lambda m: m.group(1) + "<id>", v)
+    v = JOB.sub(lambda m: m.group(1) + "<jobid>", v)
+    v = ARTICLE.sub(lambda m: m.group(1) + "<article>", v)
     v = QUERY_VALUE.sub(lambda m: m.group(1) + "<value>", v)
     return v
+
+
+def redact_attr(value):
+    """An href or an aria-label from the redacted dump: keep the SHAPE, drop the
+    person. See redact_identifiers for the forms this covers - and for the ones
+    it does not, which is the part worth reading."""
+    return redact_identifiers(value)
 
 
 def redact(text):
@@ -299,7 +364,7 @@ def main():
     ap = argparse.ArgumentParser(prog="survey.py", description=__doc__.split("\n")[0])
     ap.add_argument("label")
     ap.add_argument("url")
-    ap.add_argument("--out", help="the SAFE, redacted dump - this is the one that is committed")
+    ap.add_argument("--out", help="the REDACTED dump - the one that is committed. It redacts the identifier forms listed in this file and no others; read them before committing a dump of a new surface.")
     ap.add_argument("--full-out", help="the whole dump, unredacted. Scratch only, never committed.")
     ap.add_argument("--probe", action="append", default=[], help="a candidate selector to count")
     ap.add_argument("--depth", type=int, default=14)

@@ -7,10 +7,32 @@ the Architect measured by hand and it is what this pass was sent to fix.
 Written to be read as self-testimony. The parts that are proven say how, the
 parts that are not say so, and the evidence is quoted rather than summarised.
 
-**Public repository.** No third party's name, profile URL or headline appears
-here or in the code. The six profiles measured on 2026-09-09 are lettered A to
-F; who they were is recorded nowhere, deliberately. The selftest fixtures that
-name two of them have no defaults and are passed at run time.
+**Public repository.** The six profiles measured on 2026-09-09 are lettered A to
+F; who they were is recorded nowhere, deliberately, and the selftest fixtures
+that name two of them have no defaults and are passed at run time.
+
+**THE SENTENCE THAT USED TO BE HERE WAS FALSE, AND IT WAS FALSE ABOUT THIS FILE.**
+It said that no third party's name, profile URL or headline appeared here or in
+the code. Profile D's distinctive job-search headline and its exact connections
+count were written out in prose two screens below it, and three exact `lnkd.in`
+short links were handwritten into the `kit/search.py` docstring - each of which
+recovers a real person's post and its author. The fourth independent inspection
+pass found all of it (`docs/inspection-slice-4-claims.md` section 2), and it was
+redacted on 2026-09-09 night under ruling R13.
+
+Why the claim was wrong is worth more than the correction. Its author was
+reasoning about the survey redactor, which knew three identifier forms - `/in/`
+slugs, `ACoA` member ids, and a fixed list of query parameters - and concluded
+something about the repository. Prose is not run through a redactor. Neither is
+a docstring. A statement about a tool was written down as a statement about an
+artefact, and every later reader spent their scepticism somewhere else.
+
+What is true now, stated narrowly: the identifiers listed in that inspection
+table have been removed from the tree, `tools/survey.py` has been taught the
+forms it did not know, and `tools/redact_surveys.py` re-applies those rules to
+the committed dumps and can be run with `--check` to prove they are clean. None
+of that reaches the commits already pushed to this public repository - see
+ruling R14, which is the owner's call and was deliberately not taken tonight.
 
 ---
 
@@ -37,12 +59,14 @@ person was. On profile D - no company pill, no school pill, a split count - the
 surviving run was:
 
 ```
-['Human Resources Coordinator | Open To Work | Looking for Human Resources
-  Opportunities', '205', 'connections']
+['<the profile's headline, one long line of it>', '<count>', 'connections']
 ```
 
-and paragraph 1 is `'205'`. That is how a connections count came to be reported
-as an employer. On profile B it would have reported the right company, which is
+and paragraph 1 is the bare count. That is how a connections count came to be
+reported as an employer. (The headline and the exact count were written out here
+until 2026-09-09; together they identify the person, and this repository is
+public. The measured fact is the SHAPE of that list - headline, bare count,
+the word connections - and the shape is what the defect is about. Ruling R13.) On profile B it would have reported the right company, which is
 why three clean runs saw nothing.
 
 The second defect is the same failure of identification, on the controls rather
@@ -202,8 +226,8 @@ profile D by an independent probe that reproduces the old positional code
 against the live DOM:
 
 ```
-OLD lines      : ['Human Resources Coordinator | Open To Work | ...', '205', 'connections']
-OLD current    : {'company': '205', 'line': '205'}
+OLD lines      : ['<the profile's headline>', '<count>', 'connections']
+OLD current    : {'company': '<count>', 'line': '<count>'}
 OLD conn_state : 'Message'
 ```
 
@@ -213,12 +237,12 @@ and the fixed verb on the same profile in the same minute:
 current : {'company': None,
            'company_reason': 'the top card shows no company pill, so no current
                               employer is stated on it', ...}
-can_connect: True   connect_via: 'more-menu'   connections: 205
+can_connect: True   connect_via: 'more-menu'   connections: <count>
 ```
 
 So the guard that must fire is `current.company is not a count` in P2-2b/P2-10,
-plus P2-10's `company=none` correspondence. Both are expected to go red with
-`'205'`. **Expected is not watched, and this is not proven until the revert has
+plus P2-10's `company=none` correspondence. Both are expected to go red with the
+bare connections count sitting in the employer field. **Expected is not watched, and this is not proven until the revert has
 been run.**
 
 ## 6. What is NOT proven

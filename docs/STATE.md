@@ -120,7 +120,8 @@ Nothing of the fix is left to build. Four things, in this order:
    read back - the headline and employer as the first and second surviving
    visible paragraph of the whole top card - run the suite against the
    `--menu-profile` fixture, and confirm `current.company` comes back as the
-   bare connections count (the symptom is a value like `'205'`) and that
+   bare connections count (the symptom is the profile's own connections count
+   sitting in `current.company`) and that
    P2-10 and P2-2b go RED on `current.company is not a count` and on the
    `company=none` correspondence. Then `git checkout -- kit/people.py` and
    confirm the tree is clean. Revert 1 has already been watched failing with
