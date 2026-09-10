@@ -13,7 +13,29 @@ the Add-a-note dialog and its character limit, and `Open send options` - and one
 more that fell out of the same page load: whether the messaging list can be
 reached without marking anybody's conversation read.
 
-## 0. What it cost
+## 0. STATUS, and read this before anything below
+
+**These four surfaces are MEASURED. What was built against them is on a branch,
+is not on `main`, and has never been run against a live page.**
+
+The mission was stopped mid-flight on 2026-09-10: the owner is releasing what is
+on `main` as version 1.0 and everything unbuilt becomes a GitHub issue. This
+document and its dumps are the part that lands.
+
+* **Measured here:** the custom-invite page, the Add-a-note dialog and its
+  character limit, `Open send options`, and the bare `/messaging/compose/` route
+  to the inbox list.
+* **Built against them, on branch `phase-3-reach` only:** `connect`, `message`,
+  `read-inbox`, `read-thread`, `invitations`, `follow`/`unfollow` and
+  `invite-to-follow`, with 388 offline tests. **NOT ON MAIN. NOT LIVE-PROVEN.**
+  Not one of those seven verbs has ever been run against LinkedIn - not staged,
+  not submitted, not once. `docs/phase-3-report.md` is the honest inventory of
+  what that leaves unproven.
+* **The only live contact this pass made** was five read-only page loads through
+  `tools/survey.py`. Nothing was sent: no invitation, no message, no follow, no
+  accept, no withdraw.
+
+## 0.1 What it cost
 
 Three capped views, from a day that had six left when this seat sat down. The
 counter is at 77 of 80 and the cap has not been raised and will not be. Two
