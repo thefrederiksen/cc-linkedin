@@ -4,11 +4,11 @@ Kept current by the Architect. A fresh seat needs THIS file, `MISSION.md`, the
 design document for its phase, and
 `cc-devthrottle workflow instructions mission`. Nothing else. Not a transcript.
 
-Last updated: 2026-09-10, 02:00, by the Architect.
+Last updated: 2026-09-10, 03:20, by the Architect, at the end of an overnight run.
 
 ## Where the work is
 
-* `main` is at `a7e4ae5`. Phases 0, 1 and 2 are all ON MAIN and working.
+* `main` is at `7374a5f`. Phases 0, 1 and 2 are all ON MAIN and working.
 * Worktree `D:/ReposFred/cc-linkedin.mission`, branch `phase-2-follow-up`, cut
   from main. The shared checkout `D:/ReposFred/cc-linkedin` is main and belongs
   to everybody - never build there.
@@ -32,11 +32,17 @@ Last updated: 2026-09-10, 02:00, by the Architect.
 
 ## IN PROGRESS
 
-`phase-2-follow-up`, Manager `18221982`: F1 to F4 in
-`docs/phase-2-follow-up.md`, each with a ruling already made. F1 is the one with
-safety weight - the view counter has an uncounted path, found by the Manager
-about its own work, and the Architect had done the same thing the night before
-without noticing.
+**Nothing.** No branch, no worktree, no seated Manager. Four pull requests landed
+overnight (#3 to #6) and every one is squashed onto `main`.
+
+* **#3** Phase 2, the six read verbs.
+* **#4** the Phase 2 follow-up: the uncounted view path, `view_self`, a pending
+  invitation that says so.
+* **#5** the Phase 3 survey - and a leak form that was LIVE ON MAIN: real profile
+  slugs inside `vanityName=` invite hrefs. Fixed, and the guard now imports the
+  redactor's own form lists so the two cannot drift apart again.
+* **#6** the Phase 3 design amended with what the survey measured. It was wrong
+  six times and the document says so rather than being quietly corrected.
 
 ## NEXT: Phase 3
 
@@ -48,6 +54,10 @@ Designed in full at `docs/phase-3-design.md`, not built. `connect`, `withdraw`,
 the pre-action state survived; the message composer must NEVER press Enter,
 because Enter sends and the shared `type_text` presses one per newline; and an
 irreversible act names its target twice.
+
+**Ready to build.** The surfaces are surveyed (`docs/phase-3-survey.md`, 13
+dumps) and the design is amended to match (`docs/phase-3-amendments.md`, read it
+BEFORE the design). Build against the amendments.
 
 **Blocked, and only this part:** five acceptance rows need a consenting person
 for one real connection request and one real message. The owner redirected this
