@@ -118,3 +118,78 @@ The Add-a-note limit in particular is stated on the page and must be read from
 it rather than remembered - design 4.1's "measure it and enforce what the page
 says, not what we remember" is unchanged, and now applies to a gap we know we
 have.
+
+---
+
+# A5 CORRECTED, 2026-09-10 - the assertion I wrote passes on 30 of 40 rows while nothing happened
+
+A5 said `withdraw` must assert, after activating, that the browser is still on
+the invitation manager AND the row is gone. Measured while building it, that
+first assertion is **fail-open on three quarters of the list**.
+
+**Why.** The Withdraw anchor has TWO href forms on the same page. The first ten
+rows are server-rendered and point at the feed, which is what the survey saw and
+what A5 was written against. The thirty rows that lazy-load point at **the Sent
+tab itself**. So on those thirty, a click the page's handler does not swallow
+reloads this very page - and "am I still on the invitation manager?" answers yes,
+while nothing was withdrawn.
+
+I wrote an assertion whose pass condition was satisfied by the failure it was
+meant to catch. That is the same shape as the redactor, the leak test, the lock
+and the inventory row: **the fourth and fifth fail-open instruments in three
+days**, and this one was mine.
+
+**Corrected.** The proof is:
+
+1. **The count.** The list's own People pill and the row count both drop by
+   exactly one, and the specific row is gone.
+2. **A window marker that a navigation destroys.** Set before activating and read
+   after; if the page navigated - to the feed OR back to this same tab - the
+   marker is gone and the run fails. That distinguishes "the handler ran" from
+   "the browser went somewhere", which the URL cannot.
+
+The URL check stays as a cheap first tripwire. It is no longer the proof.
+
+# The confirmation is a native `<dialog>`, and `[role=dialog]` does not match it
+
+Measured: the withdraw confirmation is a native `<dialog>` element. Native
+`<dialog>` carries an IMPLICIT role, so it has no `role` attribute, so
+`[role=dialog]` - the selector this toolkit uses everywhere - **finds nothing**.
+The probe reported "no confirmation appeared" three times while the dialog sat
+open, intercepting every click.
+
+A selector that reports absence when the thing is present, blocking the page, is
+the worst kind of instrument. `kit/selectors.py` carries this as a dated note so
+nobody reaches for `[role=dialog]` on this surface again.
+
+# Keyboard activation does nothing here, so this control is clicked
+
+This toolkit prefers keyboard activation, because Phase 1 measured a click
+falling through onto a Photo button and opening a native OS dialog. Measured on
+this control: **keyboard activation does nothing at all** - no dialog, no
+request, no change. So `withdraw` uses a hit-tested `locator.click()`, and the
+reason is written at the call site rather than left as an unexplained exception
+to a house rule.
+
+This is the second control measured to need a click where the house rule says
+keyboard - the invite dialog's Send was the first. The rule is not wrong; it is
+scoped to the dialogs it was measured on, and each exception names its own
+measurement.
+
+# What the RESULT line says, and what it cannot
+
+Measured, verbatim: **"If you withdraw now, you won't be able to resend to this
+person for up to 3 weeks"**.
+
+`up to` three weeks, not "about three weeks" as the design assumed - a weaker
+claim than we were going to make on LinkedIn's behalf. And it is stated ONLY
+inside the confirmation, so **no caller can read it before deciding**. That is
+precisely why it belongs on the RESULT line: the tool is the only thing standing
+where the sentence is visible.
+
+# Still not proven
+
+**The feed-href trap has never been seen firing live.** Only ten of forty rows
+carry that href, no such row was ever clicked, and the assertion covering it has
+been exercised offline only. The trap A5 was written for remains a hypothesis
+about the first ten rows.

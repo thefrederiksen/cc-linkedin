@@ -249,3 +249,96 @@ STATS_MEMBER_ADDON_DO_NOT_USE = ".member-analytics-addon-summary__list-item"
 STATS_ADMIN_HEADER_FOLLOWERS = re.compile(r"([\d][\d,\.]*)\s+followers?", re.I)
 STATS_TABLE = "table"
 STATS_TIME_RANGE = re.compile(r"Time range:\s*(.+?)\s*-\s*(.{4,25}?\d{4})", re.I)
+
+
+# ============================================================================
+# PHASE 3: the invitation manager, and withdrawing an invitation we sent.
+# Measured 2026-09-10 on the live page; the dump is
+# docs/surveys/invitations-sent-rows-2026-09-10.txt. The surface is the new
+# server-driven rendering: hashed class names, no data-urn, no data-view-name.
+# Accessible names are the only stable handle and they are whole sentences.
+# ============================================================================
+
+INVITATION_MANAGER = "https://www.linkedin.com/mynetwork/invitation-manager/"
+INVITATIONS_SENT = "https://www.linkedin.com/mynetwork/invitation-manager/sent/"
+# What the address bar must still say after the withdraw control is activated.
+# A5: the control is an anchor with a LIVE href to the feed, so "did we stay
+# here" is a real question with a real wrong answer.
+ON_INVITATION_MANAGER = "/mynetwork/invitation-manager"
+
+# THE WITHDRAW CONTROL IS AN <a>, AND ITS href IS THE FEED - measured
+# 2026-09-10, and it is the whole reason this verb asserts where it landed:
+#
+#     tag=A  text="Withdraw"
+#            aria-label="Withdraw invitation sent to <Full Name>"
+#            href=https://www.linkedin.com/
+#
+# A click the page's own handler does not swallow NAVIGATES TO THE FEED and
+# withdraws nothing, silently. The row is found by the aria-label because the
+# visible text is the bare word "Withdraw", repeated forty times on the page,
+# and a bare word is not an identification.
+WITHDRAW_LINK = 'a[aria-label^="Withdraw invitation sent to"]'
+WITHDRAW_ARIA = re.compile(r"^Withdraw invitation sent to (.+)$", re.I)
+WITHDRAW_HREF_TRAP = "https://www.linkedin.com/"
+
+# The age each row displays, e.g. "Sent 11 hours ago", "Sent yesterday",
+# "Sent 1 week ago", "Sent 3 months ago". LinkedIn states a ROUNDED-DOWN
+# relative age and never a date, so "3 months ago" means AT LEAST three months
+# and the tool must never turn it into one.
+SENT_AGE = re.compile(r"Sent\s+([^\n]+?)\s*$", re.I | re.M)
+SENT_AGE_UNITS = re.compile(
+    r"^(?:(\d+)\s+)?(second|minute|hour|day|week|month|year)s?\s+ago$", re.I)
+
+# The count the page publishes for the Sent tab: `People (40)`, a link to
+# /sent/CONNECTION/. A4 - it is a per-filter pill and there is no sentence to
+# fall back on, so a parse is checked against the pill of the SAME filter whose
+# rows were parsed.
+SENT_COUNT_PILL = re.compile(r"People\s*\((\d[\d,]*)\)", re.I)
+
+# THE LIST LAZY-LOADS TEN AT A TIME AND THE WINDOW IS NOT THE SCROLLER -
+# measured 2026-09-10. window.scrollTo and mouse wheel events both do nothing:
+# document.body.scrollHeight equals its clientHeight, and the element that
+# actually scrolls is <main>. Scrolling the wrong thing looks exactly like a
+# list with only ten rows in it, which is how "the row is not here" becomes a
+# confident wrong answer about somebody's invitation.
+SENT_SCROLLER_JS = """
+() => {
+  const all = [...document.querySelectorAll('main, div')].filter(e => {
+    const s = getComputedStyle(e);
+    return e.scrollHeight > e.clientHeight + 80 && e.clientHeight > 200
+           && /auto|scroll/.test(s.overflowY);
+  });
+  const el = all[0] || document.scrollingElement;
+  el.scrollTop = el.scrollHeight;
+  return {tag: el.tagName, height: el.scrollHeight};
+}
+"""
+
+# THE CONFIRMATION - MEASURED 2026-09-10, and it had never been measured before
+# (survey section 10.4). It is a NATIVE <dialog>, which is why the first three
+# attempts reported "no confirmation appeared": a native <dialog> carries an
+# IMPLICIT role, so it has no role attribute and '[role="dialog"]' does not
+# match it. The probe was blind, its pass condition was an absence, and so it
+# certified a confirmation that was open on screen intercepting every click.
+#
+#     <dialog open data-testid="dialog" aria-labelledby="dialog-header">
+#       heading  "Withdraw invitation"
+#       text     "If you withdraw now, you won't be able to resend to this
+#                 person for up to 3 weeks."
+#       buttons  Dismiss | Cancel | <the withdraw sentence again>
+#
+# THE CONFIRM BUTTON IS NOT CALLED "Withdraw". Its visible text is, but its
+# accessible name is the SAME SENTENCE the row's control carries - "Withdraw
+# invitation sent to <Full Name>" - and the dialog's own heading also reads
+# "Withdraw invitation". Matching the bare word would have three candidates on
+# screen, one of them a heading. So the confirm control is identified
+# positively: a BUTTON, inside the open dialog, whose accessible name is the
+# withdraw sentence naming THE SAME PERSON the row named. That is the target's
+# name read a third time, off the last control that gets pressed.
+DIALOG_OPEN = 'dialog[open], [data-testid="dialog"]'
+# What the page itself says a withdrawal costs, quoted from the live dialog on
+# 2026-09-10. Note "UP TO 3 weeks": the design said "about three weeks", and the
+# page's own words are both weaker and vaguer than that. The RESULT line carries
+# what the page said, never what the design remembered.
+REINVITE_RESTRICTION = re.compile(
+    r"won.?t be able to resend to this person for ([^.]+)", re.I)
