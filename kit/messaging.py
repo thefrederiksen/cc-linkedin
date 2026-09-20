@@ -120,7 +120,11 @@ THREAD_OPEN_JS = r"""
 (sel) => ({
   events: document.querySelectorAll(sel.event).length,
   quickReplies: document.querySelectorAll(sel.quick).length,
-  titleBar: document.querySelectorAll(sel.title).length,
+  // The compose route carries a title bar of its OWN ("New message"), inside
+  // .msg-compose-container. Measured live 2026-09-20: it is there with no
+  // conversation selected, so only a title bar OUTSIDE it means a thread is open.
+  titleBar: Array.from(document.querySelectorAll(sel.title))
+    .filter(e => !e.closest('.msg-compose-container')).length,
 })
 """
 
@@ -239,7 +243,7 @@ class Inbox(object):
         self.filter = S.RECEIVED_DEFAULT_FILTER
         self.unread_marker_seen = False
 
-    def load(self, unread_only=False):
+    def load(self, unread_only=False, want=0):
         # A2 leaves /messaging/compose/ on the CAPPED counter, and this obeys
         # that as it stands. It is also the wrong way round and the report says
         # so: A2 uncapped `/messaging/` because it is the owner's own inbox and
@@ -256,6 +260,7 @@ class Inbox(object):
         self._assert_no_thread_open("on landing")
         if unread_only:
             self._apply_unread_filter()
+        self._load_more(want)
         self.rows = self.br.page.evaluate(ROWS_JS, _sel_list())
         if not self.rows:
             die("no conversation rows on %s. Zero rows is a broken selector far more often "
@@ -265,6 +270,27 @@ class Inbox(object):
         log("inbox: %d conversations, %d unread, filter=%s"
             % (len(self.rows), sum(1 for r in self.rows if r["unread_class"]), self.filter))
         return self
+
+    def _load_more(self, want):
+        """The list renders ten rows and the rest sit behind scrolling and the
+        page's OWN "Load more conversations" button (measured live 2026-09-20).
+        Neither selects a row. That is asserted after every step rather than
+        trusted, and a step that adds nothing ends the loop: the list is
+        finished, or the page stopped answering, and either way what is there
+        is what gets reported."""
+        cards = self.br.page.locator(S.CONVO_CARD)
+        while cards.count() < want:
+            before = cards.count()
+            cards.nth(before - 1).scroll_into_view_if_needed()
+            time.sleep(2)
+            more = self.br.page.get_by_role("button", name="Load more conversations")
+            if more.count() == 1:
+                self.br.press(more.first, "the list's own Load more conversations")
+                time.sleep(LIST_SETTLE)
+            self._assert_no_thread_open("after loading more rows (%d so far)" % before)
+            if cards.count() <= before:
+                log("inbox: the list stopped growing at %d rows" % before)
+                break
 
     def _assert_no_thread_open(self, where):
         """THE GUARD THAT MAKES read-inbox HONEST. Opening a thread marks it
@@ -343,10 +369,10 @@ class Inbox(object):
 
 def read_inbox(a):
     """The conversation LIST. It does not open a thread, and it proves it."""
-    limit = max(1, min(int(a.limit or 25), 100))
+    limit = max(1, min(int(a.limit or 25), 400))
     pace = Pace()
     with Browser(a.port) as br:
-        inbox = Inbox(br, pace).load(unread_only=bool(a.unread))
+        inbox = Inbox(br, pace).load(unread_only=bool(a.unread), want=limit)
         rows = inbox.rows[:limit]
         for r in rows:
             rec = {"kind": "conversation", "index": r["index"],
@@ -438,7 +464,17 @@ def _click_row(br, row):
     if cards.count() <= row["index"]:
         die("the list holds %d rows and row %d was asked for. Nothing was opened."
             % (cards.count(), row["index"]))
-    cards.nth(row["index"]).click(timeout=15000)
+    # SCROLL IT INTO VIEW FIRST. This used to be a bare click, which is fine for
+    # the ten rows the inbox renders by itself and fails for everything below
+    # them: on 2026-09-20 a run paged down to 220 rows and every click on a row
+    # in the 160s timed out at 15s, because the card is real in the DOM and
+    # nowhere near the viewport. Scrolling is also what a person does before
+    # clicking a conversation, so nothing here pretends to reach further than a
+    # human could.
+    card = cards.nth(row["index"])
+    card.scroll_into_view_if_needed(timeout=30000)
+    time.sleep(0.5)
+    card.click(timeout=30000)
     time.sleep(THREAD_SETTLE)
 
 

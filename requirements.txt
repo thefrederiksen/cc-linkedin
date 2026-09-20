@@ -1,1 +1,7 @@
 playwright>=1.58
+
+# Raw CDP, used ONLY by Browser._stop_service_workers, which has to stop the
+# profile's service workers BEFORE Playwright attaches - a running one hangs
+# connect_over_cdp for ever (measured 2026-09-20). It cannot go through
+# Playwright, because it exists to make the Playwright attach possible.
+websocket-client>=1.7

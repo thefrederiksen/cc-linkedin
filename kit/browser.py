@@ -30,6 +30,9 @@ import sys
 import tempfile
 import time
 from urllib.parse import urlparse
+from urllib.request import urlopen
+
+import websocket
 
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout, Error as PWError
 
@@ -40,12 +43,25 @@ DAY_KEY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 ME_BUTTON = re.compile(r"(^|\s)Me$")
 
 
+def _ascii(text):
+    """Everything this toolkit prints, forced to plain ASCII.
+
+    NOT cosmetic. A Windows console is cp1252, and the text here is read off a
+    web page: a LinkedIn headline routinely carries a box drawing bar, an em
+    dash or an emoji. Printing one raised UnicodeEncodeError out of log(), which
+    killed the send to Priyank Purohit on 2026-09-20 at the moment the recipient
+    row was logged - before a word had been typed, so the message simply never
+    went. Our own logging must never be the thing that stops a send.
+    """
+    return str(text).encode("ascii", "replace").decode("ascii")
+
+
 def log(msg):
-    print("[%s] %s" % (time.strftime("%H:%M:%S"), msg), flush=True)
+    print("[%s] %s" % (time.strftime("%H:%M:%S"), _ascii(msg)), flush=True)
 
 
 def die(msg):
-    print("FAIL " + msg, flush=True)
+    print("FAIL " + _ascii(msg), flush=True)
     sys.exit(1)
 
 
@@ -811,8 +827,84 @@ def open_tabs(port):
 
 # ---------------------------------------------------------------- the tab
 
+# How long the CDP attach may take. It scales with how many targets the SHARED
+# profile happens to hold, which is decided by whichever other sessions are using
+# the same browser - not by anything this toolkit does.
+ATTACH_TIMEOUT_MS = 90000
+
+
 class Browser(object):
     """Attach to Chrome on `port`, hold the lock, open one background tab."""
+
+    def _stop_service_workers(self):
+        """Stop every service worker in the profile, over raw CDP, before the
+        Playwright attach. Returns how many were stopped.
+
+        Raw CDP is used deliberately: this has to happen BEFORE the attach that
+        a service worker would hang, so it cannot go through Playwright. It
+        touches nothing of type "page".
+
+        A failure here is not fatal. If the websocket cannot be opened the attach
+        is still tried, and its own error says what happened - better than
+        refusing to run because a pre-flight step could not be completed.
+        """
+        try:
+            ver = json.loads(urlopen("http://localhost:%d/json/version" % self.port,
+                                     timeout=10).read().decode("utf-8", "replace"))
+            ws = websocket.create_connection(ver["webSocketDebuggerUrl"], timeout=15,
+                                             max_size=None, suppress_origin=True)
+        except Exception:                                         # noqa: BLE001
+            return 0
+        n = 0
+        try:
+            def call(method, params, mid):
+                ws.send(json.dumps({"id": mid, "method": method, "params": params}))
+                deadline = time.time() + 15
+                while time.time() < deadline:
+                    msg = json.loads(ws.recv())
+                    if msg.get("id") == mid:
+                        return msg
+                return {}
+            got = call("Target.getTargets", {}, 1)
+            for i, t in enumerate((got.get("result") or {}).get("targetInfos", [])):
+                if t.get("type") != "service_worker":
+                    continue
+                res = call("Target.closeTarget", {"targetId": t["targetId"]}, 100 + i)
+                if (res.get("result") or {}).get("success"):
+                    n += 1
+        except Exception:                                         # noqa: BLE001
+            pass
+        finally:
+            try:
+                ws.close()
+            except Exception:                                     # noqa: BLE001
+                pass
+        return n
+
+    def _attach_failure(self, exc):
+        """Say which of the two very different failures this was.
+
+        The old message said "no Chrome is listening on port N" for BOTH, and a
+        scheduled run spent fifteen minutes on 2026-09-20 hunting a dead browser
+        that was answering the whole time. So ASK Chrome, over plain HTTP, which
+        does not attach to anything and cannot hang on a busy target.
+        """
+        first = str(exc).splitlines()[0]
+        try:
+            raw = urlopen("http://localhost:%d/json/list" % self.port, timeout=10).read()
+            targets = json.loads(raw.decode("utf-8", "replace"))
+        except Exception:                                         # noqa: BLE001
+            return ("no Chrome is listening on port %d (%s). Start the signed-in profile "
+                    "first, e.g. bh-profiles.ps1 up cencon" % (self.port, first))
+        pages = [t for t in targets if t.get("type") == "page"]
+        busiest = ", ".join((t.get("url") or "")[:60] for t in pages[:4])
+        return ("Chrome IS running on port %d and answered over HTTP with %d targets (%d of "
+                "them pages), but the CDP attach did not finish in %ds (%s). This is a BUSY "
+                "profile, not a dead browser: the attach connects to every target, and these "
+                "profiles are shared with every other session on this machine. Close the heavy "
+                "tabs somebody left open, or raise ATTACH_TIMEOUT_MS. Pages now: %s"
+                % (self.port, len(targets), len(pages), ATTACH_TIMEOUT_MS // 1000, first,
+                   busiest or "none"))
 
     def __init__(self, port=9224):
         self.port = port
@@ -845,11 +937,29 @@ class Browser(object):
             self.lock.__enter__()
             self._locked = True
             try:
+                # A RUNNING SERVICE WORKER IN THIS PROFILE HANGS THE ATTACH, and
+                # the profile is shared, so whether one exists is decided by
+                # whatever site another session last visited. Measured
+                # 2026-09-20: connect_over_cdp lost 8 tries out of 8 at 15s and
+                # then again at 90s, while Chrome answered /json/version in 2.1s
+                # and every one of the 13 targets accepted a raw
+                # Target.attachToTarget in 0.0s. Stopping the two service workers
+                # (a Supabase one and a Chrome extension's) made the same attach
+                # succeed immediately. Playwright auto-attaches to every target
+                # and waits for each to report in; a service worker does not.
+                #
+                # Stopping one is not destructive and is not a workaround for a
+                # defect of ours: a service worker restarts on its next event,
+                # holds no unsaved state, and belongs to no tab. Pages are NEVER
+                # touched - somebody's unsaved SQL editor is not ours to close.
+                stopped = self._stop_service_workers()
+                if stopped:
+                    log("attach: stopped %d service worker(s) that would hang the attach"
+                        % stopped)
                 self.browser = self._pw.chromium.connect_over_cdp(
-                    "http://localhost:%d" % self.port, timeout=15000)
+                    "http://localhost:%d" % self.port, timeout=ATTACH_TIMEOUT_MS)
             except PWError as exc:
-                die("no Chrome is listening on port %d (%s). Start the signed-in profile first, "
-                    "e.g. bh-profiles.ps1 up cencon" % (self.port, str(exc).splitlines()[0]))
+                die(self._attach_failure(exc))
             if not self.browser.contexts:
                 die("Chrome on port %d has no browser context to open a tab in" % self.port)
             ctx = self.browser.contexts[0]
