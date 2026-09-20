@@ -1,1 +1,5 @@
 playwright>=1.58
+
+# Raw CDP for Browser._stop_service_workers: a running service worker hangs
+# Playwright's connect_over_cdp, so it must be stopped BEFORE the attach.
+websocket-client>=1.7
