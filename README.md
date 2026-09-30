@@ -35,7 +35,7 @@ an empty result as a failure rather than an answer.
 
 | | |
 |---|---|
-| **Posting** | `post`, `scheduled`, `unschedule` |
+| **Posting** | `post` (as a Page, or `--profile` as the person, staged or handed over), `scheduled`, `unschedule` |
 | **Comments and reactions** | `read-post`, `read-comments`, `comment`, `reply`, `delete-comment`, `react`, `unreact`, `delete-post` |
 | **Reading and search** | `read-profile`, `read-company`, `search-people`, `search-posts`, `notifications`, `stats` |
 | **Invitations** | `withdraw` |
@@ -53,7 +53,7 @@ here because the shape of the tool invites you to assume otherwise.
 | Not present in 1.0 | Where it stands |
 |---|---|
 | `connect`, `message`, `read-inbox`, `read-thread`, `invitations`, `follow`, `unfollow`, `invite-to-follow` | designed, and surveyed against the live site, but not built - [issue #9](https://github.com/thefrederiksen/cc-linkedin/issues/9) |
-| `post --profile` (posting as the person rather than as the Page), `edit-post`, `repost` | designed, never surveyed - [issue #10](https://github.com/thefrederiksen/cc-linkedin/issues/10) |
+| `post --profile --submit` (the press itself; staging and `--hand-over` exist since 2026-09-30), `edit-post`, `repost` | [issue #10](https://github.com/thefrederiksen/cc-linkedin/issues/10) |
 
 `withdraw` is the only invitation verb in 1.0, and it withdraws only - there is
 no way to send an invitation with this tool.

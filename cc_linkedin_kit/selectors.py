@@ -342,3 +342,28 @@ DIALOG_OPEN = 'dialog[open], [data-testid="dialog"]'
 # what the page said, never what the design remembered.
 REINVITE_RESTRICTION = re.compile(
     r"won.?t be able to resend to this person for ([^.]+)", re.I)
+
+
+# -- post as the person: the personal composer ------------------- 2026-09-30
+# Measured 2026-09-30 on the feed's "Start a post" (survey in
+# docs/profile-post-survey-2026-09-30.md). A DIFFERENT COMPOSER from the Page's:
+#   * it lives at /sharing/compose and is a NATIVE <dialog open> labelled by
+#     "dialog-header" - '[role=dialog]' does not match it;
+#   * the header reads "<member name> Post to Anyone Comments: Anyone", so the
+#     identity check is the member's name at the start of the header;
+#   * the editor is a tiptap ProseMirror, one <p> per line, blank lines as an
+#     empty <p> - not the Page composer's Quill .ql-editor;
+#   * "Media" opens the OS file chooser straight away. It is only ever pressed
+#     inside Playwright's file-chooser interception, which answers the chooser
+#     from the page and never lets a native dialog reach the screen;
+#   * the chosen image opens a second native <dialog> ("Editor ... Next");
+#   * Dismiss on a composer with content raises a THIRD native <dialog>,
+#     "Save this post as a draft?", with Discard and Save as draft.
+PROFILE_FEED = "https://www.linkedin.com/feed/"
+PROFILE_START_POST = "Start a post"
+PROFILE_COMPOSER = 'dialog[open][aria-labelledby="dialog-header"]'
+PROFILE_EDITOR = PROFILE_COMPOSER + " .ProseMirror"
+PROFILE_MEDIA = "Media"
+PROFILE_MEDIA_EDITOR_PROOF = "Editor"
+PROFILE_DRAFT_PROMPT = "Save this post as a draft"
+PROFILE_AUDIENCE = re.compile(r"\bPost to\b")

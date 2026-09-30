@@ -1,6 +1,6 @@
 ---
 name: linkedin
-description: Drive LinkedIn through the signed-in browser with cc-linkedin 1.0 - post to a Page (text, video, images, now or scheduled), comment, reply, react, delete, read profiles and companies, search people and posts, read notifications and Page stats, and withdraw an invitation we sent. Eighteen commands, no API. Stage first, read the RESULT line. Triggers on "/linkedin", "post to linkedin", "linkedin post", "schedule a linkedin post", "post the video to linkedin", "linkedin page post", "comment on linkedin", "read a linkedin profile", "search linkedin", "linkedin notifications", "page stats", "withdraw a linkedin invitation".
+description: Drive LinkedIn through the signed-in browser with cc-linkedin 1.0 - post to a Page (text, video, images, now or scheduled), comment, reply, react, delete, read profiles and companies, search people and posts, read notifications and Page stats, and withdraw an invitation we sent, and stage a post on the person's own profile for them to press Post. Eighteen commands, no API. Stage first, read the RESULT line. Triggers on "/linkedin", "post to linkedin", "linkedin post", "schedule a linkedin post", "post the video to linkedin", "linkedin page post", "post on my personal profile", "comment on linkedin", "read a linkedin profile", "search linkedin", "linkedin notifications", "page stats", "withdraw a linkedin invitation".
 ---
 
 # LinkedIn posting
@@ -53,6 +53,28 @@ deleted through the composer's own dialog; there is no page for them.
 
 `--shot` brings the tab to the front for the screenshot. Leave it off for a
 quiet run; a failed run still writes `<shot>.fail.png` when it can.
+
+## Posting as the person: `post --profile` (since 2026-09-30)
+
+```
+cc-linkedin post --profile "Soren Frederiksen" --text post.txt --media photo.jpg --shot staged.png
+cc-linkedin post --profile "Soren Frederiksen" --text post.txt --media photo.jpg --hand-over --shot staged.png
+```
+
+`--profile NAME` writes the post as the signed-in member through the feed's own
+composer, instead of as a Page. NAME must be exactly what the composer header
+shows; a composer naming anything else refuses before a word is typed.
+
+It STAGES (fills, verifies, discards) or it HANDS OVER. `--hand-over` fills in the
+picture and the text, proves the text is exact, writes `<shot>` (the opening
+lines) and `<shot>.end.png` (scrolled to the picture), and LEAVES THE COMPOSER
+OPEN in a front tab. The person presses Post. `RESULT handed-over ...
+pressed=nothing waiting_on=Post`.
+
+`--profile --submit` is NOT BUILT and refuses: finding the published post
+afterwards has not been measured, and this tool never claims a post went out
+that it cannot find. Pictures only (video on this composer is unmeasured), no
+`--schedule`. Mentions are not typed - a name is plain text.
 
 ## Comments, replies, reactions, deletes (Phase 1, live since 2026-09-09)
 
@@ -190,7 +212,7 @@ the live site, and two of them send to real people.
 | Not present | Where it stands |
 |---|---|
 | `connect`, `message`, `read-inbox`, `read-thread`, `invitations`, `follow`, `unfollow`, `invite-to-follow` | designed and surveyed, not built - issue #9 |
-| `post --profile` (posting as Soren rather than as the Page), `edit-post`, `repost` | designed, never surveyed - issue #10 |
+| `post --profile --submit` (the press itself; `--hand-over` exists), `edit-post`, `repost` | issue #10 |
 
 If Soren asks for one of these, say it does not exist and point at the issue.
 Do not build a one-off workaround for it.
@@ -201,8 +223,8 @@ Do not build a one-off workaround for it.
 |------|----------|---------------|----------------|
 | CenterConsulting, Inc. | 107519091 | `CenterConsulting, Inc.` | cencon / 9224 |
 
-Soren's personal profile is NOT a Page and is reserved for mindzie content; this
-tool does not post there.
+Soren's personal profile is NOT a Page. It is reached with `post --profile
+"Soren Frederiksen"`, and only as far as a hand-over: he presses Post.
 
 ## Rules
 

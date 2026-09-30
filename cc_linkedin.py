@@ -60,6 +60,7 @@ import time
 
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout, Error as PWError
 
+from cc_linkedin_kit import selectors as S
 from cc_linkedin_kit.browser import BrowserLock
 
 VIDEO_EXT = (".mp4", ".mov", ".webm", ".avi", ".m4v", ".mpeg", ".mpg", ".wmv", ".flv")
@@ -461,6 +462,225 @@ class Page(object):
         self.page.close()
 
 
+PROFILE_EDITOR_TEXT = """(sel) => {
+  const ed = document.querySelector(sel);
+  if (!ed) return null;
+  return [...ed.children].map(p => p.textContent).join(String.fromCharCode(10));
+}"""
+
+# Pictures in the composer that are not the header's avatar. The avatar is about
+# 64px square; an attached picture is laid out at the composer's width, and a
+# freshly chosen one is a blob: URL before it is laid out at all.
+PROFILE_MEDIA_COUNT = """(sel) => {
+  const d = document.querySelector(sel);
+  if (!d) return 0;
+  return [...d.querySelectorAll('img')].filter(i => {
+    const b = i.getBoundingClientRect();
+    return (i.src || '').startsWith('blob:') || (b.width > 150 && b.height > 80);
+  }).length;
+}"""
+
+# Scroll every scrollable box between the editor and its dialog to the top or
+# the bottom, so a screenshot can show the opening lines, then the picture.
+PROFILE_SCROLL = """(args) => {
+  const [sel, where] = args;
+  let n = document.querySelector(sel);
+  let moved = 0;
+  while (n && n.tagName !== 'DIALOG') {
+    if (n.scrollHeight > n.clientHeight + 4) {
+      n.scrollTop = where === 'top' ? 0 : n.scrollHeight;
+      moved++;
+    }
+    n = n.parentElement;
+  }
+  return moved;
+}"""
+
+
+class Profile(Page):
+    """The signed-in PERSON's own composer, rather than a Page's.
+
+    MEASURED ON THE LIVE PAGE, 2026-09-30 (docs/profile-post-survey-2026-09-30.md).
+    The feed's "Start a post" opens /sharing/compose: a NATIVE <dialog> whose
+    header reads "<member name> Post to Anyone ...". It shares nothing with the
+    Page composer but the idea, so every method that touches the DOM is its own:
+    ProseMirror instead of Quill, native dialogs instead of role=dialog, and a
+    Media button that opens the OS file chooser at once - answered here through
+    Playwright's file-chooser interception, so no native dialog reaches the
+    screen, and the native-dialog guard still runs after it in case one does.
+
+    The identity check is the whole safety story (issue #10): the header must
+    START with the member's name, as given on the command line, and say "Post
+    to". A composer set to post as a Page names the Page there instead.
+    """
+
+    def __init__(self, browser, member_name, shot):
+        Page.__init__(self, browser, None, member_name, shot)
+        self.admin = None
+
+    # -- state -------------------------------------------------------------
+
+    def buttons(self):
+        return self.page.evaluate("""() => [...document.querySelectorAll('dialog[open] button')]
+            .map(b => (b.getAttribute('aria-label') || b.innerText || '').trim()).filter(Boolean)""")
+
+    def composer_open(self):
+        return self.page.locator(S.PROFILE_COMPOSER).count() > 0
+
+    def draft_prompt(self):
+        return self.page.locator("dialog[open]").filter(has_text=S.PROFILE_DRAFT_PROMPT)
+
+    def live_dialog(self):
+        return self.page.locator(S.PROFILE_COMPOSER + ", dialog[open]:has-text(%r)"
+                                 % S.PROFILE_DRAFT_PROMPT)
+
+    def editor_text(self):
+        return self.page.evaluate(PROFILE_EDITOR_TEXT, S.PROFILE_EDITOR) or ""
+
+    def dialog(self):
+        return self.page.locator(S.PROFILE_COMPOSER)
+
+    def media_count(self):
+        return self.page.evaluate(PROFILE_MEDIA_COUNT, S.PROFILE_COMPOSER)
+
+    # -- composer ----------------------------------------------------------
+
+    def open_composer(self):
+        # "load", not "domcontentloaded": measured 2026-09-30, a Start a post
+        # clicked at domcontentloaded is VISIBLE but not yet wired up, and the
+        # click is swallowed with no composer and no error.
+        self.page.goto(S.PROFILE_FEED, wait_until="load", timeout=90000)
+        start = self.page.get_by_role("button", name=S.PROFILE_START_POST, exact=True)
+        start.first.wait_for(state="visible", timeout=45000)
+        time.sleep(3)
+        start.first.click(timeout=15000)
+        self.page.wait_for_selector(S.PROFILE_EDITOR, timeout=45000)
+        time.sleep(2)
+        header = (self.dialog().first.inner_text() or "").strip()
+        if not header.startswith(self.page_name) or not S.PROFILE_AUDIENCE.search(header):
+            die("the composer does not name %r as the author. It began: %r. Refusing to post "
+                "as the wrong identity." % (self.page_name, header[:120]))
+        log("composer open as %s (the member, not a Page)" % self.page_name)
+
+    def ensure_empty_composer(self):
+        """Open the composer and prove it is empty, discarding one restored draft."""
+        self.open_composer()
+        for attempt in (1, 2):
+            body = self.editor_text().strip()
+            media = self.media_count()
+            if not body and not media:
+                log("composer is empty")
+                return
+            if attempt == 2:
+                die("composer is still not empty after discarding the restored draft "
+                    "(%d chars, %d pictures)" % (len(body), media))
+            log("composer restored a draft (%d chars, %d pictures); discarding it" % (len(body), media))
+            self.discard("restored draft")
+            self.open_composer()
+
+    def discard(self, why):
+        """Dismiss the composer and choose Discard, both by keyboard. Proven by
+        the composer AND the draft prompt both being gone."""
+        log("discarding composer (%s)" % why)
+        if not self.composer_open() and self.draft_prompt().count() == 0:
+            return
+        if self.composer_open():
+            dismiss = self.dialog().get_by_role("button", name="Dismiss", exact=True)
+            if dismiss.count() == 0:
+                die("composer is open but has no Dismiss button; buttons=%s" % self.buttons()[:12])
+            self.press(dismiss.first, "Dismiss")
+        prompt = self.draft_prompt()
+        try:
+            prompt.first.wait_for(state="visible", timeout=6000)
+            self.press(prompt.first.get_by_role("button", name="Discard", exact=True).first, "Discard")
+        except PWTimeout:
+            log("no draft prompt appeared; buttons=%s" % self.buttons()[:12])
+        deadline = time.time() + 10
+        while time.time() < deadline:
+            if not self.composer_open() and self.draft_prompt().count() == 0:
+                log("composer discarded, nothing kept")
+                return
+            time.sleep(0.5)
+        die("composer or draft prompt still open after Dismiss + Discard; buttons=%s"
+            % self.buttons()[:12])
+
+    # -- media -------------------------------------------------------------
+
+    def attach(self, files):
+        names = [os.path.basename(f) for f in files]
+        if any(n.lower().endswith(VIDEO_EXT) for n in names):
+            die("video on the member's composer has not been measured; pictures only")
+        media = self.dialog().get_by_role("button", name=S.PROFILE_MEDIA, exact=True)
+        if media.count() != 1:
+            die("expected one %r button in the composer, found %d; buttons=%s"
+                % (S.PROFILE_MEDIA, media.count(), self.buttons()[:12]))
+        with self.page.expect_file_chooser(timeout=15000) as chooser:
+            media.first.click(timeout=10000)
+        if close_file_dialogs("Media"):
+            die("Media put a native file dialog on screen despite the interception")
+        if len(files) > 1 and not chooser.value.is_multiple():
+            die("the Media file chooser takes one file; %d were given" % len(files))
+        chooser.value.set_files(files)
+        log("file set: %s (%.1f MB)" % (", ".join(names), sum(os.path.getsize(f) for f in files) / 1048576.0))
+        # proof the editor took THESE files: it counts them, "1 of N", and Next is enabled
+        editor = self.page.locator("dialog[open]").filter(
+            has=self.page.get_by_role("button", name="Next", exact=True))
+        editor.first.wait_for(state="visible", timeout=60000)
+        text = editor.first.inner_text() or ""
+        if S.PROFILE_MEDIA_EDITOR_PROOF not in text or not re.search(r"\b1 of %d\b" % len(files), text):
+            die("the media editor does not show %d picture(s): %r" % (len(files), text[:160]))
+        nxt = editor.first.get_by_role("button", name="Next", exact=True)
+        if nxt.first.is_disabled():
+            die("the media editor's Next is disabled")
+        log("media editor shows %d picture(s), Next enabled" % len(files))
+        nxt.first.click(timeout=10000)
+        self.page.wait_for_selector(S.PROFILE_EDITOR, timeout=45000)
+        deadline = time.time() + 30
+        while time.time() < deadline and self.media_count() < 1:
+            time.sleep(0.5)
+        if self.media_count() < 1:
+            die("back in the composer, no attached picture is shown")
+        log("media attached in composer (%d picture(s) shown)" % self.media_count())
+        return False
+
+    def media_still_attached(self):
+        return self.media_count() > 0
+
+    # -- text --------------------------------------------------------------
+
+    def type_text(self, text):
+        editor = self.page.locator(S.PROFILE_EDITOR)
+        editor.first.click(timeout=10000)
+        for run in re.split(r"(\n+)", text):
+            if not run:
+                continue
+            if run[0] == "\n":
+                for _ in range(len(run)):
+                    self.page.keyboard.press("Enter")
+            else:
+                self.page.keyboard.insert_text(run)
+        time.sleep(1.5)
+        got = self.editor_text().strip()
+        if got != text:
+            with open(self.shot + ".mismatch.txt", "w", encoding="utf-8") as f:
+                f.write("WANT\n%s\n\nGOT\n%s\n" % (text, got))
+            die("text in the composer does not match the file (%d vs %d chars); wrote %s.mismatch.txt"
+                % (len(got), len(text), self.shot))
+        log("text verified: %d chars, exact" % len(text))
+
+    def screenshot(self, path):
+        """Two pictures: the opening lines, and - scrolled to the end - the
+        attached picture. <path> and <path minus .png>.end.png."""
+        self.page.bring_to_front()
+        self.page.evaluate(PROFILE_SCROLL, [S.PROFILE_EDITOR, "top"])
+        time.sleep(1)
+        self.page.screenshot(path=path)
+        self.page.evaluate(PROFILE_SCROLL, [S.PROFILE_EDITOR, "bottom"])
+        time.sleep(1)
+        self.page.screenshot(path=re.sub(r"\.png$", "", path) + ".end.png")
+        self.page.evaluate(PROFILE_SCROLL, [S.PROFILE_EDITOR, "top"])
+
+
 # ---------------------------------------------------------------- commands
 
 _LOCK = None
@@ -491,7 +711,33 @@ def release():
         _LOCK = None
 
 
+def post_target(a):
+    """Who the post is written as: a Page (--page + --page-name), or the
+    signed-in member (--profile NAME). Exactly one, and each with its own rules."""
+    if bool(a.page) == bool(a.profile):
+        die("pass --page (with --page-name) to post as a Page, or --profile NAME to post as the "
+            "signed-in member - exactly one of them")
+    if a.submit and a.hand_over:
+        die("--submit and --hand-over contradict each other: one presses Post, the other leaves "
+            "it for a person to press. Pass one.")
+    if a.page and not a.page_name:
+        die("--page needs --page-name, the exact Page name the composer must show")
+    if a.profile:
+        if a.page_name:
+            die("--page-name is for --page; --profile carries the member's own name")
+        if a.schedule:
+            die("scheduling from the member's composer has not been measured; --profile does not "
+                "schedule")
+        if a.submit:
+            die("--profile --submit is NOT BUILT. The member's composer is measured up to the "
+                "moment before Post, and finding the published post afterwards is not: until "
+                "that is measured on a real post this verb cannot prove a post went out, and "
+                "a verb here never claims what it cannot prove. Use --hand-over and press "
+                "Post yourself.")
+
+
 def cmd_post(a):
+    post_target(a)
     files = [os.path.abspath(f) for f in (a.media or [])]
     for f in files:
         if not os.path.isfile(f):
@@ -526,7 +772,10 @@ def cmd_post(a):
     t0 = time.time()
     with sync_playwright() as p:
         browser = connect(p, a.port)
-        lp = Page(browser, a.page, a.page_name, a.shot or "cc-linkedin")
+        if a.profile:
+            lp = Profile(browser, a.profile, a.shot or "cc-linkedin")
+        else:
+            lp = Page(browser, a.page, a.page_name, a.shot or "cc-linkedin")
         ok = False
         try:
             lp.ensure_empty_composer()
@@ -542,6 +791,18 @@ def cmd_post(a):
                 die("media is no longer attached after typing")
             if when:
                 lp.set_schedule(when)
+            if a.hand_over:
+                # Everything is typed, attached and verified; the one press left
+                # is a person's. The tab is brought to the front and kept.
+                if a.shot:
+                    lp.screenshot(a.shot)
+                else:
+                    lp.page.bring_to_front()
+                print("RESULT handed-over file=%s as=%r shot=%s pressed=nothing waiting_on=%s "
+                      "seconds=%.0f" % (base, a.profile or a.page_name, a.shot or "-",
+                                        "Schedule" if when else "Post", time.time() - t0))
+                ok = True
+                return
             if not a.submit:
                 if a.shot:
                     lp.screenshot(a.shot)
@@ -590,7 +851,9 @@ def cmd_post(a):
                     raise
                 except Exception as exc:
                     log("could not clear up: %s" % exc)
-            if ok and a.submit and not when and getattr(a, "keep_tab", True):
+            if ok and a.hand_over:
+                log("leaving the tab open with the composer filled in; the Post press is yours")
+            elif ok and a.submit and not when and getattr(a, "keep_tab", True):
                 log("leaving the tab open on the published post so it can be seen")
             else:
                 lp.close()
@@ -665,8 +928,16 @@ def main():
         sp.add_argument("--port", type=int, default=9224, help="Chrome remote debugging port (default 9224)")
 
     sp = sub.add_parser("post", help="stage, post, or schedule a post")
-    common(sp)
-    sp.add_argument("--page-name", required=True, help="exact Page name the composer must show")
+    sp.add_argument("--page", help="LinkedIn Page (organization) numeric id")
+    sp.add_argument("--page-name", help="exact Page name the composer must show (with --page)")
+    sp.add_argument("--profile", metavar="NAME",
+                    help="post as the signed-in MEMBER instead of a Page. NAME is the member's "
+                         "name exactly as the composer header shows it; anything else refuses. "
+                         "Stage or --hand-over only (--submit is not built for it yet).")
+    sp.add_argument("--hand-over", action="store_true",
+                    help="fill in and verify everything, then LEAVE the composer open in a "
+                         "front tab for a person to press Post. Presses nothing.")
+    sp.add_argument("--port", type=int, default=9224, help="Chrome remote debugging port (default 9224)")
     sp.add_argument("--text", required=True, help="UTF-8 text file, <= 3000 chars")
     sp.add_argument("--media", action="append", help="one video, or repeat for up to 20 images")
     sp.add_argument("--schedule", help="'YYYY-MM-DD HH:MM' local time, 15-minute grid")
