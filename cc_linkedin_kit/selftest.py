@@ -733,7 +733,8 @@ def run(a):
         try:
             with redirect_stdout(buf):
                 tool.cmd_post(argparse.Namespace(page=a.page, page_name=a.page_name, text=tf.name, media=None,
-                                                 schedule=None, submit=True, shot=None, port=a.port, keep_tab=False))
+                                                 schedule=None, submit=True, shot=None, port=a.port, keep_tab=False,
+                                                 profile=None, hand_over=False))
             ok = True
         except SystemExit as exc:
             ok = exc.code in (0, None)
