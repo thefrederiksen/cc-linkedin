@@ -61,6 +61,39 @@ class TheComposeRouteIsOurs(unittest.TestCase):
             surface_kind("https://uk.linkedin.com/messaging/compose/"), "view_self")
 
 
+class TheUnreadFiltersDraftIsOurs(unittest.TestCase):
+    """Owner ruling 2026-10-03 (docs/ruling-unread-draft-2026-10-03.md): the
+    Unread filter lands on an empty new-message draft, measured to open no
+    conversation. Uncapped, matched EXACTLY - the dangerous neighbour is a real
+    thread one path segment away."""
+
+    def test_the_address_the_filter_lands_on(self):
+        self.assertEqual(
+            surface_kind("https://www.linkedin.com/messaging/thread/new/?filter=unread"),
+            "view_self")
+
+    def test_the_draft_without_a_filter_or_a_slash(self):
+        self.assertEqual(
+            surface_kind("https://www.linkedin.com/messaging/thread/new/"), "view_self")
+        self.assertEqual(
+            surface_kind("https://www.linkedin.com/messaging/thread/new"), "view_self")
+
+    def test_a_real_thread_stays_capped(self):
+        self.assertEqual(
+            surface_kind("https://www.linkedin.com/messaging/thread/2-abc==/?filter=unread"),
+            "view")
+
+    def test_a_thread_id_that_begins_with_new_stays_capped(self):
+        self.assertEqual(
+            surface_kind("https://www.linkedin.com/messaging/thread/newabc==/"), "view")
+        self.assertEqual(
+            surface_kind("https://www.linkedin.com/messaging/thread/new/2-abc==/"), "view")
+
+    def test_another_host_stays_capped(self):
+        self.assertEqual(
+            surface_kind("https://example.com/messaging/thread/new/"), "view")
+
+
 class TheInvitationManagerIsOurs(unittest.TestCase):
 
     def test_the_bare_url(self):
