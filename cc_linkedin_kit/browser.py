@@ -434,6 +434,13 @@ _URL_NOTIFICATIONS = re.compile(
 # are - narrowing them is not what this ruling covers - but a new own-surface
 # should be written this way.
 _PATH_MESSAGING_COMPOSE = re.compile(r"^/messaging/compose/?$", re.I)
+# Owner ruling 2026-10-03 (docs/ruling-unread-draft-2026-10-03.md). The
+# Unread filter moves the address to /messaging/thread/new/?filter=unread, an
+# empty new-message draft, MEASURED to open no conversation: no reading pane,
+# no selected row, the draft's To field present, every unread row still unread
+# afterwards. Same test, same answer as compose. EXACT, like compose: "new" is
+# the whole last segment, so /messaging/thread/<any real id>/ stays capped.
+_PATH_MESSAGING_NEW_DRAFT = re.compile(r"^/messaging/thread/new/?$", re.I)
 _PATH_INVITATION_MANAGER = re.compile(r"^/mynetwork/invitation-manager(?:/.*)?$", re.I)
 _HOST_LINKEDIN = re.compile(r"^(?:[a-z0-9-]+\.)*linkedin\.com$", re.I)
 
@@ -498,6 +505,8 @@ def surface_kind(url):
     path = _linkedin_path(u)
     if path is not None:
         if _PATH_MESSAGING_COMPOSE.match(path):
+            return "view_self"
+        if _PATH_MESSAGING_NEW_DRAFT.match(path):
             return "view_self"
         if _PATH_INVITATION_MANAGER.match(path):
             return "view_self"

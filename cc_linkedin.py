@@ -806,6 +806,37 @@ def main():
     sp.add_argument("--port", type=int, default=9224)
     sp.set_defaults(fn=N.withdraw)
 
+    # -- Phase 3: the owner's own messages (read only) ------------------------
+    from cc_linkedin_kit import inbox as I
+
+    sp = sub.add_parser(
+        "read-inbox", help="print the conversation list as JSON, one row per line",
+        description="Print the messaging conversation list, one JSON row per line. "
+                    "OPENS NO CONVERSATION: the list is read through /messaging/compose/, "
+                    "whose reading pane holds an empty draft, and the run re-reads the "
+                    "list at the end and FAILS if any row that was unread is now read or "
+                    "gone. The rows carry no thread URL (none exists until a row is "
+                    "opened); each carries a thread_ref that read-thread accepts.",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    sp.add_argument("--limit", type=int, default=20, help="rows to return (hard cap 100)")
+    sp.add_argument("--unread", action="store_true",
+                    help="press the page's own Unread filter and list only those")
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=I.read_inbox)
+
+    sp = sub.add_parser(
+        "read-thread", help="print one conversation's messages as JSON (MARKS IT READ)",
+        description="Print every message in one conversation, one JSON row per line. "
+                    "THIS MARKS THE CONVERSATION READ, and the other person may be shown a "
+                    "read receipt. There is no way to read a thread without opening it, so "
+                    "the RESULT line always says marked_read=true. It counts against the "
+                    "capped daily view budget. Nothing inside the thread is clicked and no "
+                    "key is pressed.",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    sp.add_argument("target", help="a /messaging/thread/<id>/ URL, or a thread_ref from read-inbox")
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=I.read_thread)
+
     from cc_linkedin_kit import selftest as T
     sp = sub.add_parser("selftest",
                         help="run every verb on things we own, leaving nothing behind")

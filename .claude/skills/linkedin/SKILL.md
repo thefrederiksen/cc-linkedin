@@ -1,6 +1,6 @@
 ---
 name: linkedin
-description: Drive LinkedIn through the signed-in browser with cc-linkedin 1.0 - post to a Page (text, video, images, now or scheduled), comment, reply, react, delete, read profiles and companies, search people and posts, read notifications and Page stats, and withdraw an invitation we sent. Eighteen commands, no API. Stage first, read the RESULT line. Triggers on "/linkedin", "post to linkedin", "linkedin post", "schedule a linkedin post", "post the video to linkedin", "linkedin page post", "comment on linkedin", "read a linkedin profile", "search linkedin", "linkedin notifications", "page stats", "withdraw a linkedin invitation".
+description: Drive LinkedIn through the signed-in browser with cc-linkedin 1.0 - post to a Page (text, video, images, now or scheduled), comment, reply, react, delete, read profiles and companies, search people and posts, read notifications and Page stats, read the message inbox and one conversation, and withdraw an invitation we sent. Twenty commands, no API. Stage first, read the RESULT line. Triggers on "/linkedin", "post to linkedin", "linkedin post", "schedule a linkedin post", "post the video to linkedin", "linkedin page post", "comment on linkedin", "read a linkedin profile", "search linkedin", "linkedin notifications", "page stats", "read my linkedin messages", "linkedin inbox", "read a linkedin conversation", "withdraw a linkedin invitation".
 ---
 
 # LinkedIn posting
@@ -9,7 +9,7 @@ Use the tool. Do not hand-roll browser calls, do not use browser-harness for
 posting, do not reach for the LinkedIn API. It encodes a day of measured failure
 modes (see its docstring and the README).
 
-**Version 1.0.1. Eighteen commands, listed in full below - and the list of what
+**Version 1.0.1. Twenty commands, listed in full below - and the list of what
 does NOT exist is just as important, because the shape of the tool invites you
 to assume verbs that are not there.**
 
@@ -152,6 +152,57 @@ anyone as "the Page's impressions". `--days` defaults to 30 and drives the
 window control; LinkedIn's own default is 15, so a screenshot taken by hand may
 not be comparable.
 
+## Messages: the inbox and one conversation (read only)
+
+```
+cc-linkedin read-inbox [--limit N] [--unread]
+cc-linkedin read-thread <thread_ref from read-inbox | https://www.linkedin.com/messaging/thread/<id>/>
+```
+
+Both print JSON, one record per line, then a RESULT line. Neither can send:
+nothing in either verb types, presses a key, or clicks anything inside a
+conversation - a thread carries one-click quick-reply buttons that send canned
+text to a real person with no draft.
+
+**`read-inbox` opens no conversation, and proves it.** It reads the list
+through `/messaging/compose/`, whose reading pane is an empty draft, instead of
+`/messaging/`, which selects a conversation on load and marks it read. At the
+end it reads the list again and FAILS if any row that was unread is now read,
+or gone (under `--unread`, a row that got read leaves the list rather than
+changing). `opened=0 marked_read=0` on the RESULT line is that check passing.
+When no unread row was in view there was nothing to compare, and the line says
+`marked_read=unproven-no-unread-row-in-view` rather than claim a zero it never
+checked; `unread_rechecked` is how many unread rows the check covered.
+`--unread` presses the page's own Unread filter. **The default list
+(`filter=all`) is not every conversation**: measured 2026-10-03, the Unread
+filter also lists unread conversations LinkedIn keeps out of its main list
+(most likely Other / message requests). So `--unread` can show unread
+conversations the default list never will. Rows carry `participant`,
+`last_line` (null for the rows LinkedIn shows no snippet on), `when`, `unread`,
+`unread_count` and `thread_ref`. **There is no thread URL**: the list's rows
+carry none, and one only exists after a row is opened (amendment A3).
+
+**`read-thread` MARKS THE CONVERSATION READ.** There is no way to read a thread
+without opening it, and the other person may be shown a read receipt. The
+RESULT line always says `marked_read=true`, and `was_unread` says whether it was
+unread before (`unknown` when given a URL, because the list was never seen).
+`complete=false` means it stopped scrolling back before the oldest message. A
+FAIL after the conversation opened says, in the FAIL line, that it is now read.
+Only read a thread you mean to have read. It takes a `thread_ref`, which it
+resolves on the list by who and when - and refuses rather than guesses when a
+newer message has changed the row (run `read-inbox` again for a fresh ref) - or
+a thread URL. Messages carry `sender` (`sender_carried: true` where LinkedIn
+printed the name only on the first message of a group), `day`, `time`, `text`
+and `urn`.
+
+**Budget.** The list counts on the uncapped `view_self` line (it opens no
+conversation and tells nobody anything). Opening a thread counts on the CAPPED
+`view` line - 80 a day shared with every other read - because it can show
+somebody a read receipt. `--unread` costs nothing more: the filter moves the
+address to an empty new-message draft, uncapped by the owner's ruling
+(`docs/ruling-unread-draft-2026-10-03.md`). Over the cap it stops and says
+tomorrow.
+
 ## Invitations we sent (withdraw)
 
 The ONLY invitation verb in 1.0. It withdraws; it cannot send.
@@ -189,7 +240,7 @@ the live site, and two of them send to real people.
 
 | Not present | Where it stands |
 |---|---|
-| `connect`, `message`, `read-inbox`, `read-thread`, `invitations`, `follow`, `unfollow`, `invite-to-follow` | designed and surveyed, not built - issue #9 |
+| `connect`, `message`, `invitations`, `follow`, `unfollow`, `invite-to-follow` | designed and surveyed, not built - issue #9 |
 | `post --profile` (posting as Soren rather than as the Page), `edit-post`, `repost` | designed, never surveyed - issue #10 |
 
 If Soren asks for one of these, say it does not exist and point at the issue.
