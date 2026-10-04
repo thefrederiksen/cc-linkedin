@@ -27,7 +27,7 @@ py -3.11 path\to\cc_linkedin.py post ...
 Both forms run the same code. The file form matters because scheduled jobs call
 it by path, with no install and no virtual environment in the picture.
 
-## The 20 commands
+## The 21 commands
 
 Grouped by what they touch. Every writing verb takes `--expect` or an equivalent
 guard and refuses rather than guesses; every reading verb prints JSON and treats
@@ -38,10 +38,10 @@ an empty result as a failure rather than an answer.
 | **Posting** | `post`, `scheduled`, `unschedule` |
 | **Comments and reactions** | `read-post`, `read-comments`, `comment`, `reply`, `delete-comment`, `react`, `unreact`, `delete-post` |
 | **Reading and search** | `read-profile`, `read-company`, `search-people`, `search-posts`, `notifications`, `stats` |
-| **Messages (read only)** | `read-inbox`, `read-thread` - the second MARKS the conversation read |
+| **Messages** | `read-inbox`, `read-thread` - the second MARKS the conversation read; `message` - one direct message to one person, staged by default |
 | **Invitations** | `withdraw` |
 
-A twenty-first, `selftest`, runs the others against things we own; it is for
+A twenty-second, `selftest`, runs the others against things we own; it is for
 developing the tool, not for using it. `cc-linkedin --help` lists them all and
 `cc-linkedin <command> --help` explains one.
 
@@ -53,7 +53,7 @@ here because the shape of the tool invites you to assume otherwise.
 
 | Not present in 1.0 | Where it stands |
 |---|---|
-| `connect`, `message`, `invitations`, `follow`, `unfollow`, `invite-to-follow` | designed, and surveyed against the live site, but not built - [issue #9](https://github.com/thefrederiksen/cc-linkedin/issues/9) |
+| `connect`, `invitations`, `follow`, `unfollow`, `invite-to-follow` | designed, and surveyed against the live site, but not built - [issue #9](https://github.com/thefrederiksen/cc-linkedin/issues/9) |
 | `post --profile` (posting as the person rather than as the Page), `edit-post`, `repost` | designed, never surveyed - [issue #10](https://github.com/thefrederiksen/cc-linkedin/issues/10) |
 
 `withdraw` is the only invitation verb in 1.0, and it withdraws only - there is

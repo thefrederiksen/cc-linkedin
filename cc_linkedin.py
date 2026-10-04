@@ -837,6 +837,40 @@ def main():
     sp.add_argument("--port", type=int, default=9224)
     sp.set_defaults(fn=I.read_thread)
 
+    # -- Phase 3: one direct message to one person ------------------------------
+    from cc_linkedin_kit import messaging as M
+
+    sp = sub.add_parser(
+        "message", help="stage (default) or send ONE direct message to ONE person",
+        description="Open one conversation, type the message, read it back, screenshot. "
+                    "STAGED BY DEFAULT: without --submit the composer is then cleared and "
+                    "proven empty, and a reload proves the conversation's last message is "
+                    "unchanged - nothing is sent. --leave stops before clearing so a person can "
+                    "press Send. --submit sends, and REQUIRES --expect-name: the page must name "
+                    "that person as the one participant, and a text opening 'Hi/Hey/Hello X' "
+                    "must greet their first name, or it refuses and sends nothing. Enter is "
+                    "never pressed (line breaks are Shift+Enter) and the message count is "
+                    "asserted unchanged between typing and Send. Proof of send is the text, "
+                    "under our name, in the conversation after a reload. OPENING THE "
+                    "CONVERSATION MARKS IT READ on every route, and the RESULT line says "
+                    "marked_read=true.",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    sp.add_argument("target", help="a /in/ profile URL or slug, a /messaging/thread/<id>/ URL, "
+                                   "or a thread_ref from read-inbox")
+    sp.add_argument("--text", help="the message")
+    sp.add_argument("--text-file", help="UTF-8 file holding the message")
+    sp.add_argument("--expect-name", help="the participant's name as the conversation shows it. "
+                                          "REQUIRED with --submit (design rule 0.3).")
+    mode = sp.add_mutually_exclusive_group()
+    mode.add_argument("--submit", action="store_true",
+                      help="press Send. Default stages, clears, and sends nothing.")
+    mode.add_argument("--leave", action="store_true",
+                      help="stage, and leave the text typed in the composer for a person to send")
+    sp.add_argument("--shot", help="write a screenshot of the typed message here "
+                                   "(brings the tab to the front for it)")
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=M.message)
+
     from cc_linkedin_kit import selftest as T
     sp = sub.add_parser("selftest",
                         help="run every verb on things we own, leaving nothing behind")

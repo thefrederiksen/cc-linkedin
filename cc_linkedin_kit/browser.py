@@ -850,6 +850,11 @@ class Browser(object):
         self._locked = False
         self.browser = None
         self.page = None
+        # Set by a verb that hands its tab to a person (message --leave): the
+        # tab is left open when the run ends instead of being closed. Measured
+        # 2026-10-04: LinkedIn keeps no draft of an unsent message once its tab
+        # closes, so closing it would throw away the very text being handed over.
+        self.keep_page = False
         self.lock = BrowserLock(port)
 
     def __enter__(self):
@@ -912,7 +917,8 @@ class Browser(object):
         """Close what is open and RELEASE THE LOCK, whatever happens on the way."""
         try:
             try:
-                if self.page is not None and not self.page.is_closed():
+                if (self.page is not None and not self.keep_page
+                        and not self.page.is_closed()):
                     self.page.close()
             finally:
                 try:

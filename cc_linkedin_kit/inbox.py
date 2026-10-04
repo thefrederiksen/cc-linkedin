@@ -584,7 +584,7 @@ def die_opened(msg):
     die(msg + OPENED)
 
 
-def _open_from_ref(br, pace, ref):
+def _open_from_ref(br, pace, ref, on_click=None):
     """Find the row the ref names and open it. Returns (was_unread, participant).
 
     THE ORDER IS THE GUARD (review defect 4). The capped view is reserved - and
@@ -606,6 +606,11 @@ def _open_from_ref(br, pace, ref):
     if got != ref["p"]:
         die("row %d names %r on the element about to be clicked, not %r. Refusing; "
             "nothing was opened." % (idx, got, ref["p"]))
+    if on_click:
+        # The caller's record that the row is about to be opened (message
+        # words its failures from it). Called BEFORE the click: a click that
+        # raises may still have landed.
+        on_click()
     handle.click(timeout=8000)
     deadline = time.time() + 20
     while time.time() < deadline and not is_conversation_url(br.page.url):

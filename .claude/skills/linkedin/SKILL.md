@@ -1,6 +1,6 @@
 ---
 name: linkedin
-description: Drive LinkedIn through the signed-in browser with cc-linkedin 1.0 - post to a Page (text, video, images, now or scheduled), comment, reply, react, delete, read profiles and companies, search people and posts, read notifications and Page stats, read the message inbox and one conversation, and withdraw an invitation we sent. Twenty commands, no API. Stage first, read the RESULT line. Triggers on "/linkedin", "post to linkedin", "linkedin post", "schedule a linkedin post", "post the video to linkedin", "linkedin page post", "comment on linkedin", "read a linkedin profile", "search linkedin", "linkedin notifications", "page stats", "read my linkedin messages", "linkedin inbox", "read a linkedin conversation", "withdraw a linkedin invitation".
+description: Drive LinkedIn through the signed-in browser with cc-linkedin 1.0 - post to a Page (text, video, images, now or scheduled), comment, reply, react, delete, read profiles and companies, search people and posts, read notifications and Page stats, read the message inbox and one conversation, stage or send one direct message, and withdraw an invitation we sent. Twenty-one commands, no API. Stage first, read the RESULT line. Triggers on "/linkedin", "post to linkedin", "linkedin post", "schedule a linkedin post", "post the video to linkedin", "linkedin page post", "comment on linkedin", "read a linkedin profile", "search linkedin", "linkedin notifications", "page stats", "read my linkedin messages", "linkedin inbox", "read a linkedin conversation", "send a linkedin message", "linkedin dm", "withdraw a linkedin invitation".
 ---
 
 # LinkedIn posting
@@ -9,7 +9,7 @@ Use the tool. Do not hand-roll browser calls, do not use browser-harness for
 posting, do not reach for the LinkedIn API. It encodes a day of measured failure
 modes (see its docstring and the README).
 
-**Version 1.0.1. Twenty commands, listed in full below - and the list of what
+**Version 1.0.1. Twenty-one commands, listed in full below - and the list of what
 does NOT exist is just as important, because the shape of the tool invites you
 to assume verbs that are not there.**
 
@@ -203,6 +203,51 @@ address to an empty new-message draft, uncapped by the owner's ruling
 (`docs/ruling-unread-draft-2026-10-03.md`). Over the cap it stops and says
 tomorrow.
 
+## Messages: send ONE direct message (`message`)
+
+```
+cc-linkedin message <thread_ref | thread URL | profile URL> --text-file msg.txt --expect-name "Their Name" [--shot out.png]
+cc-linkedin message ... --leave                 type it and LEAVE it for Soren to press Send
+cc-linkedin message ... --expect-name "Their Name" --submit
+```
+
+**Staged by default.** Without `--submit` it opens the conversation, types the
+text, reads every line back, screenshots, then CLEARS the composer, proves it
+empty, and reloads to prove the conversation's last message is unchanged:
+`RESULT message staged left=false ... cleared=true last_message_unchanged=true`.
+Nothing is sent. Stage first, every time, and look at the screenshot.
+
+**`--leave` is the normal way to hand a DM to Soren.** It stages, then leaves the
+text typed in a browser tab that stays OPEN and in front, and the RESULT line
+says `left=true`. LinkedIn keeps no draft once that tab closes - closing
+it discards the text. Soren presses Send himself.
+
+**`--submit` sends, and only with `--expect-name`.** Before Send, the page must
+name exactly that person as the one participant, and a text opening
+"Hi/Hey/Hello" with more words on that line must greet their FIRST NAME as the
+page prints it ("Hi Anna," - or put the greeting on a line of its own). Either
+mismatch refuses and sends nothing (a wrong-name DM reached a real prospect on
+2026-07-21). Proof of send is a NEW message under our name holding the text,
+after a reload: `RESULT message sent ... urn=...`. `already-sent` means the last
+message from us is already this text, and nothing was typed. Every outbound send
+is paced through `pace.json` (45-90 s apart, 30 a day).
+
+**Every route MARKS THE CONVERSATION READ**, staged or not, and the RESULT line
+says `marked_read=true`. A thread URL or `thread_ref` costs one capped view
+(plus one for the staged run's reload); a profile URL costs two - the profile
+(which leaves a "viewed your profile" trace) and its Message destination, which
+shows the conversation. Prefer a `thread_ref` from `read-inbox` when there is a
+conversation already.
+
+Rules it enforces: Enter is never pressed (line breaks are Shift+Enter, and the
+message count is asserted unchanged between typing and Send); nothing in the
+thread is clicked but the composer and Send - never a quick-reply button; one
+recipient per run, no lists, no batch, and a group conversation is refused;
+from a profile the person must show the 1st-degree badge (anything else would be
+InMail or a message request); invisible characters in the text refuse; a
+composer already holding some other draft refuses rather than overwrite words
+typed by hand. The old `tools/send_batch.py` is gone for exactly those reasons.
+
 ## Invitations we sent (withdraw)
 
 The ONLY invitation verb in 1.0. It withdraws; it cannot send.
@@ -240,7 +285,7 @@ the live site, and two of them send to real people.
 
 | Not present | Where it stands |
 |---|---|
-| `connect`, `message`, `invitations`, `follow`, `unfollow`, `invite-to-follow` | designed and surveyed, not built - issue #9 |
+| `connect`, `invitations`, `follow`, `unfollow`, `invite-to-follow` | designed and surveyed, not built - issue #9 |
 | `post --profile` (posting as Soren rather than as the Page), `edit-post`, `repost` | designed, never surveyed - issue #10 |
 
 If Soren asks for one of these, say it does not exist and point at the issue.

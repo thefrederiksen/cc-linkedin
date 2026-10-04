@@ -193,3 +193,67 @@ where the sentence is visible.
 carry that href, no such row was ever clicked, and the assertion covering it has
 been exercised offline only. The trap A5 was written for remains a hypothesis
 about the first ten rows.
+
+---
+
+# `message`, measured 2026-10-04 while building it
+
+Four things the design (4.3) and the survey did not know.
+
+**A profile's Message destination is NOT an empty draft.** The top card's
+Message link goes to `/messaging/compose/?profileUrn=...&recipient=...`. When a
+conversation with that person exists, that page shows the WHOLE conversation
+under a "New message" heading, with the recipient as one dismissible pill
+(`button.artdeco-pill--dismiss`, aria-label `Remove <Name>`). So it can mark a
+conversation read, and `message` registers it on the CAPPED view line by name.
+`surface_kind` still files any `/messaging/compose/` address as `view_self`,
+query or not, and `tests/test_messaging_surface_views.py` pins that for
+`?recipient=`. That classification was measured on the bare route only. It is
+left alone here - changing it is a ruling, not a builder's call - and is raised
+for one.
+
+**LinkedIn keeps no draft once the tab closes.** Text left in a composer was
+gone when the same conversation was opened again in a new tab, on both the
+thread route and the compose route. So `--leave` has to leave the TAB open
+(`Browser.keep_page`); leaving only the text would hand over nothing.
+
+**"Open send options" is a setting, and on this account Enter does not send.**
+`button.msg-form__send-toggle` opens two radios, "Press Enter to Send" and
+"Click Send"; "Click Send" was selected. Rule 0.2 is unchanged: the setting can
+be flipped by a person at any time, the verb does not open the menu (that would
+be a click inside the conversation, against A6), Shift+Enter is a line break
+under both settings, and the bubble count is the check that fires if any of
+that is ever wrong.
+
+**Shift+Enter makes paragraphs.** Each line typed becomes its own `<p>` in the
+composer, and a blank line is `<p><br></p>`. The verb reads those back and
+compares them line for line with what it typed; a sent bubble collapses them
+into one run of text, so the proof of send compares whitespace-collapsed text
+and, to be a NEW message, an event urn that was not on the page before typing.
+
+## Live proof, 2026-10-04 (rows P3-5, P3-6, P3-7)
+
+Recorded as counts and shapes only - this repository is public, so neither the
+recipient nor the text appears here.
+
+* **P3-5, staged.** Run on an already-read one-to-one conversation by each of
+  the three routes (thread URL, `thread_ref`, profile URL): four typed lines read
+  back exactly, message count unchanged, composer cleared and proven empty, and
+  after the reload the last message was the one that was last before typing
+  (`cleared=true last_message_unchanged=true marked_read=true`). `--leave` was
+  run once: the text was found still typed, Send enabled, in the tab left open.
+* **P3-7, multi-paragraph, staged.** The four-line staged text above included a
+  blank line; the composer held it as four paragraphs and the count never rose.
+* **P3-6, `--submit`, owner-approved text to a consenting connection, 17:56.**
+  `RESULT message sent ... via=thread chars=1703 lines=23`. An independent
+  `read-thread` afterwards showed exactly ONE new message from the owner, dated
+  that day, 1692 characters - LinkedIn collapses blank lines in a sent message,
+  which is why the proof of send compares whitespace-collapsed text - and the
+  conversation at 3 messages.
+
+What this does NOT cover: a first message to someone with no conversation yet
+(the compose route with zero history is unmeasured, and the verb refuses there
+if the message list is not positively found), the profile and `thread_ref`
+routes under `--submit` (only the thread URL route has sent), and P3-8 - the
+Enter-sends guard deliberately broken and watched firing - which has still never
+been run.
