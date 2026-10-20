@@ -257,3 +257,109 @@ if the message list is not positively found), the profile and `thread_ref`
 routes under `--submit` (only the thread URL route has sent), and P3-8 - the
 Enter-sends guard deliberately broken and watched firing - which has still never
 been run.
+
+---
+
+# `connect`, measured 2026-10-20 while building it
+
+Survey section 10.1 and 10.2 said the invitation surface - the custom-invite
+page, Add a note, its limit, Send, Send without a note - had never been
+measured, and that what pressing Connect does was unknown. Both were measured
+with `tools/probe_invite.py`, which blocks every invitation-shaped request in
+the browser from the moment it acts, and ends with a reload that must still show
+the invite control and no Pending. Six probe runs; nothing was sent.
+
+**Pressing the card's Connect does NOT open the note dialog.** The press is
+swallowed by the page (no navigation), nothing appears in the DOM, and the page
+POSTs an SDUI server request -
+`sduiid=com.linkedin.sdui.impl.mynetwork.infra.components.relationshipbuildingdrawer`,
+`drawerType RelationshipBuildingDrawerVariant.ConnectDrawer`,
+`componentRef ProfilePostConnectDrawer_<slug>` - and then refreshes the top
+card. A POST-connect drawer followed by a top-card refresh is the shape of a
+press that has ALREADY SENT. The probe blocked that request, so whether it sends
+was not learned, and it is not going to be learned on a real person. **`connect`
+never presses that control**, on the card or in the More menu.
+
+**The control's href is the invitation's own page.** `/preload/custom-invite/
+?vanityName=<slug>` - the same href on the card's `<a>` and on the More menu's
+`<a role=menuitem>`, which A1 already knew - is a GET that renders LinkedIn's
+classic invitation modal over a blank page. Loading it made no
+invitation-shaped request. Measured on a 2nd-degree profile (invite on the card)
+and a 3rd-degree one (invite behind More); the modal is the same on both.
+
+**The modal is NOT a native `<dialog>`** - unlike the withdraw confirmation it
+is `div[role=dialog][aria-labelledby=send-invite-modal]`. Its first state names
+the person ("Personalize your invitation to <Name> by adding a note") and offers
+Dismiss / Add a note / Send without a note. Add a note reveals
+`textarea#custom-message` (no `maxlength`), "Please limit personal note to 300
+characters", a live `n/300` counter, and Cancel / Send - Send's accessible name
+is "Send invitation", disabled while the box is empty. **300, not the design's
+200**: this account has Premium, and the modal says "You have unlimited notes
+with Premium". The verb reads the limit off the page, twice, and holds no number
+of its own.
+
+**The open modal hides the page behind it from the accessibility tree**, so
+`Browser.read`'s signed-in check (the "Me" control) fails on this page. The
+profile read just before proves sign-in; the presence proof on the invitation
+page is the modal itself, naming the person.
+
+**Two instrument defects, both mine, both hangs.** The first guard routed
+`**/*` and decided in Python; with the sync API a routed request is answered only
+while Python is inside a Playwright call, so every request the page made during
+a `time.sleep` stalled and the modal never rendered (a spinner, for five
+minutes). The second called `page.unroute()` after Dismiss, which never returned.
+Fixed: the route is a REGEX, matched by Playwright's driver, so nothing the page
+needs is ever intercepted; it is installed once and never removed, and a flag
+decides abort or pass; waits with it up use `page.wait_for_timeout`.
+`Browser.goto` gained `pump=True` for that. Both hangs were with the modal open
+or just dismissed; neither sent anything (the later reloads showed no Pending).
+
+## Live proof, 2026-10-20
+
+Counts and shapes only - this repository is public.
+
+* **P3-1, staged, two live 2nd-degree profiles.** One with the invite on the top
+  card and a 110-character note: typed, read back exactly, the page's counter at
+  110/300, screenshot, dismissed, and after the reload the invite control was
+  still on the card and nothing was Pending. One with the invite behind More and
+  no note: the same, `invite_after_reload=more-menu`. Run on the final code.
+* **already-connected**, on two 1st-degree profiles; **already-pending**, on a
+  profile taken from the Sent tab. Neither opened a modal.
+* **refused**: a wrong `--expect-name` (before anything opened); `--submit`
+  without one (before the browser); a 301-character note (the modal was opened,
+  the limit read as 300, nothing typed, dismissed, and the reload proved the
+  state).
+* `pace.json`'s outbound clock and `connect` count did not move all day.
+
+**Not covered.** `--submit` has NEVER been run: P3-2 needs a consenting person
+and the owner has not named one, so the Send press, the proof of send, and the
+post-send page are unmeasured. The selftest's `pending_profile` fixture has been
+ACCEPTED since 2026-09-10 - it is 1st degree now - so P2-11 and P3-pending fail
+until a new one is recorded in the machine's fixtures file. The rolling 7-day
+connect cap in design section 2 is not built.
+
+## Review, 2026-10-20
+
+A separate review session read the change (code and offline suite only, no
+browser) and found nothing that blocks. Its findings, and what was done:
+
+* **At the press, not 90 seconds before it.** After the pacing gap `--submit`
+  re-checked the modal and the note but not that the shared browser's tab was
+  still THIS person's invitation page. It now re-reads the address and, with no
+  note on screen, the name the modal states, immediately before Send.
+* **Guards that a fake could hide.** The modal, note-box and read-back checks are
+  now plain functions (`modal_problem`, `box_problem`, `readback_problem`,
+  `visible_one`) tested both ways, and the three guards between the gap and the
+  press each have a test. Every one was watched going red with its guard taken out.
+* The no-key rule in the tests now forbids every Playwright typing and pressing
+  call, not two of them; the selftest check now proves every `connect` call in
+  the Phase 3 block goes through the one helper that forces `submit` off.
+* The proving reloads pump events (`Browser.read(..., pump=True)`), because the
+  route stays installed for the page's life.
+* **`refused` is a RESULT, `message`'s equivalent is a FAIL - on purpose.** The
+  outreach seat that drives `connect` needs to tell "the verb decided not to
+  act" (wrong name, a cap, a note too long) from "the page is not what was
+  measured". `refused` also prints a JSON record like every other outcome.
+  `message` is unchanged; aligning it is a separate change.
+* The guard's second stated limit: every GET passes, so an invitation sent by a
+  GET would not be caught. The reload is the proof.

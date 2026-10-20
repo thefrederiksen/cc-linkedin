@@ -806,6 +806,33 @@ def main():
     sp.add_argument("--port", type=int, default=9224)
     sp.set_defaults(fn=N.withdraw)
 
+    sp = sub.add_parser(
+        "connect", help="stage (default) or send ONE invitation to connect to ONE person",
+        description="Open the person's profile, find the invite control (on the top card or "
+                    "behind More) the way read-profile does, and open LinkedIn's own "
+                    "invitation modal from its address - the card's Connect is NEVER pressed. "
+                    "With a note, add it, read it back against the page's own counter, and "
+                    "refuse a note over the limit the modal states. STAGED BY DEFAULT: the "
+                    "modal is then dismissed and a reload proves the invite control is still "
+                    "there and nothing is Pending; while it is open, invitation-shaped "
+                    "requests are blocked in the browser. --submit sends, and REQUIRES "
+                    "--expect-name: the top card and the modal must both name that person. "
+                    "Proof of send is LinkedIn's own Pending control after a reload. "
+                    "RESULT connect staged|sent|already-pending|already-connected|refused.",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    sp.add_argument("url", help="the person's profile URL, or just the /in/ slug")
+    note = sp.add_mutually_exclusive_group()
+    note.add_argument("--note", help="a note to add to the invitation")
+    note.add_argument("--note-file", help="UTF-8 file holding the note")
+    sp.add_argument("--expect-name", help="the person's name as the profile shows it. "
+                                          "REQUIRED with --submit (design rule 0.3).")
+    sp.add_argument("--submit", action="store_true",
+                    help="send the invitation. Default stages, dismisses, and sends nothing.")
+    sp.add_argument("--shot", help="write a screenshot of the filled-in modal here "
+                                   "(brings the tab to the front for it)")
+    sp.add_argument("--port", type=int, default=9224)
+    sp.set_defaults(fn=N.connect)
+
     # -- Phase 3: the owner's own messages (read only) ------------------------
     from cc_linkedin_kit import inbox as I
 

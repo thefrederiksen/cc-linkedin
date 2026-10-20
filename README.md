@@ -27,7 +27,7 @@ py -3.11 path\to\cc_linkedin.py post ...
 Both forms run the same code. The file form matters because scheduled jobs call
 it by path, with no install and no virtual environment in the picture.
 
-## The 21 commands
+## The 22 commands
 
 Grouped by what they touch. Every writing verb takes `--expect` or an equivalent
 guard and refuses rather than guesses; every reading verb prints JSON and treats
@@ -39,9 +39,9 @@ an empty result as a failure rather than an answer.
 | **Comments and reactions** | `read-post`, `read-comments`, `comment`, `reply`, `delete-comment`, `react`, `unreact`, `delete-post` |
 | **Reading and search** | `read-profile`, `read-company`, `search-people`, `search-posts`, `notifications`, `stats` |
 | **Messages** | `read-inbox`, `read-thread` - the second MARKS the conversation read; `message` - one direct message to one person, staged by default |
-| **Invitations** | `withdraw` |
+| **Invitations** | `connect` - one invitation to one person, staged by default; `withdraw` |
 
-A twenty-second, `selftest`, runs the others against things we own; it is for
+A twenty-third, `selftest`, runs the others against things we own; it is for
 developing the tool, not for using it. `cc-linkedin --help` lists them all and
 `cc-linkedin <command> --help` explains one.
 
@@ -53,11 +53,11 @@ here because the shape of the tool invites you to assume otherwise.
 
 | Not present in 1.0 | Where it stands |
 |---|---|
-| `connect`, `invitations`, `follow`, `unfollow`, `invite-to-follow` | designed, and surveyed against the live site, but not built - [issue #9](https://github.com/thefrederiksen/cc-linkedin/issues/9) |
+| `invitations`, `follow`, `unfollow`, `invite-to-follow` | designed, and surveyed against the live site, but not built - [issue #9](https://github.com/thefrederiksen/cc-linkedin/issues/9) |
 | `post --profile` (posting as the person rather than as the Page), `edit-post`, `repost` | designed, never surveyed - [issue #10](https://github.com/thefrederiksen/cc-linkedin/issues/10) |
 
-`withdraw` is the only invitation verb in 1.0, and it withdraws only - there is
-no way to send an invitation with this tool.
+The invitation verbs are `connect` (send one) and `withdraw` (take one back).
+There is no way to read the invitations you have RECEIVED, or to accept one.
 
 ```
 cc-linkedin post --page 107519091 --page-name "CenterConsulting, Inc." ^
@@ -158,6 +158,36 @@ Three things worth knowing before you use them:
   table, not LinkedIn's own aggregate. `--days` drives the window control and
   then checks the range the page states, because LinkedIn's own default is
   fifteen days, not thirty.
+
+## Sending an invitation
+
+```
+cc-linkedin connect <profile URL or slug> [--note "..." | --note-file note.txt] [--shot out.png]
+cc-linkedin connect <profile URL or slug> --expect-name "Their Name" [--note-file note.txt] --submit
+```
+
+Sends ONE invitation to connect, to ONE person. **Staged by default**: without
+`--submit` it opens LinkedIn's own invitation modal, adds the note if there is
+one, reads it back against the page's own counter, screenshots, dismisses the
+modal and reloads the profile to prove the invite control is still there and
+nothing is Pending. While the modal is open, invitation-shaped requests are
+blocked in the browser. Stage first, every time.
+
+**The card's Connect is never pressed.** Measured 2026-10-20: pressing it does
+not open the note dialog - it fires a server request for a "post-connect"
+drawer and refreshes the card, which is the shape of a press that has already
+sent. The verb reads that control's address instead, the same
+`/preload/custom-invite/?vanityName=<slug>` on the card and in the More menu,
+which opens the modal that names the person and offers Add a note / Send
+without a note.
+
+`--submit` requires `--expect-name`, and the top card and the modal must both
+name that person. The note limit is read off the modal (300 on this account) and
+a longer note is refused before anything is typed; no key is ever pressed in the
+note box. A 1st-degree profile answers `already-connected`, a Pending one
+`already-pending`, and anything else that is not a positively seen invite
+control for this exact person is `refused`. Proof of send is LinkedIn's own
+Pending control after a reload. Fifteen a day, 45-90 seconds apart, never raised.
 
 ## Invitations we sent
 

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Phase 3, the invitations we have sent: taking one back.
+"""Phase 3, invitations: taking one back (`withdraw`), and sending one (`connect`,
+at the bottom of this file, with its own measurements).
 
 MEASURED ON THE LIVE PAGE 2026-09-10. The dump is
 docs/surveys/invitations-sent-rows-2026-09-10.txt and what it means is in
@@ -53,10 +54,15 @@ invited again for a period after a withdrawal. That period is stated on the
 RESULT line from what was MEASURED, and if the live surface stated nothing the
 line says that instead of repeating a number from memory.
 """
+import io
 import json
 import re
+import sys
 import time
+import unicodedata
+from urllib.parse import unquote
 
+from . import people as P
 from . import selectors as S
 from .browser import Browser, Pace, log, die
 
@@ -548,3 +554,601 @@ def _restriction(dump):
     return ("not-stated-on-screen: LinkedIn showed no period on the withdraw surface on "
             "2026-09-10, so this tool does not name one. Treat a withdrawal as spending the "
             "ability to invite this person again for a while and verify before relying on it.")
+
+
+# ============================================================================
+# `connect`: send ONE invitation to ONE person, staged by default.
+# ============================================================================
+#
+#     cc-linkedin connect <profile URL or slug> [--note TEXT | --note-file F]
+#                         [--expect-name "Name"] [--submit] [--shot out.png]
+#
+# THIS REACHES A REAL PERSON AND CANNOT BE TAKEN BACK - a withdrawal afterwards
+# costs "up to 3 weeks" of not being able to invite them again (see withdraw).
+#
+# MEASURED 2026-10-20 (tools/probe_invite.py; selectors.py, PHASE 3: SENDING AN
+# INVITATION). The two facts the whole verb is built round:
+#
+#   * PRESSING THE CARD'S Connect DOES NOT OPEN THE NOTE DIALOG. It fires an
+#     SDUI "post-connect drawer" request and refreshes the top card - the shape
+#     of a press that has already sent. That request was blocked while it was
+#     measured, so this verb never presses that control, on the card or in the
+#     More menu.
+#   * THE CONTROL'S href IS THE INVITATION'S OWN PAGE. /preload/custom-invite/
+#     ?vanityName=<slug> renders LinkedIn's classic modal: it names the person,
+#     offers Add a note / Send without a note, and Dismiss closes it having sent
+#     nothing. That is the surface this verb acts on.
+#
+# THE RULES, EACH ONE ENFORCED HERE RATHER THAN HOPED FOR
+#
+#   * STAGED BY DEFAULT. Without --submit the modal is opened, the note is typed
+#     and read back, the screenshot is taken, the modal is DISMISSED, and the
+#     profile is reloaded to prove the pre-action state survived: the invite
+#     control still where it was, and no Pending control (design rule 0.1).
+#   * WHILE THE MODAL IS OPEN, invitation-shaped requests are ABORTED in the
+#     browser, and one appearing at all fails the run. On --submit the guard is
+#     lifted only for the Send press itself. So "a staged run sends nothing" is
+#     a property of the run, and the reload is the proof of it rather than the
+#     only thing standing behind it.
+#   * --submit REQUIRES --expect-name, and the top card AND the modal must each
+#     name exactly that person (rule 0.3). Staged runs check it too when given.
+#   * The pre-check is read-profile's own: degree 1st is already-connected, a
+#     Pending control is already-pending, and anything that is not a positively
+#     seen, enabled invite control whose page is for THIS person refuses.
+#   * The NOTE LIMIT IS READ OFF THE MODAL - the sentence and the counter's
+#     denominator, which must agree - and a longer note is refused before a
+#     character is typed, never left for the box to truncate. No key is ever
+#     pressed in the note box: the note goes in as one insertText, and the
+#     box's value and the page's own counter are read back and compared.
+#   * PACING: the send is an outbound action on pace.json's `connect` line,
+#     the 45-90 s gap and the daily cap. Every page is a CAPPED view.
+#
+# PROOF OF SEND is LinkedIn's own Pending control on the profile after a
+# reload, read by the same code read-profile uses. A Send press with no Pending
+# afterwards is a FAIL saying the invitation MAY have gone.
+
+CONNECT_SETTLE = 4         # seconds for the modal to render after the page loads
+VIEWS_PER_RUN = 3          # the profile, the invitation page, the proving reload
+
+MODAL_JS = r"""
+(s) => {
+  const vis = e => !!(e && (e.offsetParent || e.getClientRects().length));
+  const t = e => (e ? (e.innerText || '') : '').replace(/\s+/g, ' ').trim();
+  const counter = /^\s*\d+\s*\/\s*\d+\s*$/;
+  const modals = [...document.querySelectorAll(s.modal)].filter(vis);
+  const m = modals.length === 1 ? modals[0] : null;
+  const boxes = m ? [...m.querySelectorAll(s.box)].filter(vis) : [];
+  return {
+    url: location.href,
+    modals: modals.length,
+    text: t(m),
+    buttons: m ? [...m.querySelectorAll('button')].filter(vis).map(b => ({
+        name: (b.getAttribute('aria-label') || t(b)).trim(),
+        disabled: b.disabled === true || b.getAttribute('aria-disabled') === 'true'})) : [],
+    boxes: boxes.length,
+    value: boxes.length === 1 ? boxes[0].value : null,
+    counters: m ? [...m.querySelectorAll('*')]
+        .filter(e => !e.children.length && vis(e) && counter.test(t(e))).map(t) : [],
+  };
+}
+"""
+
+
+class Refused(Exception):
+    """A decision, not a breakage: the run will not act, and says why."""
+
+
+def load_note(note, note_file):
+    """The note exactly as it will be put in the box, or None for no note.
+
+    Line endings become \\n, trailing whitespace on each line and at the ends
+    goes, and invisible control or format characters refuse - they cannot be
+    seen in a mockup and they defeat the read-back."""
+    from . import messaging as M
+    if note is not None and note_file:
+        die("give the note with --note or --note-file, not both")
+    if note_file:
+        try:
+            # utf-8-sig: PowerShell 5.1 writes a BOM, and a BOM in a note is invisible.
+            with io.open(note_file, encoding="utf-8-sig") as f:
+                raw = f.read()
+        except OSError as exc:
+            die("cannot read --note-file %s: %s" % (note_file, exc))
+    elif note is not None:
+        raw = note
+    else:
+        return None
+    raw = raw.replace("\r\n", "\n").replace("\r", "\n").replace("\t", " ")
+    bad = sorted({"U+%04X" % ord(c) for c in raw if c not in M.ALLOWED_INVISIBLE
+                  and unicodedata.category(c) in ("Cc", "Cf")})
+    if bad:
+        die("the note holds invisible control or format characters (%s). They cannot be "
+            "seen in a mockup and they defeat the read-back; take them out." % ", ".join(bad))
+    out = "\n".join(ln.rstrip() for ln in raw.split("\n")).strip("\n")
+    if not out.strip():
+        die("the note is empty. Leave --note off to send without one.")
+    return out
+
+
+def page_length(text):
+    """The length LinkedIn's counter shows: a JavaScript string length, which
+    counts UTF-16 units, so an emoji outside the basic plane counts two."""
+    return len((text or "").encode("utf-16-le")) // 2
+
+
+def invite_slug(url):
+    """The vanityName an invitation page is for, lower-cased, or None."""
+    m = S.CUSTOM_INVITE.search(url or "")
+    return unquote(m.group(1)).strip("/").lower() if m else None
+
+
+def modal_name(text):
+    """The person the modal's first state names, or None."""
+    m = S.INVITE_MODAL_NAME.search(text or "")
+    return re.sub(r"\s+", " ", m.group(1)).strip() if m else None
+
+
+def note_limit(text, counters):
+    """The note limit the open modal states, or raise Refused naming why not.
+
+    TWO readings, and they must agree: the sentence ("limit personal note to N
+    characters") and the counter's denominator ("0/N"). One alone is read; none
+    is a modal this was not measured on, and a limit that cannot be read is not
+    a reason to type and hope."""
+    said = S.INVITE_NOTE_LIMIT_TEXT.search(text or "")
+    dens = sorted({int(S.INVITE_NOTE_COUNTER.match(c).group(2)) for c in counters or []
+                   if S.INVITE_NOTE_COUNTER.match(c)})
+    if len(dens) > 1:
+        raise Refused("the note box shows %d different counters (%s), so which limit applies "
+                      "cannot be read" % (len(dens), ", ".join(map(str, dens))))
+    a = int(said.group(1)) if said else None
+    b = dens[0] if dens else None
+    if a is None and b is None:
+        raise Refused("the note box states no limit - neither the 'limit personal note to N "
+                      "characters' sentence nor an 'n/N' counter - so the note cannot be "
+                      "checked against one")
+    if a is not None and b is not None and a != b:
+        raise Refused("the note box states two limits: %d in its sentence and %d on its counter"
+                      % (a, b))
+    return a if a is not None else b
+
+
+def counter_value(counters):
+    """The counter's numerator - what the page believes is typed - or None."""
+    for c in counters or []:
+        m = S.INVITE_NOTE_COUNTER.match(c)
+        if m:
+            return int(m.group(1))
+    return None
+
+
+def button_names(state):
+    return [b["name"] for b in state.get("buttons") or []]
+
+
+# The modal's checks as plain functions of what was read off it, so each one can
+# be watched failing without a browser (review finding 2, 2026-10-20). Each
+# returns why not, or None.
+
+def box_problem(state):
+    """The note box, just revealed: exactly one, and empty."""
+    if state["boxes"] != 1 or (state["value"] or "") != "":
+        return ("the note box is not one empty box (%d boxes, holding %d chars)"
+                % (state["boxes"], len(state["value"] or "")))
+    return None
+
+
+def readback_problem(note, state):
+    """After typing: the box holds exactly the note, the page's own counter
+    agrees on its length, and one enabled 'Send invitation' is offered."""
+    n = page_length(note)
+    if (state["value"] or "").replace("\r\n", "\n") != note:
+        return ("the note box reads back %d characters that are not the note (%d typed)"
+                % (page_length(state["value"]), n))
+    shown = counter_value(state["counters"])
+    if shown != n:
+        return "the page's own counter reads %r after typing %d characters" % (shown, n)
+    send = [b for b in state["buttons"] if b["name"] == S.INVITE_SEND_NOTE]
+    if len(send) != 1 or send[0]["disabled"]:
+        return ("with the note typed, the modal does not offer one enabled %r button (%s)"
+                % (S.INVITE_SEND_NOTE, button_names(state)))
+    return None
+
+
+def modal_problem(state, name):
+    """The modal as first opened: one of it, naming this person, offering
+    exactly the three controls it was measured with."""
+    if state["modals"] != 1:
+        return "the invitation page shows %d invitation modals, not one" % state["modals"]
+    on = modal_name(state["text"])
+    if on is None or on != re.sub(r"\s+", " ", name).strip():
+        return "the invitation modal names %r and the profile names %r" % (on, name)
+    want = sorted([S.INVITE_DISMISS, S.INVITE_ADD_NOTE, S.INVITE_SEND_BARE])
+    if sorted(button_names(state)) != want:
+        return ("the invitation modal offers %s, not the %s it was measured with. A different "
+                "modal (an email check, a quota notice) is not one this verb acts on"
+                % (button_names(state), want))
+    return None
+
+
+def visible_one(n_visible, name):
+    """button(): exactly one visible control with this accessible name."""
+    if n_visible != 1:
+        return ("the invitation modal holds %d visible buttons named %r, not one"
+                % (n_visible, name))
+    return None
+
+
+def decide_precheck(degree, can_connect, reason, pending, via, url, slug):
+    """What the profile says before anything is opened.
+
+    Returns ('already-connected' | 'already-pending', why) for the two answers
+    that need no action, raises Refused for every no, and returns ('go', None)
+    only for a positively seen, enabled invite control whose invitation page is
+    for THIS person."""
+    if degree == "self":
+        raise Refused("this is the signed-in member's own profile")
+    if degree == "1st":
+        return "already-connected", "the top card shows the 1st-degree badge"
+    if pending:
+        return "already-pending", reason
+    if can_connect is None:
+        raise Refused("whether this person can be invited cannot be read off the page: %s"
+                      % reason)
+    if can_connect is not True:
+        raise Refused("there is no invite control for this person: %s" % reason)
+    if via not in ("topcard", "more-menu"):
+        raise Refused("the invite control was found at %r, which this verb was not measured on"
+                      % via)
+    got = invite_slug(url)
+    if got != slug:
+        raise Refused("the invite control's page is %r, which is for %r and not for /in/%s"
+                      % (url, got, slug))
+    return "go", None
+
+
+class Connect(object):
+    """One invitation to one person. Holds the page and the facts read off it."""
+
+    def __init__(self, br, pace, slug):
+        self.br = br
+        self.page = br.page
+        self.pace = pace
+        self.slug = slug
+        self.name = None
+        self.pressed = False       # a Send control was pressed: it MAY have gone
+        self.blocked = []          # invitation-shaped requests aborted by the guard
+        self.armed = False
+        self.routed = False
+
+    # -- the network guard ---------------------------------------------------
+
+    # ONLY ADDRESSES SHAPED LIKE AN INVITATION ARE INTERCEPTED, and the pattern
+    # is a regex so Playwright's driver does the matching. The first version
+    # routed "**/*" and decided in Python - and with the sync API a route
+    # handler is only answered while Python is inside a Playwright call, so
+    # every request the page made during a time.sleep stalled. Measured
+    # 2026-10-20: the invitation page sat on a spinner for five minutes and the
+    # run never returned. Nothing LinkedIn needs to load the modal matches this
+    # pattern, so nothing it needs can be held up by it. What that costs, two
+    # limits: a request whose ADDRESS says nothing about invitations is not
+    # caught however its body reads, and every GET passes - it must, because the
+    # invitation page itself is a GET to an address that matches. An invitation
+    # sent by a GET would not be caught. The reload is the proof; this is the
+    # second line.
+
+    def _guard(self, route, request):
+        if not self.armed or request.method == "GET":
+            return route.continue_()
+        self.blocked.append(request.url.split("?")[0][:160])
+        return route.abort()
+
+    # The route is installed ONCE and never removed; `armed` decides. Measured
+    # 2026-10-20: page.unroute() after Dismiss never returned - with the sync
+    # API it can wait on a handler that is itself waiting for this thread - and
+    # the run hung with the modal already closed. The tab closes at the end of
+    # the run and takes the route with it.
+
+    def arm(self):
+        if not self.routed:
+            self.page.route(S.INVITATION_REQUEST, self._guard)
+            self.routed = True
+        self.armed = True
+
+    def disarm(self):
+        self.armed = False
+
+    def wait(self, seconds):
+        """Wait while still answering the page. Never time.sleep with the guard
+        up: see the note above the guard."""
+        self.page.wait_for_timeout(int(seconds * 1000))
+
+    # -- reading -------------------------------------------------------------
+
+    def profile(self, why):
+        """Load the profile and read it the way read-profile does. Returns
+        (name, degree, (can_connect, reason, via, url, pending))."""
+        self.pace.before_view("profile %s, for connect (%s)" % (self.slug, why))
+        # pump=True: the route stays installed for the page's life, so a sleep
+        # here would hold any matching request (review finding 5).
+        final = self.br.read("https://www.linkedin.com/in/%s/" % self.slug,
+                             "the profile %s" % self.slug, settle=7, pump=True)
+        self.pace.after_view()
+        got = P.SLUG.search(final)
+        if not got or unquote(got.group(1)).lower() != self.slug:
+            die("asked for the profile /in/%s and landed on %s" % (self.slug, final))
+        card = self.page.evaluate(P.TOPCARD_JS, [S.PROFILE_TOPCARD,
+                                                 {"fill": S.PROFILE_PRIMARY_FILL}])
+        if not card or not card.get("name"):
+            die("no profile top card with a name on %s (selector %s)"
+                % (final, S.PROFILE_TOPCARD))
+        name = re.sub(r"\s+", " ", card["name"]).strip()
+        degree = P._degree(card, name)
+        return name, degree, P._connect(self.br, card, name, degree)
+
+    def modal(self):
+        return self.page.evaluate(MODAL_JS, {"modal": S.INVITE_MODAL, "box": S.INVITE_NOTE_BOX})
+
+    def button(self, name):
+        """The ONE visible button in the modal with exactly this accessible name."""
+        loc = self.page.locator(S.INVITE_MODAL).get_by_role("button", name=name, exact=True)
+        vis = [loc.nth(i) for i in range(loc.count()) if loc.nth(i).is_visible()]
+        why = visible_one(len(vis), name)
+        if why:
+            die("%s. Nothing was pressed." % why)
+        return vis[0]
+
+    # -- acting --------------------------------------------------------------
+
+    def open_invitation(self, url):
+        self.pace.before_view("the invitation page for %s" % self.name)
+        # goto, not read: the open modal marks the page behind it aria-hidden, so
+        # the "Me" control read() proves sign-in by is not in the accessibility
+        # tree here (measured 2026-10-20). The profile read a moment ago proved
+        # it, and the PRESENCE proof on this page is the modal itself, naming
+        # the person - which a signed-out page cannot render.
+        self.br.goto(url, settle=CONNECT_SETTLE, pump=True)
+        self.pace.after_view()
+        if invite_slug(self.page.url) != self.slug:
+            die("asked for the invitation page for /in/%s and landed on %s. Nothing was sent."
+                % (self.slug, self.page.url))
+        try:
+            self.page.locator(S.INVITE_MODAL).first.wait_for(state="visible", timeout=15000)
+        except Exception:                                         # noqa: BLE001
+            die("the invitation page %s showed no invitation modal (%s). Nothing was sent."
+                % (url, S.INVITE_MODAL))
+        self.wait(1)
+        return self.modal()
+
+    def dismiss(self):
+        """Close the modal with its own Dismiss button and prove it closed."""
+        self.button(S.INVITE_DISMISS).click(timeout=8000)
+        deadline = time.time() + 8
+        while time.time() < deadline:
+            if self.modal()["modals"] == 0:
+                return
+            self.wait(0.5)
+        die("Dismiss was pressed and the invitation modal was still open. Nothing was sent. "
+            "The run's tab is closed as it ends; look at the profile before running again.")
+
+    def type_note(self, note):
+        """THE ONLY TYPING IN THIS VERB: one insertText into the note box, no key
+        pressed. Then the box's value and the page's own counter are read back.
+        Returns (limit, modal state)."""
+        self.button(S.INVITE_ADD_NOTE).click(timeout=8000)
+        try:
+            self.page.locator(S.INVITE_MODAL + " " + S.INVITE_NOTE_BOX).first.wait_for(
+                state="visible", timeout=10000)
+        except Exception:                                         # noqa: BLE001
+            die("'Add a note' was pressed and no note box (%s) appeared. Nothing was typed."
+                % S.INVITE_NOTE_BOX)
+        self.wait(0.8)
+        st = self.modal()
+        lim = note_limit(st["text"], st["counters"])
+        why = box_problem(st)
+        if why:
+            die("%s. Nothing was typed." % why)
+        n = page_length(note)
+        if n > lim:
+            raise Refused("the note is %d characters and this modal allows %d. Shorten it - "
+                          "nothing was typed, rather than leave the box to cut it" % (n, lim))
+        box = self.page.locator(S.INVITE_MODAL + " " + S.INVITE_NOTE_BOX).first
+        box.click(timeout=8000)
+        self.page.keyboard.insert_text(note)
+        self.wait(1)
+        st = self.modal()
+        why = readback_problem(note, st)
+        if why:
+            die("%s. Nothing was sent." % why)
+        log("note typed: %d characters of %d, read back exactly, and the page's counter agrees"
+            % (n, lim))
+        return lim, st
+
+    def prove_unchanged(self, via):
+        """Rule 0.1: after a reload the invite control is still where it was and
+        there is no Pending control. Returns where the invite control is now."""
+        name, degree, (can, reason, via2, url, pending) = self.profile(
+            "to prove nothing was sent")
+        if pending:
+            die("THE PROFILE NOW SHOWS PENDING: an invitation to %s exists, and this run "
+                "pressed no Send. Look at the invitation manager's Sent tab." % name)
+        if can is not True or via2 != via:
+            die("after the reload the invite control reads can_connect=%r via=%r, not True via "
+                "%r as before (%s). The pre-action state did not survive."
+                % (can, via2, via, reason))
+        return via2
+
+
+def _ascii_line(s):
+    return str(s).encode("ascii", "replace").decode("ascii")
+
+
+def connect(a):
+    t0 = time.time()
+    slug = _slug(a.url)
+    note = load_note(a.note, a.note_file)
+    expect = re.sub(r"\s+", " ", a.expect_name).strip() if a.expect_name else None
+    if a.submit and not expect:
+        _refused(slug, "--submit needs --expect-name: an irreversible act names its target "
+                       "twice (design rule 0.3). Nothing was opened.")
+    pace = Pace()
+    if a.submit and pace.count("connect") >= Pace.CAPS["connect"]:
+        _refused(slug, "daily cap reached for connect (%d today, cap %d). Tomorrow. Nothing "
+                       "was opened." % (pace.count("connect"), Pace.CAPS["connect"]))
+    if pace.count("view") + VIEWS_PER_RUN > Pace.VIEW_CAP:
+        _refused(slug, "the daily view cap (%d) leaves fewer than the %d views this run "
+                       "needs - the profile, the invitation page and the reload that proves "
+                       "it. Tomorrow. Nothing was opened." % (Pace.VIEW_CAP, VIEWS_PER_RUN))
+
+    with Browser(a.port) as br:
+        run = Connect(br, pace, slug)
+        try:
+            _connect(a, run, note, expect, t0)
+        except SystemExit:
+            if run.pressed:
+                print("FAIL the step above stopped connect AFTER a Send control was pressed: "
+                      "the invitation to %s MAY HAVE GONE. Look at the profile before trying "
+                      "again." % _ascii_line(run.name), flush=True)
+            raise
+        except Exception as exc:                                  # noqa: BLE001
+            # Never a bare traceback: the caller is told what was left behind.
+            if run.pressed:
+                die("unexpected error after a Send control was pressed (%s: %s). The "
+                    "invitation to %s MAY HAVE GONE."
+                    % (type(exc).__name__, str(exc).splitlines()[0][:160], run.name))
+            die("unexpected error: %s: %s. No Send control was pressed."
+                % (type(exc).__name__, str(exc).splitlines()[0][:160]))
+
+
+def _refused(slug, why, opened=False):
+    """A refusal is a RESULT, not a FAIL: the verb decided not to act, and the
+    caller - the outreach seat - needs to tell that from a broken page."""
+    print(json.dumps({"kind": "connect-refused", "person": "/in/" + slug, "reason": why},
+                     ensure_ascii=True))
+    print("RESULT connect refused person=/in/%s sent=nothing%s reason=%s"
+          % (slug, " modal=dismissed-and-proven" if opened else "",
+             json.dumps(why, ensure_ascii=True)), flush=True)
+    sys.exit(1)
+
+
+def _connect(a, run, note, expect, t0):
+    from . import inbox as I
+    from . import messaging as M
+    slug = run.slug
+
+    # -- 1. the profile, read the way read-profile reads it -------------------
+    name, degree, (can, reason, via, url, pending) = run.profile("before")
+    run.name = name
+    if expect and not I.same_person(expect, name):
+        _refused(slug, "the top card names %r, not %r. Nothing was opened." % (name, expect))
+    try:
+        verdict, why = decide_precheck(degree, can, reason, pending, via, url, slug)
+    except Refused as exc:
+        _refused(slug, "%s. Nothing was opened." % exc)
+    if verdict != "go":
+        print(json.dumps({"kind": "connect", "person": "/in/" + slug, "name": name,
+                          "degree": degree, "invitation_pending": pending}, ensure_ascii=True))
+        print("RESULT connect %s person=/in/%s name=%s degree=%s sent=nothing why=%s"
+              % (verdict, slug, json.dumps(name, ensure_ascii=True), degree,
+                 json.dumps(why, ensure_ascii=True)))
+        return
+    if note is not None:
+        bad = M.greeting_problem(note, name)
+        if bad:
+            _refused(slug, "%s. Nothing was opened."
+                     % bad.replace("this conversation is with", "this person is"))
+    log("%s (%s): invite control %s, nothing pending" % (name, degree, via))
+
+    # -- 2. the invitation's own page, with the guard up ----------------------
+    run.arm()
+    st = run.open_invitation(url)
+    why = modal_problem(st, name)
+    if why:
+        if st["modals"]:
+            run.dismiss()
+        die("%s. %s; nothing was sent."
+            % (why, "Dismissed" if st["modals"] else "Nothing was pressed"))
+    # The modal must name the profile's person (above), and that name was held
+    # to --expect-name before anything opened - so the modal is held to it too.
+
+    limit = None
+    if note is not None:
+        try:
+            limit, st = run.type_note(note)
+        except Refused as exc:
+            run.dismiss()
+            run.disarm()
+            run.prove_unchanged(via)
+            _refused(slug, "%s." % exc, opened=True)
+    if a.shot:
+        run.br.screenshot(a.shot)
+        log("screenshot %s" % a.shot)
+    chars = page_length(note) if note is not None else 0
+
+    if not a.submit:
+        # -- 3. staged: dismiss, then PROVE nothing happened (rule 0.1) -------
+        run.dismiss()
+        run.disarm()
+        if run.blocked:
+            die("while the modal was open the page tried to send %d invitation-shaped "
+                "request(s) (%s). They were BLOCKED, so nothing went - but this surface was "
+                "measured sending none, so the page has changed."
+                % (len(run.blocked), ", ".join(run.blocked[:3])))
+        after = run.prove_unchanged(via)
+        print(json.dumps({"kind": "connect-staged", "person": "/in/" + slug, "name": name,
+                          "degree": degree, "via": via, "note_chars": chars,
+                          "note_limit": limit}, ensure_ascii=True))
+        print("RESULT connect staged person=/in/%s name=%s degree=%s via=%s note_chars=%d "
+              "note_limit=%s sent=nothing blocked=0 invite_after_reload=%s "
+              "pending_after_reload=false shot=%s seconds=%d"
+              % (slug, json.dumps(name, ensure_ascii=True), degree, via, chars,
+                 limit if limit is not None else "-", after, a.shot or "-", time.time() - t0))
+        return
+
+    # -- 3. --submit. The gap first, then everything re-read ------------------
+    run.pace.before("connect")
+    st = run.modal()
+    if st["modals"] != 1:
+        die("after the pacing gap the invitation modal is gone (%d open). Nothing was sent."
+            % st["modals"])
+    # Rule 0.3 AT THE PRESS, not 90 seconds before it (review finding 1). The
+    # browser is shared: the tab must still be THIS person's invitation page,
+    # and without a note the modal's first state - which names the person - is
+    # still the one on screen, so it must still name them.
+    if invite_slug(run.page.url) != slug:
+        die("after the pacing gap the tab is on %s, not the invitation page for /in/%s. "
+            "Nothing was sent." % (run.page.url, slug))
+    if note is None and not I.same_person(expect, modal_name(st["text"]) or ""):
+        die("after the pacing gap the invitation modal names %r, not %r. Nothing was sent."
+            % (modal_name(st["text"]), expect))
+    if note is not None and (st["value"] or "").replace("\r\n", "\n") != note:
+        die("after the pacing gap the note box no longer holds exactly the note. Nothing "
+            "was sent.")
+    if run.blocked:
+        die("before Send the page had already tried %d invitation-shaped request(s) (%s); "
+            "they were blocked, so nothing went - but the page has changed."
+            % (len(run.blocked), ", ".join(run.blocked[:3])))
+    control = S.INVITE_SEND_NOTE if note is not None else S.INVITE_SEND_BARE
+    send = run.button(control)
+    run.disarm()
+    # A hit-tested CLICK on the modal's own control, named in full - never Enter.
+    # The flag moves FIRST: a click that raises may still have landed.
+    run.pressed = True
+    send.click(timeout=8000)
+    run.pace.after("connect")
+    log("pressed %r" % control)
+    deadline = time.time() + 15
+    while time.time() < deadline and run.modal()["modals"]:
+        run.wait(1)
+
+    name2, degree2, (can2, reason2, via2, url2, pending2) = run.profile("to prove it was sent")
+    if pending2 is not True:
+        die("%r was pressed and after a reload the profile shows NO Pending control "
+            "(can_connect=%r: %s). The invitation MAY have gone - look before trying again."
+            % (control, can2, reason2))
+    print(json.dumps({"kind": "connect-sent", "person": "/in/" + slug, "name": name,
+                      "degree": degree, "via": via, "note_chars": chars}, ensure_ascii=True))
+    print("RESULT connect sent person=/in/%s name=%s degree=%s via=%s note_chars=%d "
+          "note_limit=%s pending_after_reload=true shot=%s seconds=%d"
+          % (slug, json.dumps(name, ensure_ascii=True), degree, via, chars,
+             limit if limit is not None else "-", a.shot or "-", time.time() - t0))

@@ -590,10 +590,14 @@ class Pace(object):
     # something on another person's side - their pending invitation stops
     # existing - and twenty of them in a burst is exactly what an automated
     # account looks like. So it takes the 45-90 second gap like every other
-    # outbound action, and its own daily cap. Twenty is the same number connect
-    # carries, which is the point: an account cannot withdraw its way past the
-    # rate it is allowed to invite at.
-    CAPS = {"comment": 60, "react": 100, "connect": 20, "message": 30, "invite": 5,
+    # outbound action, and its own daily cap. Twenty was the number connect
+    # carried when this was written, so that an account could not withdraw its
+    # way past the rate it was allowed to invite at.
+    #
+    # connect, 2026-10-20: FIFTEEN a day, by the owner's decision when the verb
+    # was built for the outreach seat, under the design's 20 and the published
+    # 20-40. It is never raised to finish a run. Withdraw was left at 20.
+    CAPS = {"comment": 60, "react": 100, "connect": 15, "message": 30, "invite": 5,
             "withdraw": 20}
     GAP = (45, 90)         # seconds between outbound actions
     VIEW_CAP = 80          # OTHER people's profiles/companies + search pages, per day
@@ -934,9 +938,16 @@ class Browser(object):
 
     # -- helpers every verb uses --------------------------------------------
 
-    def goto(self, url, settle=4):
+    def goto(self, url, settle=4, pump=False):
+        """pump=True settles with page.wait_for_timeout, which keeps answering
+        the page's events, instead of time.sleep, which does not. A verb with a
+        page.route handler installed needs it: with the sync API a routed
+        request is only answered while Python is inside a Playwright call."""
         self.page.goto(url, wait_until="domcontentloaded", timeout=60000)
-        time.sleep(settle)
+        if pump:
+            self.page.wait_for_timeout(int(settle * 1000))
+        else:
+            time.sleep(settle)
         body = self.page.evaluate("() => document.body ? document.body.innerText.slice(0, 4000) : ''")
         if re.search(r"unusual activity|security verification|let's do a quick security check", body, re.I):
             die("LinkedIn is showing a security check on %s. Stop for today." % url)
@@ -969,10 +980,10 @@ class Browser(object):
                 "Sign the cencon Chrome back in - this is NOT an empty result." % where)
         return n
 
-    def read(self, url, where, settle=6):
+    def read(self, url, where, settle=6, pump=False):
         """Navigate for a READ: go there, prove we are signed in, prove we landed
-        where we asked. Returns the final URL."""
-        self.goto(url, settle=settle)
+        where we asked. Returns the final URL. pump: see goto."""
+        self.goto(url, settle=settle, pump=pump)
         self.assert_signed_in(where)
         return self.page.url
 
