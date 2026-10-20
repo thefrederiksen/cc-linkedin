@@ -1,6 +1,6 @@
 ---
 name: linkedin
-description: Drive LinkedIn through the signed-in browser with cc-linkedin 1.0 - post to a Page (text, video, images, now or scheduled), comment, reply, react, delete, read profiles and companies, search people and posts, read notifications and Page stats, read the message inbox and one conversation, stage or send one direct message, and withdraw an invitation we sent. Twenty-one commands, no API. Stage first, read the RESULT line. Triggers on "/linkedin", "post to linkedin", "linkedin post", "schedule a linkedin post", "post the video to linkedin", "linkedin page post", "comment on linkedin", "read a linkedin profile", "search linkedin", "linkedin notifications", "page stats", "read my linkedin messages", "linkedin inbox", "read a linkedin conversation", "send a linkedin message", "linkedin dm", "withdraw a linkedin invitation".
+description: Drive LinkedIn through the signed-in browser with cc-linkedin 1.0 - post to a Page (text, video, images, now or scheduled), comment, reply, react, delete, read profiles and companies, search people and posts, read notifications and Page stats, read the message inbox and one conversation, stage or send one direct message, stage or send one invitation to connect, and withdraw an invitation we sent. Twenty-two commands, no API. Stage first, read the RESULT line. Triggers on "/linkedin", "post to linkedin", "linkedin post", "schedule a linkedin post", "post the video to linkedin", "linkedin page post", "comment on linkedin", "read a linkedin profile", "search linkedin", "linkedin notifications", "page stats", "read my linkedin messages", "linkedin inbox", "read a linkedin conversation", "send a linkedin message", "linkedin dm", "connect with someone on linkedin", "send a linkedin connection request", "linkedin invitation", "withdraw a linkedin invitation".
 ---
 
 # LinkedIn posting
@@ -9,7 +9,7 @@ Use the tool. Do not hand-roll browser calls, do not use browser-harness for
 posting, do not reach for the LinkedIn API. It encodes a day of measured failure
 modes (see its docstring and the README).
 
-**Version 1.0.1. Twenty-one commands, listed in full below - and the list of what
+**Version 1.0.1. Twenty-two commands, listed in full below - and the list of what
 does NOT exist is just as important, because the shape of the tool invites you
 to assume verbs that are not there.**
 
@@ -248,9 +248,72 @@ InMail or a message request); invisible characters in the text refuse; a
 composer already holding some other draft refuses rather than overwrite words
 typed by hand. The old `tools/send_batch.py` is gone for exactly those reasons.
 
+## Invitations: send ONE (`connect`)
+
+```
+cc-linkedin connect <profile URL or slug> [--note "..." | --note-file note.txt] [--expect-name "Their Name"] [--shot out.png]
+cc-linkedin connect <profile URL or slug> --expect-name "Their Name" [--note-file note.txt] --submit
+```
+
+**Staged by default.** Without `--submit` it reads the profile the way
+`read-profile` does, opens LinkedIn's own invitation modal, adds the note if
+given, reads it back against the page's own counter, screenshots, DISMISSES
+the modal, and reloads the profile to prove the invite control is still where
+it was and nothing is Pending:
+`RESULT connect staged ... sent=nothing blocked=0 invite_after_reload=topcard pending_after_reload=false`.
+Stage first, every time, and look at the screenshot.
+
+The RESULT words, and what each means for the caller:
+
+| RESULT | exit | meaning |
+|---|---|---|
+| `staged` | 0 | the modal was filled and dismissed; the reload proved nothing was sent |
+| `sent` | 0 | `--submit`: LinkedIn's own Pending control is on the profile after a reload |
+| `already-pending` | 0 | an invitation of ours is already outstanding; nothing was opened |
+| `already-connected` | 0 | the person is 1st degree; nothing was opened |
+| `refused` | 1 | the verb decided not to act (wrong name, note too long, no invite control, a cap); `reason=` says why, and `sent=nothing`. A JSON record (`kind: connect-refused`) comes first, like every other outcome |
+
+A `FAIL` line (exit 1) is a page the verb does not recognise. If it ever says
+a Send control WAS pressed, the invitation MAY have gone - look at the profile.
+
+**The card's Connect is NEVER pressed, and you must not press it by hand
+either.** Measured 2026-10-20: pressing it opens no note dialog - it fires a
+server request for a "post-connect drawer" and refreshes the top card, which is
+the shape of a press that has already sent, with no note and no confirmation.
+The verb reads the control's address instead - `/preload/custom-invite/?vanityName=<slug>`,
+the same on the card and in the More menu - which opens the modal that names
+the person and offers Add a note / Send without a note. While that modal is
+open, invitation-shaped requests are blocked in the browser, and on a staged run
+one appearing at all fails the run. The guard matches on the request's ADDRESS
+and lets every GET through (the invitation page is itself a GET), so it is a
+second line, not the proof: the reload is the proof.
+
+**`--submit` sends, and only with `--expect-name`.** The top card AND the modal
+must each name exactly that person, or it refuses and sends nothing. A note
+opening "Hi/Hey/Hello" with more words on that line must greet their FIRST NAME
+as the profile prints it, the same check `message` makes.
+
+**The note limit is the modal's, not ours.** It is read twice off the page - the
+sentence "limit personal note to N characters" and the counter's "n/N" - and
+they must agree (300 on this account, which has Premium; the design remembered
+200 for a free one). A longer note is REFUSED before a character is typed,
+never left for the box to cut. No key is ever pressed in the note box: the note
+goes in as one insert, and the box's value and the page's own counter are read
+back and compared. Invisible characters in the note refuse.
+
+**Budget.** Every page is a CAPPED view: the profile, the invitation page and
+the proving reload - three per staged or sent run, one for an
+`already-*` answer. Sending is an outbound action on `pace.json`'s `connect`
+line: **fifteen a day**, 45-90 seconds apart, never raised to finish a run. Use
+`read-profile`'s `can_connect` / `invitation_pending` first when you only need to
+know; `connect` makes the same check itself before it opens anything.
+
+The design's rolling seven-day cap (100 in any 7 days) is NOT built: `pace.json`
+keeps only today. At fifteen a day that is 105 in a week at most.
+
 ## Invitations we sent (withdraw)
 
-The ONLY invitation verb in 1.0. It withdraws; it cannot send.
+It withdraws; it cannot send - that is `connect`, above.
 
 ```
 cc-linkedin withdraw <profile URL or slug> [--older-than-months N] [--dump out.json]
@@ -281,11 +344,11 @@ line, not the fact that the click happened.
 
 Running one prints an argparse error. Do not improvise them with
 browser-harness either: they were left out because they are unproven against
-the live site, and two of them send to real people.
+the live site, and `invite-to-follow` reaches real people.
 
 | Not present | Where it stands |
 |---|---|
-| `connect`, `invitations`, `follow`, `unfollow`, `invite-to-follow` | designed and surveyed, not built - issue #9 |
+| `invitations`, `follow`, `unfollow`, `invite-to-follow` | designed and surveyed, not built - issue #9 |
 | `post --profile` (posting as Soren rather than as the Page), `edit-post`, `repost` | designed, never surveyed - issue #10 |
 
 If Soren asks for one of these, say it does not exist and point at the issue.

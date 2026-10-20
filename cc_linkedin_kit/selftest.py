@@ -25,7 +25,12 @@ twice (P2-1, and the P2-3 refusal, which navigates before it refuses), his Page,
 his notifications and his Page's analytics. The last two only started counting
 with F2.
 
-That eleven is a fact about the rows, not something this suite asserts. There is
+Phase 3 (2026-10-20) adds EIGHT more capped views: `connect` staged on profile B
+and on the menu profile costs three each (the profile, the invitation page, the
+proving reload), and the wrong-name refusal and the pending profile one each.
+Every Phase 3 row is STAGED - nothing in this suite sends an invitation.
+
+That count is a fact about the rows, not something this suite asserts. There is
 deliberately no constant to compare it against: P2-9 reconciles the pacing file's
 movement against the run's own registry of what it opened, because a hand-set
 number is the one thing in here a tired Manager can retune until a run goes
@@ -331,6 +336,14 @@ PHASE2_ROWS = ("P2-1", "P2-2", "P2-2b", "P2-10", "P2-11", "P2-3", "P2-4", "P2-5"
 # Profile B must be the shape the design asks for - ruling R12. The row used to
 # accept 3rd and 3rd+ as well, which is not what docs/phase-2-design.md says.
 PROFILE_B_DEGREES = ("1st", "2nd")
+# PHASE 3, reaching people - `connect`, 2026-10-20. STAGED ONLY, every row: no
+# row in this suite ever passes submit=True to a verb that reaches a person, and
+# tests/test_connect.py pins that against this file's source. The proof that a
+# staged run sent nothing is the verb's own reload; these rows add the pacing
+# file's outbound clock and count, which a real send would have moved.
+PHASE3_ROWS = ("P3-1", "P3-1b", "P3-4", "P3-pending", "P3-quiet")
+SELFTEST_NOTE = ("cc-linkedin selftest: this note is typed, read back and dismissed. "
+                 "It is never sent.")
 
 
 class Rows(object):
@@ -646,6 +659,7 @@ def run(a):
     rows = Rows()
     rows.declare(PHASE1_ROWS)
     rows.declare(PHASE2_ROWS)
+    rows.declare(PHASE3_ROWS)
     rows.declare(("INVENTORY",))
     print("--- this run intends to execute %d rows: %s ---"
           % (len(rows.declared), ", ".join(rows.declared)), flush=True)
@@ -953,6 +967,72 @@ def run(a):
          all_of((isinstance(x.get("impressions"), int) for x in posts), len(posts)),
          repr([x.get("impressions") for x in posts][:5])),
     ]), "Page stats: %d posts, followers=%r" % (len(posts), r.get("followers")))
+
+    # ======================================================== PHASE 3: connect, STAGED
+    print("--- Phase 3: connect, staged only - nothing is ever sent ---", flush=True)
+    from . import connections as N
+    from .browser import Pace as _Pace
+    out_before = (_Pace()._load().get("last_outbound"), _Pace().count("connect"))
+
+    def stage(name, url, **kw):
+        """connect, STAGED. submit is False here and nowhere else in this file."""
+        args = {"url": url, "note": None, "note_file": None, "expect_name": None,
+                "shot": None}
+        args.update(kw)
+        args["submit"] = False
+        return attempt(name, N.connect, **args)
+
+    def staged_line(out):
+        return next((l for l in out.splitlines() if l.startswith("RESULT connect")), "")
+
+    # -- P3-1: profile B - invite on the top card - with a note --------------
+    b_name = _expect(a.other_expect, "--other-expect")["name"]
+    ok, out = stage("connect B", a.other_profile, note=SELFTEST_NOTE, expect_name=b_name)
+    line = staged_line(out)
+    check("P3-1", every([
+        ("the verb returned cleanly", ok, "ok=%s" % ok),
+        ("RESULT connect staged", line.startswith("RESULT connect staged "), line[:80]),
+        ("nothing was sent", " sent=nothing " in line, line[:80]),
+        ("the note went in, read back, and the page's counter agreed",
+         " note_chars=%d " % N.page_length(SELFTEST_NOTE) in line, line[:120]),
+        ("the note limit was read off the modal", bool(re.search(r" note_limit=\d+ ", line)),
+         line[:120]),
+        ("no Pending after the reload", " pending_after_reload=false " in line, line[:120]),
+    ]), "connect staged with a note on profile B")
+
+    # -- P3-1b: the menu profile - invite behind More - no note ---------------
+    ok, out = stage("connect M", a.menu_profile)
+    line = staged_line(out)
+    check("P3-1b", every([
+        ("the verb returned cleanly", ok, "ok=%s" % ok),
+        ("RESULT connect staged", line.startswith("RESULT connect staged "), line[:80]),
+        ("the invitation came from the More menu", " via=more-menu " in line, line[:120]),
+        ("and is still there after the reload", " invite_after_reload=more-menu " in line,
+         line[:160]),
+        ("no note was typed", " note_chars=0 " in line, line[:120]),
+    ]), "connect staged, no note, invitation behind More")
+
+    # -- P3-4: a wrong --expect-name refuses before anything is opened --------
+    ok, out = stage("connect X", a.other_profile, expect_name="Chief Marmalade Officer")
+    line = staged_line(out)
+    check("P3-4", (not ok) and line.startswith("RESULT connect refused ")
+          and "Nothing was opened" in line,
+          "wrong --expect-name refused: non-zero=%s, %s" % (not ok, line[:60]))
+
+    # -- P3-pending: an invitation already outstanding is not sent again -----
+    ok, out = stage("connect P", a.pending_profile)
+    line = staged_line(out)
+    check("P3-pending", ok and line.startswith("RESULT connect already-pending "),
+          "pending profile: %s" % line[:70])
+
+    # -- P3-quiet: the pacing file saw no outbound action ---------------------
+    # A real send reserves a connect slot and stamps the outbound clock before
+    # it presses anything. Neither moving is a PRESENCE read twice - the same
+    # two values, before and after - not an absence of errors.
+    out_after = (_Pace()._load().get("last_outbound"), _Pace().count("connect"))
+    check("P3-quiet", out_after == out_before,
+          "outbound clock and connect count unchanged across the staged rows: %r -> %r"
+          % (out_before, out_after))
 
     # -- P2-9: the run left nothing behind, and the two records of what it
     # -- viewed agree -------------------------------------------------------

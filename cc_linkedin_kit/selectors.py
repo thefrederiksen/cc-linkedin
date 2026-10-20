@@ -342,3 +342,66 @@ DIALOG_OPEN = 'dialog[open], [data-testid="dialog"]'
 # what the page said, never what the design remembered.
 REINVITE_RESTRICTION = re.compile(
     r"won.?t be able to resend to this person for ([^.]+)", re.I)
+
+
+# ============================================================================
+# PHASE 3: SENDING AN INVITATION (`connect`). Measured 2026-10-20 with
+# tools/probe_invite.py on a 2nd-degree profile (invite on the top card) and a
+# 3rd-degree one (invite behind More). Every measurement ran with
+# invitation-shaped requests BLOCKED in the browser and ended with a reload
+# that still showed the invite control and no Pending - nothing was sent.
+# ============================================================================
+
+# PRESSING THE CARD'S Connect DOES NOT OPEN THE NOTE DIALOG. Measured: the click
+# is swallowed by the page (no navigation), NOTHING appears in the DOM, and the
+# page instead POSTs an SDUI server request,
+#     /flagship-web/rsc-action/actions/server-request
+#         ?sduiid=com.linkedin.sdui.impl.mynetwork.infra.components.relationshipbuildingdrawer
+#     drawerType RelationshipBuildingDrawerVariant.ConnectDrawer,
+#     componentRef ProfilePostConnectDrawer_<slug>
+# and then refreshes the top card. A "POST-connect drawer" followed by a top
+# card refresh is the shape of a press that HAS ALREADY SENT. That request was
+# blocked, so whether it sends was not learned - and it is not going to be
+# learned on a real person. So `connect` NEVER CLICKS THE CARD'S CONTROL. It
+# reads the control's href and navigates to it.
+#
+# THE href IS THE INVITATION'S OWN PAGE. /preload/custom-invite/?vanityName=<slug>
+# - the same href on the top card's <a> and on the More menu's <a role=menuitem>
+# - is a GET that renders LinkedIn's classic invitation modal over a blank page.
+# Loading it sent no invitation-shaped request at all.
+CUSTOM_INVITE = re.compile(r"/preload/custom-invite/\?(?:[^#]*&)?vanityName=([^&#]+)")
+
+# THE MODAL. NOT a native <dialog> here, unlike the withdraw confirmation: a
+# div[role=dialog] labelled by the header id. First state:
+#     "Add a note to your invitation?"
+#     "Personalize your invitation to <Name> by adding a note."   <- names the person
+#     "You have unlimited notes with Premium"                     <- this account
+#     buttons  Dismiss | Add a note | Send without a note
+# After "Add a note" (which only reveals the box):
+#     "Please limit personal note to 300 characters."
+#     textarea#custom-message name=message, NO maxlength attribute
+#     a live counter "<typed>/<limit>", e.g. "0/300", "4/300"
+#     buttons  Dismiss | Cancel ("Cancel adding a note") | Send ("Send invitation"),
+#              Send DISABLED while the box is empty
+# Dismiss closes it and sends nothing (measured three times).
+INVITE_MODAL = '[role="dialog"][aria-labelledby="send-invite-modal"]'
+INVITE_MODAL_NAME = re.compile(r"Personalize your invitation to (.+?) by adding a note", re.I)
+INVITE_NOTE_BOX = "textarea#custom-message"
+# The limit is READ OFF THE PAGE, twice: the sentence and the counter's
+# denominator. LinkedIn's limit differs between accounts (the design remembered
+# 200 for a free one; this Premium account says 300), so nothing here holds a
+# number of its own.
+INVITE_NOTE_LIMIT_TEXT = re.compile(r"limit personal note to (\d+) characters", re.I)
+INVITE_NOTE_COUNTER = re.compile(r"^\s*(\d+)\s*/\s*(\d+)\s*$")
+# Buttons, by ACCESSIBLE NAME, each matched whole.
+INVITE_DISMISS = "Dismiss"
+INVITE_ADD_NOTE = "Add a note"
+INVITE_SEND_BARE = "Send without a note"      # SENDS. Pressed only under --submit with no note.
+INVITE_SEND_NOTE = "Send invitation"          # SENDS. Pressed only under --submit with a note.
+INVITE_CANCEL_NOTE = "Cancel adding a note"
+# What the guard intercepts while the modal is open: any non-GET request whose
+# ADDRESS is shaped like an invitation is ABORTED before it leaves the browser,
+# and on a staged run its mere appearance fails the run. Measured: loading the
+# modal, adding a note, typing and dismissing made NO request matching this; the
+# card's Connect press made one (relationshipbuildingdrawer).
+INVITATION_REQUEST = re.compile(r"invit|relationship", re.I)
