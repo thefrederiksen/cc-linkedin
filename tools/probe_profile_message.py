@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 """Read-only probe: where does a profile's Message control lead, for `message`?
 
-    py -3.11 tools/probe_profile_message.py <profile URL>
+    py -3.11 tools/probe_profile_message.py <profile URL> [--dump page.html]
 
 Opens the profile (one CAPPED view, and the person gets the ordinary "viewed
 your profile" trace), reads the top card's Message control, then follows its
 href and dumps what that page holds: the final address, the composer, whether a
 conversation's history is shown (bubbles), and the header naming who it is with.
+--dump also writes the destination's whole HTML to a file, so a layout can be
+measured offline without spending more views (the file names a real person:
+keep it outside the repository).
 
 IT TYPES NOTHING, CLICKS NOTHING AND PRESSES NO KEY. Following the href is a
 navigation; if that lands on an existing conversation it MARKS IT READ, and the
@@ -50,6 +53,13 @@ def main():
         print(__doc__)
         return 2
     url = sys.argv[1]
+    dump = None
+    if "--dump" in sys.argv:
+        at = sys.argv.index("--dump") + 1
+        if at >= len(sys.argv):
+            print(__doc__)
+            return 2
+        dump = sys.argv[at]
     pace = Pace()
     with Browser(9224) as br:
         pace.before_view("probe: profile for its Message control")
@@ -76,6 +86,10 @@ def main():
         pace.after_view()
         time.sleep(3)
         print(json.dumps(br.page.evaluate(AFTER), indent=1, ensure_ascii=True))
+        if dump:
+            with open(dump, "w", encoding="utf-8") as f:
+                f.write(br.page.content())
+            print("dump:", dump)
         shot = os.path.join(os.environ.get("TEMP", "."), "probe_profile_message.png")
         br.screenshot(shot)
         print("shot:", shot)

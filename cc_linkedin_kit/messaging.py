@@ -81,6 +81,32 @@ tools/probe_profile_message.py):
     Other people's carry .msg-s-event-listitem--other; ours are matched by the
     name, positively, not by that class's absence.
 
+MEASURED ON THE LIVE PAGE, 2026-10-21 (tools/probe_profile_message.py --dump):
+
+  * A FIRST CONVERSATION - a 1st-degree connection nobody has written to yet,
+    reached through the profile's Message control - renders NO message list at
+    all (devthrottle#4306). Under the one recipient pill sits the person's card,
+    div.msg-s-profile-card-one-to-one, holding ONE
+    a.profile-card-one-to-one__profile-link to /in/<slug>/ whose text is the
+    name, and a badge .artdeco-entity-lockup__badge whose .a11y-text reads
+    "1st degree connection"; then the empty composer, Send disabled. That card,
+    POSITIVELY read, is the only way an absent list passes (see `history`).
+  * A conversation WITH history, on the same compose route, carries the same
+    card INSIDE the message list, and there its link is /in/<member id>
+    (ACoAA...), never the vanity slug. So a moved list selector on an existing
+    conversation still shows a card, but one whose link is not the profile
+    this run came from, and `card_problem` refuses it. Keep the slug check
+    strict for that reason: accepting the member id too would let exactly that
+    case through, and a run that came from a member-id profile address is
+    refused the card path for the same reason. The page's message-event count
+    must also be zero: a second presence that does not rest on a URL's shape
+    (it counts the same event selector the list reader uses, so against a
+    renamed event selector it is the card's member-id link that refuses).
+  * The same person is printed two ways (devthrottle#4339): a profile's top
+    card can print "First (Maiden) Last" where the messaging pane prints
+    "First Last". Every name comparison here goes through `same_name`, which
+    drops a parenthetical and is otherwise EXACT.
+
 PUBLIC REPO. The output names a real person and quotes text meant for them. It
 goes to stdout for the caller and is never pasted into a committed file.
 """
@@ -89,6 +115,7 @@ import json
 import re
 import time
 import unicodedata
+import urllib.parse
 
 from . import inbox as I
 from . import people as P
@@ -108,7 +135,18 @@ COMPOSE_PREFIX = "/messaging/compose/"
 # PRESENCE refuses. Its absence proves nothing; the 1st-degree badge is the proof.
 SUBJECT = ("form.msg-form input[name*='subject' i], form.msg-form input[placeholder*='Subject'], "
            "form.msg-form input[aria-label*='Subject']")
+# The first-conversation layout, measured 2026-10-21 (module docstring).
+CARD = "div.msg-s-profile-card-one-to-one"
+CARD_LINK = "a.profile-card-one-to-one__profile-link"
+CARD_BADGE = ".artdeco-entity-lockup__badge .a11y-text"
+FIRST_DEGREE = "1st degree connection"
 PROFILE_URL = re.compile(r"^https://(?:[a-z]{2,3}\.|www\.)?linkedin\.com/in/[^/?#]+/?(?:[?#].*)?$")
+
+# A parenthetical inside a name: "First (Maiden) Last" (devthrottle#4339).
+PARENTHETICAL = re.compile(r"\([^()]*\)")
+SLUG = re.compile(r"/in/([^/?#]+)")
+# A member id in place of a vanity slug: /in/ACoAA... (case-folded by profile_slug).
+MEMBER_ID = re.compile(r"^acoaa[a-z0-9_-]{30,}$")
 
 # A greeting, and the rest of ITS OWN LINE: "Hi" then a blank line then
 # "Thanks for..." greets nobody, and "Thanks" is not a name.
@@ -157,6 +195,21 @@ STATE_JS = r"""
 """
 
 
+CARD_JS = r"""
+(s) => {
+  const t = e => e ? (e.textContent || '').replace(/\s+/g, ' ').trim() : '';
+  const vis = e => !!(e && (e.offsetParent || e.getClientRects().length));
+  return [...document.querySelectorAll(s.card)].filter(vis).map(c => {
+    const links = [...c.querySelectorAll(s.link)];
+    return {links: links.length,
+            name: links.length === 1 ? t(links[0]) : '',
+            href: links.length === 1 ? (links[0].getAttribute('href') || '') : '',
+            badges: [...c.querySelectorAll(s.badge)].map(t)};
+  });
+}
+"""
+
+
 TYPING_JS = r"""
 (s) => {
   const e = document.querySelector(s.editor);
@@ -177,6 +230,57 @@ def _fold(s):
     """Case- and accent-folded, for comparing a greeting to a first name."""
     s = unicodedata.normalize("NFKD", str(s or ""))
     return "".join(c for c in s if not unicodedata.combining(c)).casefold()
+
+
+def name_key(name):
+    """A person's name as ONE identity, whichever surface printed it.
+
+    Measured 2026-10-21 (devthrottle#4339): the profile's top card printed
+    "First (Maiden) Last" and the messaging pane printed the same person
+    "First Last", so one --expect-name could never pass both checks. A
+    parenthetical is dropped, whitespace is collapsed, and NOTHING ELSE changes:
+    no case folding, no accent folding, no substring."""
+    return _clean(PARENTHETICAL.sub(" ", str(name or "")))
+
+
+def same_name(a, b):
+    """Two printed names for the same person: EXACT after `name_key`, never a
+    substring ('Ann' is inside 'Joanne'). An empty name matches nobody."""
+    return bool(name_key(a)) and name_key(a) == name_key(b)
+
+
+def profile_slug(href):
+    """The /in/ slug of a profile address, decoded and case-folded, or ''."""
+    m = SLUG.search(str(href or ""))
+    return urllib.parse.unquote(m.group(1)).strip().casefold() if m else ""
+
+
+def card_problem(cards, who, slug):
+    """Why this page is NOT positively the first-conversation layout for `who`,
+    or None (devthrottle#4306).
+
+    PRESENCE, every part of it: exactly one one-to-one profile card, holding one
+    profile link to the very profile this run came from, naming the recipient
+    the pill names, under a "1st degree connection" badge. A card that is
+    missing, doubled, or says anything else is a reason, never a pass."""
+    if len(cards) != 1:
+        return "the page holds %d one-to-one profile cards (%s), not one" % (len(cards), CARD)
+    c = cards[0]
+    if c["links"] != 1:
+        return "the profile card holds %d profile links (%s), not one" % (c["links"], CARD_LINK)
+    if not same_name(c["name"], who):
+        return "the profile card names %r and the recipient is %r" % (c["name"], who)
+    if not slug or MEMBER_ID.match(slug):
+        return ("the run came from the profile %r, which is not a vanity slug; only a vanity "
+                "slug tells a first conversation's card from the card inside an existing "
+                "conversation's list. Give the profile's /in/<name>/ address" % slug)
+    if profile_slug(c["href"]) != slug:
+        return ("the profile card links to %r, not to the profile this run came from (%r)"
+                % (c["href"], slug))
+    if FIRST_DEGREE not in c["badges"]:
+        return ("the profile card's badge reads %s, not %r"
+                % (", ".join(repr(b) for b in c["badges"]) or "nothing", FIRST_DEGREE))
+    return None
 
 
 def load_text(text, text_file):
@@ -256,7 +360,7 @@ def editor_is_empty(state):
 
 def ours(messages, me):
     """The messages whose (carried) sender is the signed-in member."""
-    return [m for m in messages if me and _clean(m.get("sender")) == _clean(me)]
+    return [m for m in messages if same_name(m.get("sender"), me)]
 
 
 def last_ours_text(messages, me):
@@ -281,8 +385,8 @@ def problem_in(msgs, me, who):
     why = I.message_problem(msgs)
     if why:
         return why
-    names = {_clean(me), _clean(who)}
-    other = sorted({_clean(m.get("sender")) for m in msgs} - names)
+    names = {name_key(me), name_key(who)}
+    other = sorted({name_key(m.get("sender")) for m in msgs} - names)
     if other:
         return ("messages from %s, who is neither the signed-in member %r nor the participant "
                 "%r" % (", ".join(repr(o) for o in other), me, who))
@@ -358,6 +462,7 @@ class Run(object):
         self.reported = False    # a FAIL line naming what was left behind is out
         self.url = None          # what to reload to see this conversation again
         self.via = None
+        self.slug = None         # the profile this run came from, on the profile route
         self.who = None
         self.me = None
         self.before = []         # the history read before typing, for every later comparison
@@ -399,7 +504,7 @@ class Run(object):
                 said = (" WHETHER ANYTHING WAS SENT COULD NOT BE CHECKED - the conversation "
                         "could not be re-read. Look at it before trying again.")
             elif [m for m in gone if not m.get("sender")
-                  or _clean(m.get("sender")) != _clean(self.who)]:
+                  or not same_name(m.get("sender"), self.who)]:
                 # Ours, or nobody's that can be named: a fragment may have gone.
                 said = (" %d NEW MESSAGE(S) APPEARED SINCE TYPING BEGAN (%s). SOMETHING MAY HAVE "
                         "BEEN SENT to %s - look at the conversation now and tell the person."
@@ -423,6 +528,9 @@ class Run(object):
             time.sleep(2)
             got = self.page.evaluate(I.MESSAGES_JS, {"thread_list": I.THREAD_LIST})
             if not got.get("found"):
+                # Also on a first conversation, which has no list: what the page
+                # shows in the seconds after a first send was never measured,
+                # so "no list" there is not proof that nothing went.
                 return None
             now = I.carry_senders(got.get("messages") or [])
         except Exception:                                         # noqa: BLE001
@@ -454,6 +562,9 @@ class Run(object):
             "editor": EDITOR, "send": SEND, "header": HEADER, "header_link": HEADER_LINK,
             "pill": PILL, "event": EVENT, "me": ME_PHOTO, "subject": SUBJECT})
 
+    def cards(self):
+        return self.page.evaluate(CARD_JS, {"card": CARD, "link": CARD_LINK, "badge": CARD_BADGE})
+
     def history(self, me, who, where):
         """Every message in view, POSITIVELY read (review defect 1). An empty
         read passes nothing: every guard downstream - already-sent, the staged
@@ -462,7 +573,16 @@ class Run(object):
         A conversation route must show a message list with messages in it. The
         compose route may hold NO history (a first message to a connection),
         and then says so; that is the one empty read allowed, and the RESULT
-        line carries history=0 so nobody reads more into it."""
+        line carries history=0 so nobody reads more into it.
+
+        A true first conversation renders no list at all (devthrottle#4306), so
+        on the compose route an empty read - no list, or a list with no
+        messages read out of it - passes only when the page is POSITIVELY that
+        layout: the recipient's card (`card_problem`), zero message events and
+        an empty composer. An empty read without all of that is a selector that
+        moved, and fails. (A list present with zero events used to pass on its
+        own; it was never measured, and a renamed event selector on an existing
+        conversation reads exactly like it.)"""
         try:
             self.page.locator(I.THREAD_LIST).first.wait_for(state="attached", timeout=15000)
         except Exception:                                         # noqa: BLE001
@@ -471,11 +591,24 @@ class Run(object):
         got = self.page.evaluate(I.MESSAGES_JS, {"thread_list": I.THREAD_LIST})
         events = got.get("events", 0) if got.get("found") else 0
         if not got.get("found") or not got.get("messages"):
-            # The ONE empty read allowed: the compose route, the message list
-            # POSITIVELY present, and zero events in it (re-review defect 2).
-            # A list that is not found at all is a selector that moved.
-            if self.via == "profile" and got.get("found") and events == 0:
-                return []
+            if self.via == "profile":
+                why = card_problem(self.cards(), who, self.slug)
+                st = self.state() if why is None else None
+                if why is None and st["events"] != 0:
+                    why = "%d message events (%s) are on the page" % (st["events"], EVENT)
+                if why is None and not editor_is_empty(st):
+                    why = ("the composer is not positively empty (it holds text, or Send is "
+                           "not disabled). If that is this text left by a --leave run, clear "
+                           "it in the browser and run again")
+                if why is None:
+                    log("%s: no messages, and the page is positively a first conversation "
+                        "with %r (one-to-one profile card, 1st degree, empty composer)"
+                        % (where, who))
+                    return []
+                self.fail("%s: the conversation shows no readable message list (%s found=%s, "
+                          "%d events), and it is not positively a first conversation either: "
+                          "%s. An empty read is a broken selector far more often than an empty "
+                          "conversation." % (where, I.THREAD_LIST, got.get("found"), events, why))
             self.fail("%s: the conversation shows no readable message list (%s found=%s, %d "
                       "events). An empty read is a broken selector far more often than an "
                       "empty conversation." % (where, I.THREAD_LIST, got.get("found"), events))
@@ -556,7 +689,7 @@ class Run(object):
             self.fail("no profile top card with a name on %s (selector %s)."
                       % (final, S.PROFILE_TOPCARD))
         name = _clean(card["name"])
-        if expect and not I.same_person(expect, name):
+        if expect and not same_name(expect, name):
             self.fail("the profile's top card names %r, not %r. Refusing before opening any "
                       "conversation." % (name, expect))
         # A direct message is to a 1st-degree connection. Anything else behind a
@@ -585,7 +718,7 @@ class Run(object):
         self.phase = OPEN
         self.br.read(dest, "the conversation with %s" % name, settle=7)
         self.pace.after_view()
-        self.url, self.via = dest, "profile"
+        self.url, self.via, self.slug = dest, "profile", profile_slug(final)
 
     def shown_url(self):
         """The address for the RESULT line. A thread's id is the whole identity,
@@ -674,7 +807,7 @@ class Run(object):
             now = []
         old = {m.get("urn") for m in before}
         new = [m for m in now if m.get("urn") and m.get("urn") not in old]
-        mine = [m for m in new if _clean(m.get("sender")) == _clean(me)]
+        mine = [m for m in new if same_name(m.get("sender"), me)]
         if mine or not new:
             self.fail("THE MESSAGE COUNT MOVED FROM %d %s, and %s. A line break may have become "
                       "a send."
@@ -752,15 +885,15 @@ def _message(a, br, run, pace, text, kind, target, expect, t0):
     if not me:
         run.fail("the global navigation states no signed-in name (%s alt), so our own "
                  "messages cannot be told from theirs." % ME_PHOTO)
-    if I.same_person(me, who):
+    if same_name(me, who):
         run.fail("this conversation's participant reads %r, which is the signed-in member."
                  % who)
     # A ref names a person; the conversation that opened must be that person
     # (review defect 8), whether or not --expect-name was given.
-    if kind == "ref" and not I.same_person(target["p"], who):
+    if kind == "ref" and not same_name(target["p"], who):
         run.fail("the thread_ref names %r and the conversation that opened is with %r. "
                  "Refusing; nothing was typed." % (target["p"], who))
-    if expect and not I.same_person(expect, who):
+    if expect and not same_name(expect, who):
         run.fail("this conversation is with %r, not %r. Refusing; nothing was typed."
                  % (who, expect))
     bad = greeting_problem(text, who)
@@ -881,7 +1014,7 @@ def _message(a, br, run, pace, text, kind, target, expect, t0):
     if st["events"] != bubbles0:
         run.bubble_rise(bubbles0, before, me, "while waiting to send")
     who2 = run.participant(st)
-    if not I.same_person(expect, who2):
+    if not same_name(expect, who2):
         run.fail("just before Send the conversation reads %r, not %r." % (who2, expect))
     if st["editor_paras"] != lines_of(text):
         run.fail("just before Send the composer no longer holds exactly the text.")
