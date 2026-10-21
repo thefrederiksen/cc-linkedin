@@ -59,6 +59,11 @@ REACT = {
 }
 
 CONFIRM_DELETE = re.compile(r"^Delete$")
+# The "Delete post?" / "Delete comment?" confirm. Measured 2026-10-21 (react
+# rendering): a native <dialog open> with NO role attribute, holding Dismiss /
+# Cancel / Delete. The page also keeps closed ad-feedback <dialog>s, hence
+# [open]. The role forms are the older artdeco modal.
+CONFIRM_DIALOG = "dialog[open], [role=dialog], [role=alertdialog]"
 
 
 # ============================================================================

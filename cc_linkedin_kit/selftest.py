@@ -737,7 +737,7 @@ def run(a):
             # owed a report and cannot vanish from the inventory.
             rows.also("P1-delete-leftover")
             step("P1-delete-leftover", "delete-leftover", C.delete_post,
-                 url=C.permalink(urn), expect="Throwaway post")
+                 url=C.permalink(urn), expect="Throwaway post", shot=None)
         body = "cc-linkedin selftest %s. Throwaway post, deleted by the tool a minute later." % stamp
         tf = tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False, encoding="utf-8")
         tf.write(body)
@@ -761,7 +761,7 @@ def run(a):
               "the Page post was published and gave back a URL to delete it by")
         if ok and m:
             step("P1-page-delete-post", "delete-post", C.delete_post,
-                 url=m.group(1), expect="Throwaway post")
+                 url=m.group(1), expect="Throwaway post", shot=None)
         else:
             check("P1-page-delete-post", False,
                   "no post URL to delete; check the Page for a leftover selftest post")

@@ -31,7 +31,7 @@ import time
 
 from . import identity as ID
 from . import selectors as S
-from .browser import Browser, Pace, log, die
+from .browser import Browser, Pace, PWTimeout, log, die
 
 
 def urn_of(url):
@@ -260,7 +260,7 @@ class Post(object):
         item = self.page.locator(S.EMBER["menu_item"]).filter(has_text=re.compile(r"^\s*Delete\s*$"))
         item.first.wait_for(state="visible", timeout=10000)
         item.first.click(timeout=10000)
-        confirm = self.page.locator("[role=dialog], [role=alertdialog]").get_by_role("button", name=S.CONFIRM_DELETE)
+        confirm = self.page.locator(S.CONFIRM_DIALOG).get_by_role("button", name=S.CONFIRM_DELETE)
         confirm.first.wait_for(state="visible", timeout=10000)
         self.br.press(confirm.first, "Delete (%s)" % what)
         time.sleep(3)
@@ -403,13 +403,22 @@ def delete_post(a):
     with Browser(a.port) as br:
         p = Post(br, a.url, expect=a.expect)
         t0 = time.time()
-        p.page.get_by_role("button", name=S.POST_MENU_NAME).first.click(timeout=10000)
-        log("post menu opened (%.0fs)" % (time.time() - t0))
-        item = p.page.locator(S.EMBER["menu_item"]).filter(has_text=re.compile(r"^\s*Delete post\s*$"))
-        item.first.wait_for(state="visible", timeout=10000)
-        item.first.click(timeout=10000)
-        confirm = p.page.locator("[role=dialog], [role=alertdialog]").get_by_role("button", name=S.CONFIRM_DELETE)
-        confirm.first.wait_for(state="visible", timeout=10000)
+        try:
+            p.page.get_by_role("button", name=S.POST_MENU_NAME).first.click(timeout=10000)
+            log("post menu opened (%.0fs)" % (time.time() - t0))
+            item = p.page.locator(S.EMBER["menu_item"]).filter(has_text=re.compile(r"^\s*Delete post\s*$"))
+            item.first.wait_for(state="visible", timeout=10000)
+            item.first.click(timeout=10000)
+            confirm = p.page.locator(S.CONFIRM_DIALOG).get_by_role("button", name=S.CONFIRM_DELETE)
+            confirm.first.wait_for(state="visible", timeout=10000)
+        except PWTimeout as exc:
+            log("timeout: %s" % str(exc).splitlines()[0])
+            shot = (a.shot or "cc-linkedin") + ".fail.png"
+            try:
+                br.screenshot(shot)
+            except Exception:
+                pass
+            die("timed out before Delete was confirmed; nothing was deleted. See %s" % shot)
         br.press(confirm.first, "Delete post (confirm)")
         time.sleep(4)
         log("confirmed (%.0fs); reloading the permalink to prove it is gone" % (time.time() - t0))
