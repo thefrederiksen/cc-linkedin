@@ -231,3 +231,28 @@ measurement rather than a measurement.
 * `tools/redact_surveys.py` - applies them to the committed dumps; `--check`.
 * `tests/` - 122 offline tests. `tests/README.md` says how to run them.
 * `docs/evidence/` - what each one looked like before the fix.
+
+---
+
+## Later: `message` from a profile, 2026-10-21 (devthrottle#4306, #4339)
+
+Watched failing before the fix, against the HEAD `messaging.py`:
+
+* **#4306.** A first message to a 1st-degree connection never written to:
+  LinkedIn renders no message list at all, only the person's card and an empty
+  composer, and `history` failed "no readable message list". The fake of that
+  layout in `tests/test_message.py` (`FirstConversation`) failed the same way.
+  The fix recognises the layout by PRESENCE - one one-to-one card linking to the
+  vanity slug the run came from, the recipient's name, the 1st-degree badge,
+  zero message events, an empty composer - and an absent list without all of
+  that still fails. Measured on the live page: on a conversation WITH history
+  the same card sits inside the list and links by member id, which is why the
+  slug check is strict and a member-id profile address gets no card path.
+* **#4339.** The top card printed "First (Maiden) Last" and the conversation
+  "First Last", and one `--expect-name` was compared exactly to both. `OneName`
+  failed on HEAD. Every name comparison in the verb now goes through
+  `same_name`: a parenthetical is dropped, everything else stays exact.
+
+Proven live, staged only, nothing sent: one first-conversation run staged with
+`history=0 last_message_unchanged=unproven-no-history`, and one run with a
+parenthetical top-card name staged with `history=1 last_message_unchanged=true`.

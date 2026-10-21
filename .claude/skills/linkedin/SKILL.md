@@ -248,6 +248,19 @@ InMail or a message request); invisible characters in the text refuse; a
 composer already holding some other draft refuses rather than overwrite words
 typed by hand. The old `tools/send_batch.py` is gone for exactly those reasons.
 
+**A first message to a connection works from the profile URL.** LinkedIn shows
+no message list for a conversation that has never had a message; the verb
+recognises that page by the person's own card (their profile link, their name,
+the 1st-degree badge) and an empty composer, and stages with `history=0
+last_message_unchanged=unproven-no-history`. No list AND no such card still
+fails, as the moved selector it usually is.
+
+**Names compare exactly, except for a parenthetical.** A top card can print
+"First (Maiden) Last" where the conversation prints "First Last"; every name
+check (`--expect-name`, the participant, Send) treats those as one person, so
+either form of `--expect-name` works. Nothing else is loosened: no case or
+accent folding, never a substring.
+
 ## Invitations: send ONE (`connect`)
 
 ```
