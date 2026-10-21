@@ -711,7 +711,8 @@ def main():
     post_verb("react", C.react, "react to a post",
               extra=[(("--kind",), {"default": "like", "help": "like, celebrate, support, love, insightful, funny"})])
     post_verb("unreact", C.unreact, "remove our reaction", expect=False)
-    post_verb("delete-post", C.delete_post, "delete one of our posts")
+    post_verb("delete-post", C.delete_post, "delete one of our posts",
+              extra=[(("--shot",), {"help": "on failure, write <shot>.fail.png"})])
 
     # -- Phase 2: reading people, companies, search, notifications, stats ----
     from cc_linkedin_kit import people as P
