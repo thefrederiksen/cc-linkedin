@@ -215,7 +215,14 @@ is exactly one shorter, with the page's own count agreeing.
 ## How it works
 
 Playwright, used as a library, attaches to Chrome over its remote debugging
-port (default 9224) and opens one background tab. In that tab it opens the
+port (default 9224) and opens one tab, in a new window that is not activated
+when it opens: it takes no focus and leaves your own tabs alone, and unlike a
+hidden background tab its renderer is not starved when the machine is busy
+(devthrottle#4340). The window opens near the top of the window stack, usually
+over what you are reading, for the length of the run. This relies on the Chrome being launched with
+`--disable-features=CalculateNativeWinOcclusion`, as `bh-profiles.ps1` launches
+the cencon profile; without it a covered window is treated as hidden and
+starves the same way. In that tab it opens the
 Page's composer directly (`/admin/page-posts/published/?share=true`), proves the
 composer names the right Page and is empty, sets the file on the composer's own
 file input, waits until the media editor names that file, presses Next, proves

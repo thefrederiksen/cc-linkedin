@@ -45,9 +45,10 @@ MEASURED ON THE LIVE PAGE, 2026-09-09 (every rule below was watched failing firs
     chooser. A keystroke cannot fall through.
   * Some videos leave inert role=dialog shells behind (the player's modal). A
     live dialog is one holding a Dismiss, Discard, Post or Schedule button.
-  * The working tab is created in the BACKGROUND so the person using the browser
-    is not interrupted. A background tab cannot be screenshotted; the final
-    screenshot brings it to the front.
+  * The working tab is created in a NEW WINDOW, without activating it, so the
+    person using the browser is not interrupted and the tab's renderer is not
+    starved at idle priority (devthrottle#4340). The final screenshot brings it
+    to the front.
 """
 import argparse
 import ctypes
@@ -60,7 +61,7 @@ import time
 
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout, Error as PWError
 
-from cc_linkedin_kit.browser import BrowserLock
+from cc_linkedin_kit.browser import BrowserLock, open_working_tab
 
 VIDEO_EXT = (".mp4", ".mov", ".webm", ".avi", ".m4v", ".mpeg", ".mpg", ".wmv", ".flv")
 IMAGE_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp")
@@ -154,7 +155,7 @@ FIND_CARD = """(first) => {
 
 
 class Page(object):
-    """One LinkedIn Page admin, driven through one background tab."""
+    """One LinkedIn Page admin, driven through one working tab."""
 
     def __init__(self, browser, page_id, page_name, shot):
         self.browser = browser
@@ -162,13 +163,9 @@ class Page(object):
         self.page_name = page_name
         self.shot = shot
         self.admin = "https://www.linkedin.com/company/%s/admin/page-posts/published/" % page_id
-        ctx = browser.contexts[0]
-        # Background target: ctx.new_page() would become the active tab in the
-        # user's window and interrupt them.
-        root = browser.new_browser_cdp_session()
-        with ctx.expect_page(timeout=15000) as opened:
-            root.send("Target.createTarget", {"url": "about:blank", "background": True})
-        self.page = opened.value
+        # The same tab every verb opens: its own window, never activated. A
+        # hidden background tab starves on a busy machine (devthrottle#4340).
+        self.page = open_working_tab(browser)
 
     # -- state -------------------------------------------------------------
 
@@ -481,6 +478,23 @@ def connect(p, port):
             "e.g. bh-profiles.ps1 up cencon" % (port, str(exc).splitlines()[0]))
 
 
+def attach_page(p, a, shot):
+    """connect() and the working tab, as one step that gives the lock back if
+    the tab cannot be opened. open_working_tab dies on failure, and a die
+    between connect() and the commands' own try/finally used to leave _LOCK
+    held - harmless in a one-shot command, a fifteen-minute stall in the
+    selftest, which runs cmd_post in process and carries on past SystemExit."""
+    browser = connect(p, a.port)
+    try:
+        return browser, Page(browser, a.page, a.page_name, shot)
+    except BaseException:
+        try:
+            browser.close()
+        finally:
+            release()
+        raise
+
+
 def release():
     """Give the browser back. Called whenever a session ends, so a caller that
     runs several commands in one process (the selftest) does not wait on a
@@ -525,8 +539,7 @@ def cmd_post(a):
     base = ", ".join(os.path.basename(f) for f in files) or "-"
     t0 = time.time()
     with sync_playwright() as p:
-        browser = connect(p, a.port)
-        lp = Page(browser, a.page, a.page_name, a.shot or "cc-linkedin")
+        browser, lp = attach_page(p, a, a.shot or "cc-linkedin")
         ok = False
         try:
             lp.ensure_empty_composer()
@@ -602,8 +615,7 @@ def cmd_post(a):
 
 def cmd_scheduled(a):
     with sync_playwright() as p:
-        browser = connect(p, a.port)
-        lp = Page(browser, a.page, a.page_name, "")
+        browser, lp = attach_page(p, a, "")
         try:
             rows = lp.open_scheduled_dialog()
             if not rows:
@@ -619,8 +631,7 @@ def cmd_scheduled(a):
 
 def cmd_unschedule(a):
     with sync_playwright() as p:
-        browser = connect(p, a.port)
-        lp = Page(browser, a.page, a.page_name, "")
+        browser, lp = attach_page(p, a, "")
         try:
             rows = lp.open_scheduled_dialog()
             hit = [r for r in rows if a.match in r["text"]]

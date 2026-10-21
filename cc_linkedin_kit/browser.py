@@ -2,7 +2,8 @@
 """The one way every verb touches the browser.
 
 Attach to the already-running, already-signed-in Chrome over its remote
-debugging port; open ONE background tab; press buttons by keyboard where a late
+debugging port; open ONE tab, in a window of its own that is not activated when
+it opens (see open_working_tab); press buttons by keyboard where a late
 click could fall through; watch for a native "Open" dialog; hold the browser
 lock so two runs never drive the same Chrome at once.
 
@@ -11,10 +12,13 @@ MEASURED
     navigations (2026-09-09 14:34: a run from another session was attached and
     every goto from this one timed out at "commit"). So one Chrome = one run at
     a time, enforced by a lock file, and a second run WAITS, it does not fail.
-  * A tab created with Target.createTarget(background=true) does not interrupt
-    the person using the browser; a tab from ctx.new_page() becomes the active
-    tab in their window. A background tab cannot be screenshotted; bring it to
-    the front for that one moment.
+  * A tab from ctx.new_page() becomes the active tab in the person's window
+    and interrupts them, so the working tab is created with
+    Target.createTarget(background=true). Since devthrottle#4340 (2026-10-21)
+    it is created in a NEW WINDOW as well, because a hidden background tab runs
+    at idle priority and starves on a busy machine - see open_working_tab, and
+    the launch flag it depends on.
+    Bring it to the front for a screenshot, for that one moment.
   * Chrome hosts the Windows file chooser in a helper process; it is found as
     a visible window of class #32770 titled "Open", not as anything on the
     page. WM_CLOSE cancels it. A run that spawned one still fails.
@@ -778,8 +782,105 @@ def open_tabs(port):
 # browser - not by anything this toolkit does.
 ATTACH_TIMEOUT_MS = 90000
 
+# How long the new working tab may take to report in. A visible new tab
+# answered in under 1.4s on every trial on 2026-10-21, including with every
+# core of the machine busy, so this is generous for a healthy browser.
+TAB_TIMEOUT_MS = 15000
+
+# What every failure to open the tab says about the daily cap. True for every
+# caller: a read reserves its view inside `with Browser(...)`, after the attach
+# has returned, and the posting commands reserve no view at all.
+NO_VIEW_SPENT = ("No view was counted against the daily cap: a read reserves its view "
+                 "only after the attach has succeeded.")
+
+
+def open_working_tab(browser):
+    """Open the run's ONE tab and return its Playwright page. Dies naming the
+    step on any failure - never a traceback.
+
+    THE TAB GOES IN A NEW WINDOW OF ITS OWN, CREATED WITHOUT BEING ACTIVATED.
+    devthrottle#4340, measured 2026-10-21. It used to be a background tab in
+    the person's window, and `read-profile` died with Playwright's "Timeout
+    15000ms exceeded while waiting for event 'page'" right after a relaunch.
+
+    The cause is Chrome's process priority, not the service worker the attach
+    had just stopped (that log line was a bystander - the stall reproduced with
+    no service worker in the profile at all). On Windows a hidden tab's
+    renderer runs at base priority 4, IDLE; a visible one at 8, NORMAL. An idle
+    process gets no CPU while anything above it wants all of it, and this
+    machine runs a fleet of sessions that regularly holds every core. Playwright
+    reports a new page only after its renderer answers the first commands
+    (Page.enable and the rest), so a starved renderer means no "page" event, ever.
+
+    Measured on a throwaway Chrome with every core held by spinners at BELOW
+    NORMAL priority - above the idle renderer, below every normal process on the
+    machine: a background tab answered nothing in 25s on 3 of 3 trials; a tab in
+    a new window, created with background=true, answered in 0.15-0.24s on 3 of 3
+    and did not take the keyboard focus. Unloaded, both answer in well under a
+    second, which is why the failure came and went with the machine's load.
+    --disable-renderer-backgrounding on the browser's command line was tried
+    and changes nothing here: the hidden tab still sat at priority 4 and still
+    starved.
+
+    IT DEPENDS ON ONE LAUNCH FLAG, and that is measured too. Chrome's native
+    occlusion tracking marks a window that other windows cover as hidden, and a
+    hidden window's renderer is backgrounded like a hidden tab. Same throwaway
+    Chrome, the new window covered by another window and the same load: WITHOUT
+    --disable-features=CalculateNativeWinOcclusion the covered window read
+    visibilityState "hidden" and took 8.84s, 1.60s and 0.82s to answer; WITH
+    it, as bh-profiles.ps1 launches the cencon Chrome, it read "visible" and
+    answered in 0.01s three times. A Chrome launched without that flag gets
+    this fix only while nothing covers the window.
+
+    The window opens near the top of the z-order (4th of all visible windows on
+    the desktop in that trial) WITHOUT taking the focus: a blank window shows up
+    over whatever the person is reading, for the length of the run, and leaves
+    their own tabs alone. That is the price of a renderer that gets the CPU.
+    """
+    if not browser.contexts:
+        die("open the working tab: Chrome has no browser context to open a tab in. "
+            + NO_VIEW_SPENT)
+    ctx = browser.contexts[0]
+    root = None
+    created = {}
+    step = "the CDP session"
+    try:
+        root = browser.new_browser_cdp_session()
+        with ctx.expect_page(timeout=TAB_TIMEOUT_MS) as opened:
+            step = "creating the tab"
+            created = root.send("Target.createTarget", {
+                "url": "about:blank", "newWindow": True, "background": True})
+            step = "the new tab reporting in"
+        return opened.value
+    except PWError as exc:
+        first = str(exc).splitlines()[0][:120]
+    target = created.get("targetId")
+    if target is None:
+        # What is known is that Chrome returned no tab id. A send can fail after
+        # Chrome made the tab (the reply lost, the session dropped mid-call), so
+        # this does not claim there is no tab.
+        die("open the working tab: failed at %s (%s); Chrome returned no tab id, so if a "
+            "blank window was left behind it was not closed here. %s"
+            % (step, first, NO_VIEW_SPENT))
+    try:
+        closed = bool((root.send("Target.closeTarget", {"targetId": target}) or {})
+                      .get("success"))
+    except PWError:
+        closed = False
+    die("open the working tab: Chrome created it (target %s) but it did not report in "
+        "within %ds (%s). Its renderer never answered - on this machine that is a "
+        "starved renderer, which a visible window should prevent, so look at what is "
+        "holding the CPU, or at a Chrome launched without "
+        "--disable-features=CalculateNativeWinOcclusion while the window was covered. %s %s"
+        % (target, TAB_TIMEOUT_MS // 1000, first,
+           "The half-open tab was closed again." if closed
+           else "The half-open tab could NOT be closed; close the blank window by hand.",
+           NO_VIEW_SPENT))
+
 
 class Browser(object):
+    """Attach to Chrome on `port`, hold the lock, open one working tab."""
+
     def _stop_service_workers(self):
         """Stop every service worker in the profile, over raw CDP, BEFORE the
         Playwright attach. Returns how many were stopped.
@@ -846,8 +947,6 @@ class Browser(object):
                 % (self.port, len(targets), len(pages), ATTACH_TIMEOUT_MS // 1000, first,
                    ", ".join((t.get("url") or "")[:60] for t in pages[:4]) or "none"))
 
-    """Attach to Chrome on `port`, hold the lock, open one background tab."""
-
     def __init__(self, port=9224):
         self.port = port
         self._pw = None
@@ -892,13 +991,7 @@ class Browser(object):
                     "http://localhost:%d" % self.port, timeout=ATTACH_TIMEOUT_MS)
             except PWError as exc:
                 die(self._attach_failure(exc))
-            if not self.browser.contexts:
-                die("Chrome on port %d has no browser context to open a tab in" % self.port)
-            ctx = self.browser.contexts[0]
-            root = self.browser.new_browser_cdp_session()
-            with ctx.expect_page(timeout=15000) as opened:
-                root.send("Target.createTarget", {"url": "about:blank", "background": True})
-            self.page = opened.value
+            self.page = open_working_tab(self.browser)
             return self
         except BaseException:
             self._teardown()
