@@ -854,7 +854,9 @@ def main():
                     "OPENS NO CONVERSATION: the list is read through /messaging/compose/, "
                     "whose reading pane holds an empty draft, and the run re-reads the "
                     "list at the end and FAILS if any row that was unread is now read or "
-                    "gone. The rows carry no thread URL (none exists until a row is "
+                    "gone. Every position in the range it prints is read, or it FAILS: the "
+                    "list is virtualised and a skipped row is never passed over silently. "
+                    "The rows carry no thread URL (none exists until a row is "
                     "opened); each carries a thread_ref that read-thread accepts.",
         formatter_class=argparse.RawDescriptionHelpFormatter)
     sp.add_argument("--limit", type=int, default=20, help="rows to return (hard cap 100)")
@@ -870,9 +872,13 @@ def main():
                     "read receipt. There is no way to read a thread without opening it, so "
                     "the RESULT line always says marked_read=true. It counts against the "
                     "capped daily view budget. Nothing inside the thread is clicked and no "
-                    "key is pressed.",
+                    "key is pressed. A /in/ profile URL opens the conversation with that one "
+                    "1st-degree connection through the profile's own Message control, as "
+                    "`message` does: two capped views (the profile and the conversation). "
+                    "Use it when read-inbox does not list the person, or lists them twice.",
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    sp.add_argument("target", help="a /messaging/thread/<id>/ URL, or a thread_ref from read-inbox")
+    sp.add_argument("target", help="a /in/ profile URL or slug, a /messaging/thread/<id>/ URL, "
+                                   "or a thread_ref from read-inbox")
     sp.add_argument("--port", type=int, default=9224)
     sp.set_defaults(fn=I.read_thread)
 
