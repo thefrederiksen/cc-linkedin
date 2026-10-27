@@ -279,6 +279,14 @@ class Target(unittest.TestCase):
         k, v = M.classify_target("someone-1")
         self.assertEqual((k, v), ("profile", "https://www.linkedin.com/in/someone-1/"))
 
+    def test_a_ref_without_its_prefix_is_not_a_slug(self):
+        """It fits the slug pattern, and would spend a capped view on whatever
+        profile that string names (review finding 9)."""
+        from cc_linkedin_kit import inbox as I
+        ref = I.make_ref({"participant": "A B", "when": "Oct 1", "index": 3}, "all")
+        with self.assertRaises(SystemExit):
+            M.classify_target(ref[len(I.REF_PREFIX):])
+
     def test_ref(self):
         from cc_linkedin_kit import inbox as I
         ref = I.make_ref({"participant": "A B", "when": "Oct 1", "index": 3}, "all")

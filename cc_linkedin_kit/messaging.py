@@ -435,6 +435,12 @@ def classify_target(target):
         except ValueError as exc:
             die(str(exc))
     if re.match(r"^[A-Za-z0-9\-_%]+$", t):
+        # A thread_ref pasted without its prefix is base64 of '{"...' and fits
+        # the slug pattern; taken as a slug it spends a capped view on a profile
+        # that may belong to a stranger. LinkedIn's own vanity names stop at 100.
+        if t.startswith("eyJ") or len(t) > 100:
+            die("%r looks like a thread_ref without its %r prefix, not a profile slug. "
+                "Nothing was opened." % (t[:24] + "...", I.REF_PREFIX))
         return "profile", "https://www.linkedin.com/in/%s/" % t.strip("/")
     die("%r is not a profile URL or slug, a thread URL, or a thread_ref" % t)
 
@@ -463,6 +469,7 @@ class Run(object):
         self.url = None          # what to reload to see this conversation again
         self.via = None
         self.slug = None         # the profile this run came from, on the profile route
+        self.profile_name = None # the name its top card prints, on the profile route
         self.who = None
         self.me = None
         self.before = []         # the history read before typing, for every later comparison
@@ -688,7 +695,7 @@ class Run(object):
         if not card or not card.get("name"):
             self.fail("no profile top card with a name on %s (selector %s)."
                       % (final, S.PROFILE_TOPCARD))
-        name = _clean(card["name"])
+        name = self.profile_name = _clean(card["name"])
         if expect and not same_name(expect, name):
             self.fail("the profile's top card names %r, not %r. Refusing before opening any "
                       "conversation." % (name, expect))

@@ -156,7 +156,7 @@ not be comparable.
 
 ```
 cc-linkedin read-inbox [--limit N] [--unread]
-cc-linkedin read-thread <thread_ref from read-inbox | https://www.linkedin.com/messaging/thread/<id>/>
+cc-linkedin read-thread <thread_ref from read-inbox | https://www.linkedin.com/messaging/thread/<id>/ | https://www.linkedin.com/in/<slug>/>
 ```
 
 Both print JSON, one record per line, then a RESULT line. Neither can send:
@@ -182,6 +182,23 @@ conversations the default list never will. Rows carry `participant`,
 `unread_count` and `thread_ref`. **There is no thread URL**: the list's rows
 carry none, and one only exists after a row is opened (amendment A3).
 
+**Every row in the range, or a FAIL** (devthrottle#4541). The list is
+virtualised: a row the viewport has not reached is an empty placeholder. Until
+2026-10-27 the reader jumped to the bottom of the list each scroll, the rows it
+jumped over stayed placeholders, and they were dropped - a real Oct 22
+conversation was missing from a 100-row read that reached back to August, under
+a normal RESULT line. The list is now walked half a viewport at a time, and each
+row is held by its position. A position that never rendered fails the run; so
+does a position that shows a different person later in the run (a new message
+lifted a row to the top mid-read: run it again), and so does a row that is no
+longer on the page at the final read. `gaps=0` on the RESULT line is those
+checks passing. `end=limit` means the list holds at least `--limit` rows;
+`end=bottom` means it stopped growing at its end, so `rows` is all of it. A
+100-row read takes 40 s to a minute. Anything read from a `read-inbox` run
+before 2026-10-27 may be missing rows. A `thread_ref` printed before then
+still parses, but its position counted rendered cards, so a deep row may
+resolve to "no row carries" - run `read-inbox` again.
+
 **`read-thread` MARKS THE CONVERSATION READ.** There is no way to read a thread
 without opening it, and the other person may be shown a read receipt. The
 RESULT line always says `marked_read=true`, and `was_unread` says whether it was
@@ -191,14 +208,28 @@ FAIL after the conversation opened says, in the FAIL line, that it is now read.
 Only read a thread you mean to have read. It takes a `thread_ref`, which it
 resolves on the list by who and when - and refuses rather than guesses when a
 newer message has changed the row (run `read-inbox` again for a fresh ref) - or
-a thread URL. Messages carry `sender` (`sender_carried: true` where LinkedIn
+a thread URL, or a profile URL. **One person on two rows** (devthrottle#3277)
+resolves too: the ref carries a fingerprint of the row's last line, so two rows
+with the same name and time are told apart by it, then by position. It refuses
+only when the two rows agree on name, time and last line and neither sits where
+it did, and then says so.
+
+**`read-thread <profile URL>`** opens the conversation with that one 1st-degree
+connection through the profile's own Message control - the route `message`
+takes - so a conversation `read-inbox` does not list, or lists twice, can still
+be read. It refuses anyone not 1st-degree, more than one recipient, or a
+recipient whose name is not the profile's, and every message must be from us
+or from that person. Two CAPPED views: the profile (which leaves a "viewed
+your profile" trace) and the conversation. The RESULT line says `via=profile`
+and the url is the Message destination, not a thread URL. A first conversation
+with nobody's messages yet prints `messages=0 ... history=none`. Messages carry `sender` (`sender_carried: true` where LinkedIn
 printed the name only on the first message of a group), `day`, `time`, `text`
 and `urn`.
 
 **Budget.** The list counts on the uncapped `view_self` line (it opens no
 conversation and tells nobody anything). Opening a thread counts on the CAPPED
 `view` line - 80 a day shared with every other read - because it can show
-somebody a read receipt. `--unread` costs nothing more: the filter moves the
+somebody a read receipt; from a profile URL it is two. `--unread` costs nothing more: the filter moves the
 address to an empty new-message draft, uncapped by the owner's ruling
 (`docs/ruling-unread-draft-2026-10-03.md`). Over the cap it stops and says
 tomorrow.
