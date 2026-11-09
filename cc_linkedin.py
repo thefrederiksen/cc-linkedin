@@ -603,10 +603,10 @@ def cmd_post(a):
                     raise
                 except Exception as exc:
                     log("could not clear up: %s" % exc)
-            if ok and a.submit and not when and getattr(a, "keep_tab", True):
-                log("leaving the tab open on the published post so it can be seen")
-            else:
-                lp.close()
+            # The tab closes on every path, a published post included (owner, 9 Nov 2026: a tab
+            # stays open only until the post is live, then the agent closes it). It used to be
+            # left open on the published post, and those tabs piled up in the profile.
+            lp.close()
             browser.close()
             release()
             if close_file_dialogs("the run"):
