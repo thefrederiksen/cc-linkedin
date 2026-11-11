@@ -95,7 +95,7 @@ class TheCapIsAReservation(PaceCase):
     both take the same last slot."""
 
     def test_the_last_slot_goes_to_exactly_one_of_them(self):
-        cap = B.Pace.VIEW_CAP
+        cap = B.Pace().view_cap()        # the cap a caller that declares nothing has
         p = B.Pace()
         for _ in range(cap - 1):                  # fill it to one below the cap
             p._reserve("view", None, "views")

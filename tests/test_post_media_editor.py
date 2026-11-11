@@ -164,7 +164,7 @@ class FileChooserIsIntercepted(unittest.TestCase):
         orig = C.open_working_tab
         C.open_working_tab = lambda browser: Tab()
         try:
-            C.Page(object(), "144093416", "DevThrottle", "")
+            C.Page(object(), "144093416", "DevThrottle", "", 9224)
         finally:
             C.open_working_tab = orig
         self.assertEqual(calls, ["filechooser"])

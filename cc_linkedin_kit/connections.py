@@ -64,7 +64,7 @@ from urllib.parse import unquote
 
 from . import people as P
 from . import selectors as S
-from .browser import Browser, Pace, log, die
+from .browser import Browser, Pace, log, die, view_purpose
 
 # How long to let a lazy list settle after each scroll, and how many scrolls
 # before a list that keeps growing is treated as broken rather than long.
@@ -995,10 +995,11 @@ def connect(a):
     if a.submit and pace.count("connect") >= Pace.CAPS["connect"]:
         _refused(slug, "daily cap reached for connect (%d today, cap %d). Tomorrow. Nothing "
                        "was opened." % (pace.count("connect"), Pace.CAPS["connect"]))
-    if pace.count("view") + VIEWS_PER_RUN > Pace.VIEW_CAP:
-        _refused(slug, "the daily view cap (%d) leaves fewer than the %d views this run "
+    if pace.count("view") + VIEWS_PER_RUN > pace.view_cap():
+        _refused(slug, "the daily view cap (%d for %s) leaves fewer than the %d views this run "
                        "needs - the profile, the invitation page and the reload that proves "
-                       "it. Tomorrow. Nothing was opened." % (Pace.VIEW_CAP, VIEWS_PER_RUN))
+                       "it. Tomorrow. Nothing was opened."
+                       % (pace.view_cap(), view_purpose(), VIEWS_PER_RUN))
 
     with Browser(a.port) as br:
         run = Connect(br, pace, slug)

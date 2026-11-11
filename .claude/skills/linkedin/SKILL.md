@@ -104,7 +104,10 @@ in, checks it landed on the entity asked for, and fails loudly rather than
 printing an empty record with a zero exit. If one of these prints FAIL, believe
 it - do not go and do the same thing by hand and assume the tool was wrong.
 
-**Reads have their own budget: 80 a day, 3-8 seconds apart.** A profile read
+**Reads have their own budget: 80 a day, 3-8 seconds apart, and the last 15
+are kept for reply reads.** A run stops at 65 unless it passes
+`--views-for reply` (every verb takes it); pass it only when reading or
+answering a reply, never for outreach. A profile read
 leaves the ordinary "viewed your profile" trace, and high-volume profile viewing
 is one of the top triggers for an account warning. Some surfaces cost nothing against that
 80 and are counted instead on a separate uncapped `view_self` line in
@@ -416,7 +419,11 @@ tool does not post there.
 * If it prints `FAIL`, read the reason and the `.fail.png`. Fix the cause in the
   tool; do not work around it in a wrapper.
 * A native "Open" dialog on screen means a click fell through to something that
-  opens a file chooser. The tool cancels it and fails the run; report it.
+  opens a file chooser. The working tab intercepts choosers, so this should not
+  happen; if it does, the tool cancels it and fails the run; report it. One that
+  the Chrome we drive left behind is cancelled at the start of the next run
+  (`ORPHAN OPEN DIALOG cancelled`) and the run goes on; one owned by any other
+  program still refuses.
 
 ## There is a stub on this machine. Keep it a stub.
 
