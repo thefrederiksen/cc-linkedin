@@ -45,14 +45,18 @@ MEASURED ON THE LIVE PAGE, 2026-09-09 (every rule below was watched failing firs
     chooser. A keystroke cannot fall through.
   * Some videos leave inert role=dialog shells behind (the player's modal). A
     live dialog is one holding a Dismiss, Discard, Post or Schedule button.
+  * devthrottle#4901: the working tab INTERCEPTS file choosers over CDP, so no
+    click of ours can put a native "Open" dialog on screen, and a run killed
+    mid-upload can no longer leave one behind to stop every unattended seat
+    after it. A dialog the Chrome we drive owns, found while we hold its lock,
+    is an orphan and is cancelled; one owned by any other program still
+    refuses the run.
   * The working tab is created in a NEW WINDOW, without activating it, so the
     person using the browser is not interrupted and the tab's renderer is not
     starved at idle priority (devthrottle#4340). The final screenshot brings it
     to the front.
 """
 import argparse
-import ctypes
-import ctypes.wintypes as wt
 import datetime
 import os
 import re
@@ -61,7 +65,8 @@ import time
 
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout, Error as PWError
 
-from cc_linkedin_kit.browser import BrowserLock, open_working_tab
+from cc_linkedin_kit.browser import (BrowserLock, Pace, cancel_orphan_dialogs, close_file_dialogs,
+                                     open_working_tab, set_view_purpose)
 
 VIDEO_EXT = (".mp4", ".mov", ".webm", ".avi", ".m4v", ".mpeg", ".mpg", ".wmv", ".flv")
 IMAGE_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp")
@@ -81,47 +86,6 @@ def die(msg):
 def needle(text):
     """The opening words of the text, used to find the post on the page afterwards."""
     return text.split("\n")[0].strip().strip('"')[:60]
-
-
-# ---------------------------------------------------------------- native dialogs
-
-def open_file_dialogs():
-    """Handles of visible native 'Open' file dialogs on this desktop (Windows)."""
-    if not hasattr(ctypes, "windll"):
-        return []
-    user32 = ctypes.windll.user32
-    found = []
-    proc = ctypes.WINFUNCTYPE(ctypes.c_bool, wt.HWND, wt.LPARAM)
-
-    def cb(h, _):
-        if not user32.IsWindowVisible(h):
-            return True
-        cls = ctypes.create_unicode_buffer(64)
-        user32.GetClassNameW(h, cls, 64)
-        if cls.value != "#32770":
-            return True
-        title = ctypes.create_unicode_buffer(256)
-        user32.GetWindowTextW(h, title, 256)
-        if title.value == "Open":
-            found.append(int(h))
-        return True
-
-    user32.EnumWindows(proc(cb), 0)
-    return found
-
-
-def close_file_dialogs(where):
-    """Cancel any native 'Open' dialog (WM_CLOSE) and name the step that spawned it.
-
-    Clean-up, not a fix: a run that spawned one still FAILS, because a chooser
-    means a click landed on something that opens one, and that click is a bug.
-    """
-    handles = open_file_dialogs()
-    for h in handles:
-        ctypes.windll.user32.SendMessageW(h, 0x0010, 0, 0)
-    if handles:
-        log("NATIVE OPEN DIALOG appeared after %s (hwnd %s); cancelled it" % (where, handles))
-    return handles
 
 
 # ---------------------------------------------------------------- page helpers
@@ -157,7 +121,8 @@ FIND_CARD = """(first) => {
 class Page(object):
     """One LinkedIn Page admin, driven through one working tab."""
 
-    def __init__(self, browser, page_id, page_name, shot):
+    def __init__(self, browser, page_id, page_name, shot, port):
+        self.port = port
         self.browser = browser
         self.page_id = page_id
         self.page_name = page_name
@@ -222,7 +187,7 @@ class Page(object):
         locator.focus()
         self.page.keyboard.press("Enter")
         log("%s pressed" % what)
-        if close_file_dialogs(what):
+        if close_file_dialogs(what, self.port):
             die("%s spawned a native file dialog" % what)
 
     def discard(self, why):
@@ -486,7 +451,10 @@ def attach_page(p, a, shot):
     selftest, which runs cmd_post in process and carries on past SystemExit."""
     browser = connect(p, a.port)
     try:
-        return browser, Page(browser, a.page, a.page_name, shot)
+        # devthrottle#4901: with the lock held, a dialog of this Chrome's is an
+        # orphan and is cancelled; one owned by anything else refuses the run.
+        cancel_orphan_dialogs(a.port)
+        return browser, Page(browser, a.page, a.page_name, shot, a.port)
     except BaseException:
         try:
             browser.close()
@@ -534,8 +502,6 @@ def cmd_post(a):
             die("--schedule must be at least 30 minutes from now")
         if when.minute % 15:
             die("--schedule minutes must be a multiple of 15 (LinkedIn's grid)")
-    if open_file_dialogs():
-        die("a native 'Open' file dialog is already on screen; close it first")
     base = ", ".join(os.path.basename(f) for f in files) or "-"
     t0 = time.time()
     with sync_playwright() as p:
@@ -609,7 +575,7 @@ def cmd_post(a):
             lp.close()
             browser.close()
             release()
-            if close_file_dialogs("the run"):
+            if close_file_dialogs("the run", a.port):
                 die("a native 'Open' file dialog was spawned during the run; cancelled it")
 
 
@@ -955,7 +921,18 @@ def main():
     sp.add_argument("--port", type=int, default=9224)
     sp.set_defaults(fn=T.run)
 
+    # devthrottle#4901: every verb says what its capped views are for. The
+    # default is outreach, which stops short of the reply reserve; only a
+    # caller that names a reply read reaches the whole daily cap.
+    for name, sp in sub.choices.items():
+        sp.add_argument("--views-for", choices=Pace.VIEW_PURPOSES, default="outreach",
+                        help="what this run's capped views are for. 'reply' (reading or "
+                             "answering a reply) may use the whole %d a day; 'outreach', the "
+                             "default, stops %d short of it so reply reads always have room."
+                             % (Pace.VIEW_CAP, Pace.REPLY_RESERVE))
+
     a = ap.parse_args()
+    set_view_purpose(a.views_for)
     a.fn(a)
 
 

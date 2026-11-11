@@ -77,6 +77,12 @@ class FakeExpect(object):
 
 
 class FakePage(object):
+    def __init__(self):
+        self.listeners = {}
+
+    def on(self, event, fn):
+        self.listeners.setdefault(event, []).append(fn)
+
     def is_closed(self):
         return False
 

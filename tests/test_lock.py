@@ -104,6 +104,9 @@ class FakePage(object):
     def __init__(self):
         self.closed = False
 
+    def on(self, event, fn):
+        pass
+
     def is_closed(self):
         return self.closed
 
@@ -120,7 +123,7 @@ class LockCase(unittest.TestCase):
         self._dialogs = B.open_file_dialogs
         self._close = B.close_file_dialogs
         B.open_file_dialogs = lambda: []
-        B.close_file_dialogs = lambda where: []
+        B.close_file_dialogs = lambda where, port: []
         self._pw = B.sync_playwright
         self.port = 9999
         self.lock_path = os.path.join(self.dir, "browser-%d.lock" % self.port)
@@ -222,7 +225,7 @@ class CleanupReleasesTheLock(LockCase):
     def test_a_native_dialog_check_cannot_sit_before_the_release(self):
         # R3.4: close_file_dialogs and its die must not sit between the release
         # and the end of __exit__.
-        B.close_file_dialogs = lambda where: [1234]
+        B.close_file_dialogs = lambda where, port: [1234]
         self._playwright()
         br = B.Browser(self.port)
         br.__enter__()

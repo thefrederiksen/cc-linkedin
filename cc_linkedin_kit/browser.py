@@ -19,9 +19,12 @@ MEASURED
     at idle priority and starves on a busy machine - see open_working_tab, and
     the launch flag it depends on.
     Bring it to the front for a screenshot, for that one moment.
-  * Chrome hosts the Windows file chooser in a helper process; it is found as
-    a visible window of class #32770 titled "Open", not as anything on the
-    page. WM_CLOSE cancels it. A run that spawned one still fails.
+  * The Windows file chooser is found as a visible window of class #32770
+    titled "Open", not as anything on the page. WM_CLOSE cancels it. A run
+    that spawned one still fails. Since devthrottle#4901 the working tab
+    intercepts file choosers over CDP, so it should never show one at all, and
+    a dialog owned by the Chrome we drive that is found while we hold its lock
+    is an orphan and is cancelled (cancel_orphan_dialogs).
 """
 import ctypes
 import ctypes.wintypes as wt
@@ -95,15 +98,206 @@ def open_file_dialogs():
     return found
 
 
-def close_file_dialogs(where):
-    """Cancel any native 'Open' dialog (WM_CLOSE) and name the step that spawned it.
-    Clean-up, not a fix: the run that spawned one still fails."""
-    handles = open_file_dialogs()
-    for h in handles:
-        ctypes.windll.user32.SendMessageW(h, 0x0010, 0, 0)
+def close_file_dialogs(where, port):
+    """Cancel the native 'Open' dialogs THE CHROME ON `port` owns (WM_CLOSE) and
+    name the step that spawned them. Clean-up, not a fix: the run that spawned
+    one still fails.
+
+    devthrottle#4901 review: this used to cancel EVERY 'Open' dialog on the
+    desktop. With the working tab intercepting choosers, a dialog found here is
+    more likely the owner's own - Word's File > Open while a seat runs - and
+    closing it, then failing a run that did not cause it, is wrong twice. A
+    dialog of any other program is now named in the log and left alone."""
+    ours, foreign, _, _ = classify_dialogs(port)
+    for h, p in foreign:
+        log("a native 'Open' dialog of another program is on screen (hwnd %s pid %s); "
+            "not ours, left alone" % (h, p))
+    for h, p in ours:
+        _wm_close(h)
+    handles = [h for h, p in ours]
     if handles:
         log("NATIVE OPEN DIALOG appeared after %s (hwnd %s); cancelled it" % (where, handles))
     return handles
+
+
+def _wm_close(hwnd):
+    """Cancel one dialog. WM_CLOSE on a file dialog is its Cancel button.
+
+    SendMessageTimeoutW with SMTO_ABORTIFHUNG, not SendMessageW: a plain send
+    never returns while the dialog's thread is hung, and this runs with the
+    browser lock held, so one hung dialog would wedge every seat behind it.
+    Whether the close took is checked by the caller looking again."""
+    u32 = ctypes.windll.user32
+    u32.SendMessageTimeoutW.argtypes = [wt.HWND, wt.UINT, wt.WPARAM, wt.LPARAM, wt.UINT,
+                                        wt.UINT, ctypes.POINTER(ctypes.c_size_t)]
+    result = ctypes.c_size_t()
+    u32.SendMessageTimeoutW(hwnd, 0x0010, 0, 0, 0x0002, 3000, ctypes.byref(result))
+
+
+def window_pid(hwnd):
+    """The process that owns a window."""
+    u32 = ctypes.windll.user32
+    u32.GetWindowThreadProcessId.argtypes = [wt.HWND, ctypes.POINTER(wt.DWORD)]
+    pid = wt.DWORD()
+    u32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+    return pid.value
+
+
+class _PROCESSENTRY32W(ctypes.Structure):
+    _fields_ = [("dwSize", wt.DWORD), ("cntUsage", wt.DWORD), ("th32ProcessID", wt.DWORD),
+                ("th32DefaultHeapID", ctypes.c_size_t), ("th32ModuleID", wt.DWORD),
+                ("cntThreads", wt.DWORD), ("th32ParentProcessID", wt.DWORD),
+                ("pcPriClassBase", ctypes.c_long), ("dwFlags", wt.DWORD),
+                ("szExeFile", ctypes.c_wchar * 260)]
+
+
+def process_table():
+    """{pid: (parent pid, exe name)} for every process on the machine.
+    Raises OSError when the snapshot cannot be taken: a census that could not be
+    taken is not an empty one."""
+    k32 = ctypes.windll.kernel32
+    k32.CreateToolhelp32Snapshot.argtypes = [wt.DWORD, wt.DWORD]
+    k32.CreateToolhelp32Snapshot.restype = wt.HANDLE
+    k32.Process32FirstW.argtypes = [wt.HANDLE, ctypes.POINTER(_PROCESSENTRY32W)]
+    k32.Process32NextW.argtypes = [wt.HANDLE, ctypes.POINTER(_PROCESSENTRY32W)]
+    k32.CloseHandle.argtypes = [wt.HANDLE]
+    snap = k32.CreateToolhelp32Snapshot(0x2, 0)             # TH32CS_SNAPPROCESS
+    if not snap or snap == wt.HANDLE(-1).value:
+        raise OSError("CreateToolhelp32Snapshot failed (%d)" % k32.GetLastError())
+    out = {}
+    try:
+        e = _PROCESSENTRY32W()
+        e.dwSize = ctypes.sizeof(e)
+        ok = k32.Process32FirstW(snap, ctypes.byref(e))
+        while ok:
+            out[e.th32ProcessID] = (e.th32ParentProcessID, e.szExeFile)
+            ok = k32.Process32NextW(snap, ctypes.byref(e))
+    finally:
+        k32.CloseHandle(snap)
+    if not out:
+        raise OSError("the process snapshot listed no processes")
+    return out
+
+
+def listening_pid(port):
+    """The pid of the process LISTENING on TCP `port` (IPv4), or None when nothing
+    listens there. This is the Chrome we drive: its remote-debugging port.
+
+    Read from the operating system's own TCP table (GetExtendedTcpTable), not by
+    asking Chrome over CDP, so it cannot hang on a busy browser and does not
+    depend on the browser telling the truth about itself."""
+    iphlp = ctypes.windll.iphlpapi
+    size = wt.DWORD(0)
+    TCP_TABLE_OWNER_PID_LISTENER, AF_INET = 3, 2
+    iphlp.GetExtendedTcpTable(None, ctypes.byref(size), False, AF_INET,
+                              TCP_TABLE_OWNER_PID_LISTENER, 0)
+    for _ in range(3):
+        buf = ctypes.create_string_buffer(size.value)
+        rc = iphlp.GetExtendedTcpTable(buf, ctypes.byref(size), False, AF_INET,
+                                       TCP_TABLE_OWNER_PID_LISTENER, 0)
+        if rc == 0:
+            break
+        if rc != 122:                                       # ERROR_INSUFFICIENT_BUFFER
+            raise OSError("GetExtendedTcpTable failed (%d)" % rc)
+    else:
+        raise OSError("GetExtendedTcpTable kept growing; could not read it")
+    n = ctypes.cast(buf, ctypes.POINTER(wt.DWORD))[0]
+    # MIB_TCPROW_OWNER_PID: state, local addr, local port, remote addr, remote
+    # port, owning pid - six DWORDs each, after the DWORD count.
+    rows = ctypes.cast(ctypes.addressof(buf) + 4, ctypes.POINTER(wt.DWORD * 6))
+    for i in range(n):
+        row = rows[i]
+        local_port = ((row[2] & 0xFF) << 8) | ((row[2] >> 8) & 0xFF)   # network byte order
+        if local_port == port:
+            return int(row[5])
+    return None
+
+
+def owned_by(pid, browser_pid, table):
+    """True when `pid` is the browser process itself or one of its direct
+    children. Chrome may show the file chooser from the browser process or
+    from a utility child it started; both are the Chrome we drive.
+
+    A child must name the browser as its parent AND run the browser's own exe.
+    Parent-pid equality alone is open to Windows pid reuse: a process whose
+    real parent exited before this Chrome started, and whose old parent pid
+    Chrome was then given, would pass as ours and lose its live dialog."""
+    if browser_pid is None:
+        return False
+    if pid == browser_pid:
+        return True
+    entry, browser = table.get(pid), table.get(browser_pid)
+    return (entry is not None and browser is not None and entry[0] == browser_pid
+            and entry[1].lower() == browser[1].lower())
+
+
+def classify_dialogs(port):
+    """(ours, foreign, browser_pid, exes) for the 'Open' dialogs on screen now:
+    `ours` and `foreign` are lists of (hwnd, pid); `browser_pid` is the Chrome
+    listening on `port` or None; `exes` maps a foreign pid to its exe name.
+
+    A dialog that is gone again by the time its owner has been read is left
+    out: it was closed between the two looks (by a person, usually), and a
+    closed window reads as pid 0 - which would otherwise be "another program"
+    and refuse a run with nothing on screen."""
+    handles = open_file_dialogs()
+    if not handles:
+        return [], [], None, {}
+    browser_pid = listening_pid(port)
+    table = process_table()
+    owners = [(h, window_pid(h)) for h in handles]
+    still = set(open_file_dialogs())
+    owners = [(h, p) for h, p in owners if h in still]
+    ours = [(h, p) for h, p in owners if owned_by(p, browser_pid, table)]
+    foreign = [(h, p) for h, p in owners if not owned_by(p, browser_pid, table)]
+    exes = {p: (table.get(p) or (0, "?"))[1] for h, p in foreign}
+    return ours, foreign, browser_pid, exes
+
+
+def cancel_orphan_dialogs(port):
+    """devthrottle#4901. CALL ONLY WHILE HOLDING THE BROWSER LOCK FOR `port`.
+
+    A native 'Open' dialog on screen used to stop every verb, whoever owned it,
+    until a person closed it - and a dialog one run left behind stopped every
+    unattended seat after it (2026-11-05 and 2026-11-11).
+
+    Holding the lock settles who could have opened it: no other cc-linkedin
+    run is driving this Chrome now. So a dialog OWNED BY THE CHROME LISTENING ON
+    `port` is an orphan, and it is cancelled (WM_CLOSE) with a log line. A
+    dialog owned by ANY OTHER process is somebody's live work and is refused
+    with its owner named, and nothing is closed - not even an orphan of ours
+    beside it. Returns the handles it cancelled.
+
+    THE TRADE, stated: the lock proves no RUN of ours is using this Chrome. It
+    cannot prove a PERSON is not - a file dialog the owner opened by hand in
+    the same Chrome is cancelled too, and the log line names it. The owner
+    asked for this (devthrottle#4901): an unattended seat must not stop and
+    wait for a person.
+    """
+    ours, foreign, browser_pid, exes = classify_dialogs(port)
+    if foreign:
+        die("a native 'Open' file dialog owned by another program is on screen (%s); %s. "
+            "It is not ours to close. Close it first."
+            % (", ".join("hwnd %s pid %s %s" % (h, p, exes.get(p, "?")) for h, p in foreign),
+               ("no Chrome listens on port %d, so it cannot be one of ours" % port)
+               if browser_pid is None else
+               ("the Chrome on port %d is pid %d" % (port, browser_pid))))
+    if not ours:
+        return []
+    handles = [h for h, p in ours]
+    for h, p in ours:
+        _wm_close(h)
+        log("ORPHAN OPEN DIALOG cancelled (hwnd %s, pid %s): the Chrome on port %d owned it "
+            "and this run holds its lock, so no run of ours was using it" % (h, p, port))
+    deadline = time.time() + 5
+    while True:
+        left = [h for h in open_file_dialogs() if h in handles]
+        if not left:
+            return handles
+        if time.time() > deadline:
+            die("cancelled the orphan 'Open' dialog (hwnd %s) but it is still on screen "
+                "after 5s. Close it by hand." % left)
+        time.sleep(0.2)
 
 
 # ---------------------------------------------------------------- the lock
@@ -608,6 +802,22 @@ class Pace(object):
     VIEW_SELF_CAP = None   # our own profile and our own Pages: counted, NOT capped
     VIEW_GAP = (3, 8)      # seconds between reads, on both counters
 
+    # devthrottle#4901, 2026-11-11. The 80 are SHARED by the mindzie Outreach
+    # seat (08:00) and its Replies seat (15:00). Outreach spent all 80 that
+    # day, so a new reply waited a day unread - and a reply is the outcome the
+    # factory works for. So the last REPLY_RESERVE of the 80 are kept for
+    # reads that a caller declares, by name, to be REPLY READS
+    # (`--views-for reply`, set_view_purpose("reply")). Every other view stops
+    # at VIEW_CAP - REPLY_RESERVE. THE TOTAL IS STILL 80, on the one "view"
+    # counter; nothing here adds a view to the day.
+    #
+    # Same rule as view/view_self: the generous path is reached only by a
+    # positive declaration. A caller that says nothing is "outreach" and gets
+    # the smaller budget. A reply read that forgets to say so loses the reserve;
+    # an outreach run can never take it by omission.
+    REPLY_RESERVE = 15
+    VIEW_PURPOSES = ("outreach", "reply")
+
     def __init__(self):
         os.makedirs(STATE_DIR, exist_ok=True)
         self.path = os.path.join(STATE_DIR, "pace.json")
@@ -696,7 +906,21 @@ class Pace(object):
         they are compared to each other. A disagreement means either the pacing
         is wrong or the registry is, and both deserve a red run.
         """
-        self._view("view", self.VIEW_CAP, what, "views")
+        self._view("view", self.view_cap(), what, self._view_noun())
+
+    def view_cap(self):
+        """The most "view" may reach today for THIS process's declared purpose:
+        all 80 for a reply read, 80 minus the reply reserve for anything else.
+        Every pre-check of the view budget asks this, never VIEW_CAP."""
+        if _VIEW_PURPOSE[0] == "reply":
+            return self.VIEW_CAP
+        return self.VIEW_CAP - self.REPLY_RESERVE
+
+    def _view_noun(self):
+        if _VIEW_PURPOSE[0] == "reply":
+            return "views (reply read: the whole %d)" % self.VIEW_CAP
+        return ("views (the last %d of the %d are kept for reply reads; a caller reading a "
+                "reply says so with --views-for reply)" % (self.REPLY_RESERVE, self.VIEW_CAP))
 
     def before_self_view(self, what="page"):
         """One view of a surface WE OWN - the owner's own profile, or a Page he
@@ -734,6 +958,27 @@ class Pace(object):
         if wait > 0:
             log("pacing: %.0fs before the next %s" % (wait, what))
             time.sleep(wait)
+
+
+# ---------------------------------------------------------------- whose views
+#
+# What this process's capped views are FOR: "outreach" (the default) or
+# "reply". Set once, from the command line, before any verb runs. A one-item
+# list rather than a bare global so that tests and callers change it in place.
+_VIEW_PURPOSE = ["outreach"]
+
+
+def set_view_purpose(purpose):
+    """Declare what this process's capped views are for. "reply" reaches the
+    reply reserve; "outreach" does not. Anything else is a caller's mistake and
+    fails - an unknown purpose must not quietly become either one."""
+    if purpose not in Pace.VIEW_PURPOSES:
+        die("--views-for must be one of %s, not %r" % (", ".join(Pace.VIEW_PURPOSES), purpose))
+    _VIEW_PURPOSE[0] = purpose
+
+
+def view_purpose():
+    return _VIEW_PURPOSE[0]
 
 
 # ---------------------------------------------------------------- what we viewed
@@ -794,6 +1039,37 @@ NO_VIEW_SPENT = ("No view was counted against the daily cap: a read reserves its
                  "only after the attach has succeeded.")
 
 
+# Every file chooser a working tab asked for, in order, as the step it came
+# after. Process-level, like _VIEWS: the question is what this run did.
+INTERCEPTED_CHOOSERS = []
+
+
+def guard_file_chooser(page):
+    """Make it impossible for this tab to put a native 'Open' dialog on screen.
+
+    devthrottle#4901. Files only ever reach LinkedIn through DOM.setFileInputFiles
+    (Playwright's set_input_files), which opens no dialog. But a page can open
+    a chooser by itself: the Page admin screen's Photo button does on any
+    mouse click that lands on it, and the media editor's own controls can. A
+    native dialog opened that way outlives the run whenever the run is killed
+    before its clean-up - a caller's timeout during a ten-minute video upload is
+    enough - and then it stopped every unattended seat that came after it.
+
+    Listening for Playwright's "filechooser" event turns on CDP's
+    Page.setInterceptFileChooserDialog for this tab: from then on Chrome
+    reports a chooser to us INSTEAD OF showing the native dialog. Nothing is
+    put on screen and nothing can be left behind. The request is logged and
+    recorded, NOT failed: with nothing on screen there is nothing for a person
+    to clear, and an unattended seat must not stop and ask for help over it.
+    The log line is what tells a reader that some click landed on a control
+    that opens a chooser."""
+    def seen(chooser):
+        INTERCEPTED_CHOOSERS.append(time.strftime("%H:%M:%S"))
+        log("FILE CHOOSER intercepted: the page asked for a native file dialog and none was "
+            "shown")
+    page.on("filechooser", seen)
+
+
 def open_working_tab(browser):
     """Open the run's ONE tab and return its Playwright page. Dies naming the
     step on any failure - never a traceback.
@@ -851,7 +1127,10 @@ def open_working_tab(browser):
             created = root.send("Target.createTarget", {
                 "url": "about:blank", "newWindow": True, "background": True})
             step = "the new tab reporting in"
-        return opened.value
+        page = opened.value
+        step = "turning on file-chooser interception"
+        guard_file_chooser(page)
+        return page
     except PWError as exc:
         first = str(exc).splitlines()[0][:120]
     target = created.get("targetId")
@@ -976,12 +1255,14 @@ class Browser(object):
         the createTarget timeout - used to leave the lock file behind and wedge
         every other session on this machine for fifteen minutes at a time.
         """
-        if open_file_dialogs():
-            die("a native 'Open' file dialog is already on screen; close it first")
         self._pw = sync_playwright().start()
         try:
             self.lock.__enter__()
             self._locked = True
+            # devthrottle#4901: only now, holding the lock, can a dialog of
+            # this Chrome's be called an orphan. One owned by anything else
+            # still refuses the run.
+            cancel_orphan_dialogs(self.port)
             try:
                 stopped = self._stop_service_workers()
                 if stopped:
@@ -1006,7 +1287,7 @@ class Browser(object):
         try:
             self._teardown()
         finally:
-            spawned = close_file_dialogs("the run")
+            spawned = close_file_dialogs("the run", self.port)
         if spawned:
             die("a native 'Open' file dialog was spawned during the run; cancelled it")
 
@@ -1086,7 +1367,7 @@ class Browser(object):
         locator.focus()
         self.page.keyboard.press("Enter")
         log("%s pressed" % what)
-        if close_file_dialogs(what):
+        if close_file_dialogs(what, self.port):
             die("%s spawned a native file dialog" % what)
 
     def type_text(self, text):

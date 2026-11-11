@@ -178,7 +178,7 @@ class TheSurveyToolRegistersItsView(ViewCase):
         self.assertIn("survey", at_navigation[0]["what"].lower())
 
     def test_a_survey_over_the_cap_refuses_before_opening_anything(self):
-        for _ in range(B.Pace.VIEW_CAP):
+        for _ in range(B.Pace().view_cap()):
             p = B.Pace()
             p.before_view("a page")
             p.after_view()
@@ -187,7 +187,7 @@ class TheSurveyToolRegistersItsView(ViewCase):
         with self.assertRaises(SystemExit):
             sv.survey(br, "a-label", "https://www.linkedin.com/in/someone-else/",
                       sv.Dump(None, None), [], 4, 0, False)
-        self.assertEqual(B.Pace().count("view"), B.Pace.VIEW_CAP,
+        self.assertEqual(B.Pace().count("view"), B.Pace().view_cap(),
                          "a refused survey must not take a slot")
         self.assertEqual(br.seen, [], "a refused survey must not open the page")
 
