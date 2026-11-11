@@ -17,7 +17,10 @@ opened here: the Page is driven by a fake that behaves as the live page did.
 import contextlib
 import io
 import os
+import shutil
 import sys
+import tempfile
+import types
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -151,6 +154,144 @@ class DiscardFromTheMediaEditor(unittest.TestCase):
         self.assertIs(result, False)
         self.assertNotIn("FAIL", out)
         self.assertIn("could not clear up: composer still open", out)
+
+
+class LaggingPage(FakePage):
+    """The composer is still closing when the 4 s check runs out, and has gone
+    by the time the next round looks for Dismiss (review of #39, finding 1)."""
+
+    def __init__(self):
+        FakePage.__init__(self, "composer")
+
+
+class LaggingLinkedInPage(FakeLinkedInPage):
+    def press(self, locator, what):
+        if what == "Dismiss":
+            self.fake.dismissed += 1
+            self.fake.state = "closing"
+
+    def composer_open(self):
+        return self.fake.state in ("composer", "closing")
+
+    def closed(self, seconds):
+        if self.fake.state == "closing":
+            # LinkedIn finishes the teardown just after this check gives up.
+            self.fake.state = "gone"
+            return False
+        return self.fake.state == "gone"
+
+
+class DiscardRace(unittest.TestCase):
+    def test_a_composer_that_closes_late_is_a_clean_discard_not_a_fail(self):
+        fake = LaggingPage()
+        result, out = run(lambda: LaggingLinkedInPage(fake).discard("staged only"))
+        self.assertTrue(result, out)
+        self.assertEqual(fake.dismissed, 1)
+        self.assertNotIn("FAIL", out)
+        self.assertIn("composer discarded, nothing kept", out)
+
+    def test_no_dismiss_button_on_a_page_still_open_still_fails(self):
+        # The control: a composer that is open and has no Dismiss is still refused.
+        class NoDismiss(FakeLinkedInPage):
+            def dismiss_button(self):
+                return None
+        result, out = run(lambda: NoDismiss(FakePage("composer")).discard("staged only"))
+        self.assertEqual(result, ("exit", 1))
+        self.assertIn("FAIL composer is open but has no Dismiss button", out)
+
+
+class ChooserCountPage(C.Page):
+    """A Page for cmd_post with no browser. `stray` file choosers are opened by
+    keystrokes that should never open one (the mis-click the OS dialog used to
+    prove); each "Add media" opens one, as measured on 2026-11-11."""
+
+    def __init__(self, stray):
+        self.choosers = stray
+        self.admin = ""
+        self.page = self
+        self.attached = False
+
+    def evaluate(self, script, *args):
+        return ""
+
+    def ensure_empty_composer(self):
+        pass
+
+    def attach(self, files):
+        self.choosers += 1
+        self.attached = True
+        return False
+
+    def media_still_attached(self):
+        return self.attached
+
+    def type_text(self, text):
+        pass
+
+    def discard(self, why, fatal=True):
+        return True
+
+    def composer_open(self):
+        return False
+
+    def live_dialog(self):
+        return FakeLocator(0)
+
+    def close(self):
+        pass
+
+
+class ChooserCount(unittest.TestCase):
+    """Review of #39, finding 2: an intercepted chooser beyond one per Add media
+    is a keystroke that landed on the wrong thing, and fails the run."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.text = os.path.join(self.tmp, "post.txt")
+        with open(self.text, "w", encoding="utf-8") as f:
+            f.write("Opening line of the post\n\nBody.")
+        self.video = os.path.join(self.tmp, "clip.mp4")
+        with open(self.video, "wb") as f:
+            f.write(b"0")
+        self.saved = (C.sync_playwright, C.attach_page, C.release, C.close_file_dialogs)
+        C.sync_playwright = lambda: contextlib.nullcontext(None)
+        C.release = lambda: None
+        C.close_file_dialogs = lambda where, port: False
+
+    def tearDown(self):
+        C.sync_playwright, C.attach_page, C.release, C.close_file_dialogs = self.saved
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def post(self, stray, media):
+        class Browser(object):
+            def close(self):
+                pass
+        C.attach_page = lambda p, a, shot: (Browser(), ChooserCountPage(stray))
+        a = types.SimpleNamespace(media=media, text=self.text, schedule=None, submit=False, shot="",
+                                  port=9224, page="144093416", page_name="DevThrottle")
+        return run(lambda: C.cmd_post(a))
+
+    def test_a_stray_chooser_fails_the_run(self):
+        result, out = self.post(stray=1, media=[])
+        self.assertEqual(result, ("exit", 1), out)
+        self.assertIn("FAIL", out)
+        self.assertIn("file chooser", out)
+
+    def test_a_stray_chooser_beside_the_one_add_media_opens_fails_the_run(self):
+        result, out = self.post(stray=1, media=[self.video])
+        self.assertEqual(result, ("exit", 1), out)
+        self.assertIn("file chooser", out)
+
+    def test_one_chooser_from_add_media_passes(self):
+        # The control: the one chooser Add media opens is expected.
+        result, out = self.post(stray=0, media=[self.video])
+        self.assertNotIn("FAIL", out)
+        self.assertIn("RESULT staged", out)
+
+    def test_no_media_and_no_chooser_passes(self):
+        result, out = self.post(stray=0, media=[])
+        self.assertNotIn("FAIL", out)
+        self.assertIn("RESULT staged", out)
 
 
 class FileChooserIsIntercepted(unittest.TestCase):
