@@ -45,6 +45,17 @@ MEASURED ON THE LIVE PAGE, 2026-09-09 (every rule below was watched failing firs
     chooser. A keystroke cannot fall through.
   * Some videos leave inert role=dialog shells behind (the player's modal). A
     live dialog is one holding a Dismiss, Discard, Post or Schedule button.
+
+MEASURED ON THE LIVE PAGE, 2026-11-11 (a refused post, reproduced by staging)
+  * "Add media" now opens the native Open dialog together with the media
+    editor. Every Page session listens for file choosers, so Playwright takes
+    them and Windows never shows one; the file still goes in by the editor's
+    own input.
+  * Open chat bubbles in the messaging overlay carry file inputs of their own.
+    Only the inputs inside the media editor's modal are counted.
+  * Dismiss in the media editor goes back to the composer; it does not close
+    it. Discard presses Dismiss again until nothing is left, at most three
+    rounds.
   * The working tab is created in a NEW WINDOW, without activating it, so the
     person using the browser is not interrupted and the tab's renderer is not
     starved at idle priority (devthrottle#4340). The final screenshot brings it
@@ -126,16 +137,32 @@ def close_file_dialogs(where):
 
 # ---------------------------------------------------------------- page helpers
 
-ENUM_INPUTS = """() => {
+EDITOR_INPUTS = """(sel) => {
+  // Every file input on the page, each marked with whether it sits in the same
+  // modal as the media editor's own input. The page holds others: an open chat
+  // bubble in the messaging overlay carries two (attachment-input-emberNNN).
+  const own = document.querySelector(sel);
+  const modal = own ? (own.closest('[role=dialog]') || own.closest('.artdeco-modal')) : null;
   const walk = (root, acc) => {
     for (const el of root.querySelectorAll('*')) {
-      if (el.tagName === 'INPUT' && el.type === 'file') acc.push({id: el.id, accept: el.accept});
+      if (el.tagName === 'INPUT' && el.type === 'file')
+        acc.push({id: el.id, accept: el.accept, editor: !!modal && modal.contains(el)});
       if (el.shadowRoot) walk(el.shadowRoot, acc);
     }
     return acc;
   };
   return walk(document, []);
 }"""
+
+
+def editor_inputs(found):
+    """The file inputs that belong to the media editor, out of every file input
+    on the page (EDITOR_INPUTS). Anything outside the editor's modal is not
+    ours: on 2026-11-11 four open chat bubbles in the messaging overlay put
+    eight more inputs on the admin page, and counting the whole page refused a
+    post that was fine."""
+    return [i for i in found if i.get("editor")]
+
 
 EDITOR_TEXT = """() => {
   const ed = document.querySelector('.share-creation-state .ql-editor');
@@ -166,6 +193,17 @@ class Page(object):
         # The same tab every verb opens: its own window, never activated. A
         # hidden background tab starves on a busy machine (devthrottle#4340).
         self.page = open_working_tab(browser)
+        # Any file chooser the page opens is taken by Playwright, so Windows
+        # never shows one. Measured 2026-11-11: pressing "Add media" now opens
+        # the media editor AND the native Open dialog at once, and that dialog
+        # was left stranded on the screen. The file still goes in through the
+        # editor's own input (attach); this listener only keeps the OS out.
+        self.choosers = 0
+        self.page.on("filechooser", self._chooser)
+
+    def _chooser(self, chooser):
+        self.choosers += 1
+        log("file chooser intercepted (%d); no native dialog shown" % self.choosers)
 
     # -- state -------------------------------------------------------------
 
@@ -225,33 +263,78 @@ class Page(object):
         if close_file_dialogs(what):
             die("%s spawned a native file dialog" % what)
 
-    def discard(self, why):
-        """Dismiss the composer and choose Discard. Proven by the composer being
-        gone and the page's own 'Start a post' box being back."""
-        log("discarding composer (%s)" % why)
-        if self.live_dialog().count() == 0 and not self.composer_open():
-            return
-        had_content = bool(self.editor_text().strip()) or self.has_button("Remove media")
-        dismiss = self.page.locator("[role=dialog] button[aria-label='Dismiss']")
-        if dismiss.count() == 0:
-            die("composer is open but has no Dismiss button; buttons=%s" % self.buttons()[:12])
-        self.press(dismiss.first, "Dismiss")
+    DISMISS_ROUNDS = 3
+
+    def dismiss_button(self):
+        found = self.page.locator("[role=dialog] button[aria-label='Dismiss']")
+        return found.first if found.count() else None
+
+    def discard_prompt(self, timeout_ms):
+        """The "Discard" choice of the save-as-draft prompt, or None if none comes."""
         choice = self.page.get_by_role("button", name="Discard", exact=True)
-        # An empty composer closes without a "save as draft?" prompt, so only a
-        # composer with content is worth waiting on for one.
         try:
-            choice.first.wait_for(state="visible", timeout=8000 if had_content else 2500)
-            self.press(choice.first, "Discard")
+            choice.first.wait_for(state="visible", timeout=timeout_ms)
+            return choice.first
         except PWTimeout:
-            log("no Discard prompt appeared; buttons=%s" % self.buttons()[:12])
+            return None
+
+    def closed(self, seconds):
+        """True once neither the composer nor any live dialog is on the page."""
+        deadline = time.time() + seconds
+        while True:
+            if not self.composer_open() and self.live_dialog().count() == 0:
+                return True
+            if time.time() >= deadline:
+                return False
+            time.sleep(0.5)
+
+    def start_box_back(self):
         try:
-            self.page.locator(".share-creation-state").wait_for(state="detached", timeout=8000)
             self.page.get_by_role("button", name="Start a post").first.wait_for(state="visible", timeout=8000)
+            return True
         except PWTimeout:
-            die("composer still open after Dismiss + Discard; buttons=%s" % self.buttons()[:12])
-        if self.live_dialog().count():
-            die("a live dialog remains after discard: %s" % self.buttons()[:12])
+            return False
+
+    def discard(self, why, fatal=True):
+        """Dismiss the composer and choose Discard. Proven by the composer being
+        gone and the page's own 'Start a post' box being back.
+
+        Dismiss is pressed again while anything is left: Dismiss in the media
+        editor only goes BACK to the composer (measured 2026-11-11), so a
+        composer left in the media editor takes two. With fatal=False (clearing
+        up after a failure that has already printed its FAIL) a failure here is
+        logged, not a second FAIL line that would hide the cause."""
+        log("discarding composer (%s)" % why)
+        if self.closed(0):
+            return True
+        for _ in range(self.DISMISS_ROUNDS):
+            had_content = bool(self.editor_text().strip()) or self.has_button("Remove media")
+            dismiss = self.dismiss_button()
+            if dismiss is None:
+                return self.stop(fatal, "composer is open but has no Dismiss button; buttons=%s"
+                                 % self.buttons()[:12])
+            self.press(dismiss, "Dismiss")
+            # An empty composer closes without a "save as draft?" prompt, so only a
+            # composer with content is worth waiting on for one.
+            choice = self.discard_prompt(8000 if had_content else 2500)
+            if choice is not None:
+                self.press(choice, "Discard")
+            if self.closed(4):
+                break
+            log("still open after Dismiss; buttons=%s" % self.buttons()[:12])
+        else:
+            return self.stop(fatal, "composer still open after %d rounds of Dismiss + Discard; buttons=%s"
+                             % (self.DISMISS_ROUNDS, self.buttons()[:12]))
+        if not self.start_box_back():
+            return self.stop(fatal, "the composer closed but the page's 'Start a post' box did not come back")
         log("composer discarded, nothing kept")
+        return True
+
+    def stop(self, fatal, msg):
+        if fatal:
+            die(msg)
+        log("could not clear up: %s" % msg)
+        return False
 
     # -- media -------------------------------------------------------------
 
@@ -260,7 +343,7 @@ class Page(object):
         is_video = names[0].lower().endswith(VIDEO_EXT)
         self.page.locator(".share-creation-state button[aria-label='Add media']").click(timeout=10000)
         self.page.wait_for_selector(FILE_INPUT, state="attached", timeout=20000)
-        inputs = self.page.evaluate(ENUM_INPUTS)
+        inputs = editor_inputs(self.page.evaluate(EDITOR_INPUTS, FILE_INPUT))
         if len(inputs) != 1:
             die("expected exactly one file input in the media editor, found %r" % inputs)
         accept = inputs[0]["accept"]
@@ -598,7 +681,7 @@ def cmd_post(a):
             if not ok:
                 try:
                     if lp.composer_open() or lp.live_dialog().count():
-                        lp.discard("clearing up after failure")
+                        lp.discard("clearing up after failure", fatal=False)
                 except SystemExit:
                     raise
                 except Exception as exc:
