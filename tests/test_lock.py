@@ -104,6 +104,9 @@ class FakePage(object):
     def __init__(self):
         self.closed = False
 
+    def on(self, event, fn):
+        pass
+
     def is_closed(self):
         return self.closed
 

@@ -120,7 +120,7 @@ import urllib.parse
 from . import inbox as I
 from . import people as P
 from . import selectors as S
-from .browser import Browser, Pace, log, die
+from .browser import Browser, Pace, log, die, view_purpose
 
 EDITOR = "form.msg-form .msg-form__contenteditable[contenteditable=true]"
 SEND = "form.msg-form button.msg-form__send-button"
@@ -919,9 +919,9 @@ def _message(a, br, run, pace, text, kind, target, expect, t0):
 
     # The run must be able to take its proving reload. Checked BEFORE typing,
     # so the view cap cannot stop a run between the Send click and its proof.
-    if pace.count("view") + 1 > Pace.VIEW_CAP:
-        run.fail("the daily view cap (%d) leaves no view for the reload that proves this "
-                 "run. Tomorrow. Nothing was typed." % Pace.VIEW_CAP)
+    if pace.count("view") + 1 > pace.view_cap():
+        run.fail("the daily view cap (%d for %s) leaves no view for the reload that proves "
+                 "this run. Tomorrow. Nothing was typed." % (pace.view_cap(), view_purpose()))
 
     # A FRESH COMPOSER. A leftover draft that is exactly this text came from
     # a --leave run and is cleared; anything else may be the owner's own

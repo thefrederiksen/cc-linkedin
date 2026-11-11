@@ -113,7 +113,11 @@ notifications is a FAIL, because a broken selector and an empty result set look
 identical from here and the broken selector is far more likely.
 
 Reads are paced on their OWN clock - 3 to 8 seconds apart, 80 a day - so a
-profile read never makes the next comment wait 90 seconds. One view is a profile
+profile read never makes the next comment wait 90 seconds. **The last 15 of the
+80 are kept for reply reads** (devthrottle#4901): a run stops at 65 unless it
+says `--views-for reply`, which every verb accepts and which may use the whole
+80. Outreach says nothing (or `--views-for outreach`); reading or answering a
+reply says `--views-for reply`. The total is still 80 on one counter. One view is a profile
 or a company page opened, or one page of search results however many cards it
 holds. Some surfaces are counted on a second counter, `view_self`, which is reported
 and NOT capped.
@@ -276,6 +280,12 @@ detail.
 * The discard prompt's Discard button sits exactly over the admin page's Photo
   button. A mouse click that lands late opens Photo's file chooser. Dismiss and
   Discard are therefore pressed with the keyboard.
+* Every working tab INTERCEPTS file choosers over CDP (devthrottle#4901), so no
+  click can put a native "Open" dialog on screen; an intercepted request is
+  logged as `FILE CHOOSER intercepted`. A native dialog owned by the Chrome we
+  drive that is found while we hold its lock is an orphan: it is cancelled and
+  logged as `ORPHAN OPEN DIALOG cancelled (hwnd, pid)`, and the run goes on. A
+  dialog owned by any other program still refuses the run.
 * A Page keeps one server-side draft per admin and puts it back into the next
   composer. The tool discards a restored draft once and stops if it comes back.
 * Scheduled posts have no page of their own. They live in a dialog reached from
