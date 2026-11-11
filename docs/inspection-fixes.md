@@ -256,3 +256,36 @@ Watched failing before the fix, against the HEAD `messaging.py`:
 Proven live, staged only, nothing sent: one first-conversation run staged with
 `history=0 last_message_unchanged=unproven-no-history`, and one run with a
 parenthetical top-card name staged with `history=1 last_message_unchanged=true`.
+
+---
+
+## Later: `post` with a video, 2026-11-11 (a refused Page post)
+
+A Page post of a video died at the media editor and was reproduced by a staged
+run (no `--submit`, nothing published). Watched failing before the fix, against
+the HEAD `cc_linkedin.py`; all nine tests in `tests/test_post_media_editor.py`
+fail on HEAD:
+
+* **The file-input count took the whole page.** Four chat bubbles open in the
+  messaging overlay of the signed-in profile carry two file inputs each
+  (`attachment-input-emberNNN`), so the check "exactly one file input in the
+  media editor" found nine and refused. Only inputs inside the media editor's
+  own modal are counted now (`editor_inputs`); two inside it still refuse.
+* **"Add media" opens the native Open dialog.** The media editor now opens
+  the OS file chooser along with itself, and it was left stranded on the
+  screen (one was found on the DevThrottle admin window before the staged
+  run). Every Page session listens for `filechooser`, so Playwright takes the
+  chooser and Windows never shows one. The file still goes in through the
+  editor's own input.
+* **One Dismiss does not close a composer left in the media editor.** It goes
+  back to the composer. Discard presses Dismiss until nothing is left, at most
+  three rounds.
+* **The clean-up FAIL hid the cause.** A failed clean-up after a failure
+  printed a second FAIL ("composer still open after Dismiss + Discard"), and
+  a caller reading the last FAIL line took it for the cause. Clearing up after
+  a failure now logs `could not clear up: ...` and the first FAIL stays last.
+
+Proven live, staged only, nothing posted: a staged video run on the DevThrottle
+Page with the four chat bubbles open ended `RESULT staged`, chooser intercepted,
+no native dialog on screen after; and a composer left in the media editor was
+discarded in two Dismiss rounds.
