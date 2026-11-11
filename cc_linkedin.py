@@ -276,6 +276,11 @@ class Page(object):
             had_content = bool(self.editor_text().strip()) or self.has_button("Remove media")
             dismiss = self.dismiss_button()
             if dismiss is None:
+                # The composer may have finished closing just after the last
+                # check gave up (it gets 4 s, and one with a video takes
+                # longer). A page that is clean now is a discard, not a fault.
+                if self.closed(4):
+                    break
                 return self.stop(fatal, "composer is open but has no Dismiss button; buttons=%s"
                                  % self.buttons()[:12])
             self.press(dismiss, "Dismiss")
@@ -660,6 +665,17 @@ def cmd_post(a):
             release()
             if close_file_dialogs("the run", a.port):
                 die("a native 'Open' file dialog was spawned during the run; cancelled it")
+            # Choosers are intercepted, so the OS dialog no longer proves a
+            # keystroke landed on something that opens one. "Add media" opens
+            # at most one; any more is that mis-click. After a failure the
+            # cause stays the last FAIL line, so the count is only logged.
+            stray = lp.choosers - (1 if files else 0)
+            if stray > 0:
+                msg = ("%d file chooser(s) opened during the run, %d more than 'Add media' "
+                       "accounts for: a keystroke landed on something that opens one" % (lp.choosers, stray))
+                if ok:
+                    die(msg)
+                log(msg)
 
 
 def cmd_scheduled(a):
