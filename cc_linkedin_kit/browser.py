@@ -98,26 +98,48 @@ def open_file_dialogs():
     return found
 
 
-def close_file_dialogs(where):
-    """Cancel any native 'Open' dialog (WM_CLOSE) and name the step that spawned it.
-    Clean-up, not a fix: the run that spawned one still fails."""
-    handles = open_file_dialogs()
-    for h in handles:
+def close_file_dialogs(where, port):
+    """Cancel the native 'Open' dialogs THE CHROME ON `port` owns (WM_CLOSE) and
+    name the step that spawned them. Clean-up, not a fix: the run that spawned
+    one still fails.
+
+    devthrottle#4901 review: this used to cancel EVERY 'Open' dialog on the
+    desktop. With the working tab intercepting choosers, a dialog found here is
+    more likely the owner's own - Word's File > Open while a seat runs - and
+    closing it, then failing a run that did not cause it, is wrong twice. A
+    dialog of any other program is now named in the log and left alone."""
+    ours, foreign, _, _ = classify_dialogs(port)
+    for h, p in foreign:
+        log("a native 'Open' dialog of another program is on screen (hwnd %s pid %s); "
+            "not ours, left alone" % (h, p))
+    for h, p in ours:
         _wm_close(h)
+    handles = [h for h, p in ours]
     if handles:
         log("NATIVE OPEN DIALOG appeared after %s (hwnd %s); cancelled it" % (where, handles))
     return handles
 
 
 def _wm_close(hwnd):
-    """Cancel one dialog. WM_CLOSE on a file dialog is its Cancel button."""
-    ctypes.windll.user32.SendMessageW(hwnd, 0x0010, 0, 0)
+    """Cancel one dialog. WM_CLOSE on a file dialog is its Cancel button.
+
+    SendMessageTimeoutW with SMTO_ABORTIFHUNG, not SendMessageW: a plain send
+    never returns while the dialog's thread is hung, and this runs with the
+    browser lock held, so one hung dialog would wedge every seat behind it.
+    Whether the close took is checked by the caller looking again."""
+    u32 = ctypes.windll.user32
+    u32.SendMessageTimeoutW.argtypes = [wt.HWND, wt.UINT, wt.WPARAM, wt.LPARAM, wt.UINT,
+                                        wt.UINT, ctypes.POINTER(ctypes.c_size_t)]
+    result = ctypes.c_size_t()
+    u32.SendMessageTimeoutW(hwnd, 0x0010, 0, 0, 0x0002, 3000, ctypes.byref(result))
 
 
 def window_pid(hwnd):
     """The process that owns a window."""
+    u32 = ctypes.windll.user32
+    u32.GetWindowThreadProcessId.argtypes = [wt.HWND, ctypes.POINTER(wt.DWORD)]
     pid = wt.DWORD()
-    ctypes.windll.user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+    u32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
     return pid.value
 
 
@@ -134,7 +156,11 @@ def process_table():
     Raises OSError when the snapshot cannot be taken: a census that could not be
     taken is not an empty one."""
     k32 = ctypes.windll.kernel32
+    k32.CreateToolhelp32Snapshot.argtypes = [wt.DWORD, wt.DWORD]
     k32.CreateToolhelp32Snapshot.restype = wt.HANDLE
+    k32.Process32FirstW.argtypes = [wt.HANDLE, ctypes.POINTER(_PROCESSENTRY32W)]
+    k32.Process32NextW.argtypes = [wt.HANDLE, ctypes.POINTER(_PROCESSENTRY32W)]
+    k32.CloseHandle.argtypes = [wt.HANDLE]
     snap = k32.CreateToolhelp32Snapshot(0x2, 0)             # TH32CS_SNAPPROCESS
     if not snap or snap == wt.HANDLE(-1).value:
         raise OSError("CreateToolhelp32Snapshot failed (%d)" % k32.GetLastError())
@@ -190,13 +216,42 @@ def listening_pid(port):
 def owned_by(pid, browser_pid, table):
     """True when `pid` is the browser process itself or one of its direct
     children. Chrome may show the file chooser from the browser process or
-    from a utility child it started; both are the Chrome we drive. A direct
-    child is checked against the browser's own pid, and that child must be
-    alive in the same snapshot, so a stale parent pid cannot pass."""
+    from a utility child it started; both are the Chrome we drive.
+
+    A child must name the browser as its parent AND run the browser's own exe.
+    Parent-pid equality alone is open to Windows pid reuse: a process whose
+    real parent exited before this Chrome started, and whose old parent pid
+    Chrome was then given, would pass as ours and lose its live dialog."""
+    if browser_pid is None:
+        return False
     if pid == browser_pid:
         return True
-    entry = table.get(pid)
-    return entry is not None and entry[0] == browser_pid and browser_pid in table
+    entry, browser = table.get(pid), table.get(browser_pid)
+    return (entry is not None and browser is not None and entry[0] == browser_pid
+            and entry[1].lower() == browser[1].lower())
+
+
+def classify_dialogs(port):
+    """(ours, foreign, browser_pid, exes) for the 'Open' dialogs on screen now:
+    `ours` and `foreign` are lists of (hwnd, pid); `browser_pid` is the Chrome
+    listening on `port` or None; `exes` maps a foreign pid to its exe name.
+
+    A dialog that is gone again by the time its owner has been read is left
+    out: it was closed between the two looks (by a person, usually), and a
+    closed window reads as pid 0 - which would otherwise be "another program"
+    and refuse a run with nothing on screen."""
+    handles = open_file_dialogs()
+    if not handles:
+        return [], [], None, {}
+    browser_pid = listening_pid(port)
+    table = process_table()
+    owners = [(h, window_pid(h)) for h in handles]
+    still = set(open_file_dialogs())
+    owners = [(h, p) for h, p in owners if h in still]
+    ours = [(h, p) for h, p in owners if owned_by(p, browser_pid, table)]
+    foreign = [(h, p) for h, p in owners if not owned_by(p, browser_pid, table)]
+    exes = {p: (table.get(p) or (0, "?"))[1] for h, p in foreign}
+    return ours, foreign, browser_pid, exes
 
 
 def cancel_orphan_dialogs(port):
@@ -212,23 +267,25 @@ def cancel_orphan_dialogs(port):
     dialog owned by ANY OTHER process is somebody's live work and is refused
     with its owner named, and nothing is closed - not even an orphan of ours
     beside it. Returns the handles it cancelled.
+
+    THE TRADE, stated: the lock proves no RUN of ours is using this Chrome. It
+    cannot prove a PERSON is not - a file dialog the owner opened by hand in
+    the same Chrome is cancelled too, and the log line names it. The owner
+    asked for this (devthrottle#4901): an unattended seat must not stop and
+    wait for a person.
     """
-    handles = open_file_dialogs()
-    if not handles:
-        return []
-    browser_pid = listening_pid(port)
-    if browser_pid is None:
-        die("a native 'Open' file dialog is on screen (hwnd %s) and no Chrome listens on "
-            "port %d, so it cannot be one of ours. Close it first." % (handles, port))
-    table = process_table()
-    owners = [(h, window_pid(h)) for h in handles]
-    foreign = [(h, p) for h, p in owners if not owned_by(p, browser_pid, table)]
+    ours, foreign, browser_pid, exes = classify_dialogs(port)
     if foreign:
-        die("a native 'Open' file dialog owned by another program is on screen (%s); the "
-            "Chrome on port %d is pid %d. It is not ours to close. Close it first."
-            % (", ".join("hwnd %s pid %s %s" % (h, p, (table.get(p) or (0, "?"))[1])
-                         for h, p in foreign), port, browser_pid))
-    for h, p in owners:
+        die("a native 'Open' file dialog owned by another program is on screen (%s); %s. "
+            "It is not ours to close. Close it first."
+            % (", ".join("hwnd %s pid %s %s" % (h, p, exes.get(p, "?")) for h, p in foreign),
+               ("no Chrome listens on port %d, so it cannot be one of ours" % port)
+               if browser_pid is None else
+               ("the Chrome on port %d is pid %d" % (port, browser_pid))))
+    if not ours:
+        return []
+    handles = [h for h, p in ours]
+    for h, p in ours:
         _wm_close(h)
         log("ORPHAN OPEN DIALOG cancelled (hwnd %s, pid %s): the Chrome on port %d owned it "
             "and this run holds its lock, so no run of ours was using it" % (h, p, port))
@@ -1230,7 +1287,7 @@ class Browser(object):
         try:
             self._teardown()
         finally:
-            spawned = close_file_dialogs("the run")
+            spawned = close_file_dialogs("the run", self.port)
         if spawned:
             die("a native 'Open' file dialog was spawned during the run; cancelled it")
 
@@ -1310,7 +1367,7 @@ class Browser(object):
         locator.focus()
         self.page.keyboard.press("Enter")
         log("%s pressed" % what)
-        if close_file_dialogs(what):
+        if close_file_dialogs(what, self.port):
             die("%s spawned a native file dialog" % what)
 
     def type_text(self, text):

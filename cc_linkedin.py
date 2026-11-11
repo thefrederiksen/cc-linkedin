@@ -121,7 +121,8 @@ FIND_CARD = """(first) => {
 class Page(object):
     """One LinkedIn Page admin, driven through one working tab."""
 
-    def __init__(self, browser, page_id, page_name, shot):
+    def __init__(self, browser, page_id, page_name, shot, port):
+        self.port = port
         self.browser = browser
         self.page_id = page_id
         self.page_name = page_name
@@ -186,7 +187,7 @@ class Page(object):
         locator.focus()
         self.page.keyboard.press("Enter")
         log("%s pressed" % what)
-        if close_file_dialogs(what):
+        if close_file_dialogs(what, self.port):
             die("%s spawned a native file dialog" % what)
 
     def discard(self, why):
@@ -453,7 +454,7 @@ def attach_page(p, a, shot):
         # devthrottle#4901: with the lock held, a dialog of this Chrome's is an
         # orphan and is cancelled; one owned by anything else refuses the run.
         cancel_orphan_dialogs(a.port)
-        return browser, Page(browser, a.page, a.page_name, shot)
+        return browser, Page(browser, a.page, a.page_name, shot, a.port)
     except BaseException:
         try:
             browser.close()
@@ -574,7 +575,7 @@ def cmd_post(a):
             lp.close()
             browser.close()
             release()
-            if close_file_dialogs("the run"):
+            if close_file_dialogs("the run", a.port):
                 die("a native 'Open' file dialog was spawned during the run; cancelled it")
 
 

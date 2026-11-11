@@ -155,6 +155,44 @@ class ADialogOfAnybodyElseStillRefuses(unittest.TestCase):
         self.assertEqual(d.closed, [])
 
 
+class ReviewRoundOne(unittest.TestCase):
+    """The separate review of PR #40: ownership must hold at the end of a run
+    too, pid reuse must not make a stranger ours, and a dialog closed between
+    two looks must not refuse a run."""
+
+    def test_a_child_running_another_exe_is_not_ours(self):
+        # Pid reuse: notepad's dead parent had the pid Chrome has now.
+        d = FakeDesktop({441: OTHER}).install(self)
+        d.table[OTHER] = (CHROME, "notepad.exe")
+        code, _ = run(B.cancel_orphan_dialogs, 9224)
+        self.assertEqual(code, 1)
+        self.assertEqual(d.closed, [])
+
+    def test_a_dialog_closed_between_the_two_looks_does_not_refuse(self):
+        d = FakeDesktop({442: OTHER}).install(self)
+
+        def gone(h):
+            d.dialogs.pop(h)            # the person closed it just now
+            return 0
+        B.window_pid = gone
+        code, out = run(B.cancel_orphan_dialogs, 9224)
+        self.assertIsNone(code, out)
+        self.assertEqual(d.closed, [])
+
+    def test_end_of_run_cleanup_leaves_another_programs_dialog_alone(self):
+        d = FakeDesktop({443: OTHER, 444: CHROME}).install(self)
+        code, out = run(B.close_file_dialogs, "the run", 9224)
+        self.assertIsNone(code)
+        self.assertEqual(d.closed, [444], "only the Chrome's own dialog may be closed")
+        self.assertIn("not ours, left alone", out)
+
+    def test_end_of_run_with_only_a_foreign_dialog_reports_nothing_spawned(self):
+        FakeDesktop({445: OTHER}).install(self)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(B.close_file_dialogs("the run", 9224), [])
+
+
 class TheCheckRunsUnderTheLock(AttachCase):
     """Only the lock makes "orphan" true: without it another run of ours could
     be using that very dialog. So the check must run with the lock held, and a
