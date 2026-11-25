@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
-dependencies = ["playwright>=1.58"]
+dependencies = ["playwright>=1.58", "websockets>=13"]
 
 [project.scripts]
 cc-linkedin = "cc_linkedin:main"

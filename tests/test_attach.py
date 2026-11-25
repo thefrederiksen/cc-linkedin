@@ -126,15 +126,6 @@ class FakePlaywright(object):
 
 class AttachCase(LockCase):
 
-    def setUp(self):
-        LockCase.setUp(self)
-        self._stop_sw = B.Browser._stop_service_workers
-        B.Browser._stop_service_workers = lambda self: 0
-
-    def tearDown(self):
-        B.Browser._stop_service_workers = self._stop_sw
-        LockCase.tearDown(self)
-
     def attach(self, **kw):
         session = FakeSession(kw.pop("fail_on", ()))
         browser = FakeBrowser(session, **kw)

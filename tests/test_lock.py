@@ -114,9 +114,28 @@ class FakePage(object):
         self.closed = True
 
 
+class FakeProxy(object):
+    """Stands in for cdp_proxy.TargetHidingProxy (devthrottle#4916), which would
+    otherwise open a real websocket to a Chrome on the test port."""
+
+    hidden_count = 0
+
+    def __init__(self, port):
+        self.port = port
+        self.stopped = False
+
+    def start(self):
+        return "ws://127.0.0.1:1/fake-proxy-%d" % self.port
+
+    def stop(self):
+        self.stopped = True
+
+
 class LockCase(unittest.TestCase):
 
     def setUp(self):
+        self._proxy = B.TargetHidingProxy
+        B.TargetHidingProxy = FakeProxy
         self.dir = tempfile.mkdtemp(prefix="cc-linkedin-lock-")
         self._state = B.STATE_DIR
         B.STATE_DIR = self.dir
@@ -129,6 +148,7 @@ class LockCase(unittest.TestCase):
         self.lock_path = os.path.join(self.dir, "browser-%d.lock" % self.port)
 
     def tearDown(self):
+        B.TargetHidingProxy = self._proxy
         B.STATE_DIR = self._state
         B.open_file_dialogs = self._dialogs
         B.close_file_dialogs = self._close
