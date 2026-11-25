@@ -76,7 +76,8 @@ import time
 
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout, Error as PWError
 
-from cc_linkedin_kit.browser import (BrowserLock, Pace, cancel_orphan_dialogs, close_file_dialogs,
+from cc_linkedin_kit.browser import (AttachError, BrowserLock, Pace, attach_cdp,
+                                     cancel_orphan_dialogs, close_file_dialogs,
                                      open_working_tab, set_view_purpose)
 
 VIDEO_EXT = (".mp4", ".mov", ".webm", ".avi", ".m4v", ".mpeg", ".mpg", ".wmv", ".flv")
@@ -514,16 +515,25 @@ _LOCK = None
 def connect(p, port):
     """Attach to Chrome, holding the one-run-per-browser lock for the rest of
     the process. Two Playwright clients on one Chrome block each other's
-    navigations (measured 2026-09-09 14:34), so a second run waits its turn."""
+    navigations (measured 2026-09-09 14:34), so a second run waits its turn.
+
+    devthrottle#4916: through attach_cdp, so the tabs other sessions left open
+    in the shared profile are hidden from the attach and never waited on. The
+    proxy it puts in place stops by itself when browser.close() disconnects."""
     global _LOCK
     _LOCK = BrowserLock(port)
     _LOCK.__enter__()
     try:
-        return p.chromium.connect_over_cdp("http://localhost:%d" % port, timeout=15000)
+        browser, _proxy = attach_cdp(p, port)
+        return browser
+    except AttachError as exc:
+        release()
+        die("%s. Start the signed-in profile first, e.g. bh-profiles.ps1 up cencon" % exc)
     except PWError as exc:
         release()
-        die("no Chrome is listening on port %d (%s). Start the signed-in profile first, "
-            "e.g. bh-profiles.ps1 up cencon" % (port, str(exc).splitlines()[0]))
+        die("Chrome on port %d is running but the CDP attach did not finish (%s). The tabs "
+            "already open are hidden from the attach, so the browser process itself is not "
+            "answering DevTools commands" % (port, str(exc).splitlines()[0]))
 
 
 def attach_page(p, a, shot):

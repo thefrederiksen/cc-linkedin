@@ -42,6 +42,8 @@ import websocket
 
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout, Error as PWError
 
+from cc_linkedin_kit.cdp_proxy import AttachError, TargetHidingProxy, browser_ws_url
+
 STATE_DIR = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), "cc-linkedin")
 LIVE_BUTTON = re.compile(r"^(Dismiss|Discard|Post|Schedule)$")
 DAY_KEY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -1022,10 +1024,36 @@ def open_tabs(port):
 
 # ---------------------------------------------------------------- the tab
 
-# How long the CDP attach may take. It scales with how many targets the SHARED
-# profile holds, which is decided by whichever other sessions use the same
-# browser - not by anything this toolkit does.
-ATTACH_TIMEOUT_MS = 90000
+# How long the CDP attach may take. Since devthrottle#4916 Playwright attaches
+# through TargetHidingProxy and never sees the tabs that were already open in
+# the shared profile, so the attach no longer waits on other sessions' starved
+# background tabs: it is Browser.getVersion and Target.setAutoAttach against the
+# browser process itself, 0.13-0.29s with 40 background tabs and every core
+# busy. 15s is generous for a browser that answers at all. It used to be 90s,
+# and even that was cut off on a busy machine, because the old wait grew with
+# (open tabs x CPU load) and had no upper bound.
+ATTACH_TIMEOUT_MS = 15000
+
+
+def attach_cdp(pw, port, timeout_ms=ATTACH_TIMEOUT_MS):
+    """Attach Playwright to the Chrome on `port` through a TargetHidingProxy,
+    so the tabs already open in it are invisible to Playwright and are never
+    waited on. Returns (browser, proxy). Raises AttachError when the proxy
+    cannot be put in place - no Chrome, or a Chrome that will not list its
+    targets - and PWError when Playwright's own attach fails.
+
+    The proxy stops by itself when Playwright disconnects (browser.close()).
+    The caller stops it explicitly only when connect_over_cdp raised."""
+    proxy = TargetHidingProxy(port)
+    url = proxy.start()
+    try:
+        browser = pw.chromium.connect_over_cdp(url, timeout=timeout_ms)
+    except BaseException:
+        proxy.stop()
+        raise
+    log("attach: %d target(s) already open in this browser were hidden from the attach"
+        % proxy.hidden_count)
+    return browser, proxy
 
 # How long the new working tab may take to report in. A visible new tab
 # answered in under 1.4s on every trial on 2026-10-21, including with every
@@ -1176,9 +1204,9 @@ class Browser(object):
         editor is not ours to close.
         """
         try:
-            ver = json.loads(urlopen("http://localhost:%d/json/version" % self.port,
-                                     timeout=10).read().decode("utf-8", "replace"))
-            ws = websocket.create_connection(ver["webSocketDebuggerUrl"], timeout=15,
+            # browser_ws_url: 127.0.0.1, not localhost, which costs 2s a
+            # connection on this machine (see cdp_proxy.DEVTOOLS_HOST)
+            ws = websocket.create_connection(browser_ws_url(self.port), timeout=15,
                                              max_size=None, suppress_origin=True)
         except Exception:                                         # noqa: BLE001
             return 0
@@ -1211,7 +1239,13 @@ class Browser(object):
     def _attach_failure(self, exc):
         """Which of the two very different failures this was. The old message
         said "no Chrome is listening" for BOTH, and a scheduled run spent fifteen
-        minutes hunting a dead browser that was answering the whole time."""
+        minutes hunting a dead browser that was answering the whole time.
+
+        devthrottle#4916: it also used to call a slow attach "a BUSY profile".
+        The attach no longer waits on the profile's other tabs, so a slow one
+        now means the browser process itself is not answering, and it says so."""
+        if isinstance(exc, AttachError):
+            return "%s. Start the signed-in profile first, e.g. bh-profiles.ps1 up cencon" % exc
         first = str(exc).splitlines()[0]
         try:
             targets = json.loads(urlopen("http://localhost:%d/json/list" % self.port,
@@ -1221,8 +1255,10 @@ class Browser(object):
                     "first, e.g. bh-profiles.ps1 up cencon" % (self.port, first))
         pages = [t for t in targets if t.get("type") == "page"]
         return ("Chrome IS running on port %d and answered over HTTP with %d targets (%d of "
-                "them pages), but the CDP attach did not finish in %ds (%s). A BUSY profile, "
-                "not a dead browser. Pages now: %s"
+                "them pages), but the CDP attach did not finish in %ds (%s). The attach "
+                "hides every tab that was already open, so it does not wait on them: the "
+                "browser process itself is not answering DevTools commands. Look at what "
+                "is holding the CPU, or restart the profile. Pages now: %s"
                 % (self.port, len(targets), len(pages), ATTACH_TIMEOUT_MS // 1000, first,
                    ", ".join((t.get("url") or "")[:60] for t in pages[:4]) or "none"))
 
@@ -1232,6 +1268,7 @@ class Browser(object):
         self._locked = False
         self.browser = None
         self.page = None
+        self.proxy = None
         # Set by a verb that hands its tab to a person (message --leave): the
         # tab is left open when the run ends instead of being closed. Measured
         # 2026-10-04: LinkedIn keeps no draft of an unsent message once its tab
@@ -1268,9 +1305,8 @@ class Browser(object):
                 if stopped:
                     log("attach: stopped %d service worker(s) that would hang the attach"
                         % stopped)
-                self.browser = self._pw.chromium.connect_over_cdp(
-                    "http://localhost:%d" % self.port, timeout=ATTACH_TIMEOUT_MS)
-            except PWError as exc:
+                self.browser, self.proxy = attach_cdp(self._pw, self.port)
+            except (AttachError, PWError) as exc:
                 die(self._attach_failure(exc))
             self.page = open_working_tab(self.browser)
             return self
@@ -1303,8 +1339,12 @@ class Browser(object):
                     if self.browser is not None:
                         self.browser.close()
                 finally:
-                    if self._pw is not None:
-                        self._pw.stop()
+                    try:
+                        if self.proxy is not None:
+                            self.proxy.stop()
+                    finally:
+                        if self._pw is not None:
+                            self._pw.stop()
         finally:
             if self._locked:
                 self.lock.__exit__(None, None, None)
