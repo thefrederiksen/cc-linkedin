@@ -38,11 +38,9 @@ import time
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
-import websocket
-
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout, Error as PWError
 
-from cc_linkedin_kit.cdp_proxy import AttachError, TargetHidingProxy, browser_ws_url
+from cc_linkedin_kit.cdp_proxy import AttachError, DEVTOOLS_HOST, TargetHidingProxy
 
 STATE_DIR = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), "cc-linkedin")
 LIVE_BUTTON = re.compile(r"^(Dismiss|Discard|Post|Schedule)$")
@@ -1010,14 +1008,15 @@ def views_registered(kind=None):
 def open_tabs(port):
     """The URLs of the pages this Chrome has open.
 
-    Read from the DevTools endpoint over localhost - NOT by attaching a second
+    Read from the DevTools endpoint on this machine - NOT by attaching a second
     Playwright client, which is the very thing the browser lock exists to
     prevent, and NOT by opening a tab of our own to count tabs with. Raises if
     it cannot read; a tab census that cannot be taken is a broken instrument and
     the caller must fail on it rather than report a tidy zero.
     """
     import urllib.request
-    with urllib.request.urlopen("http://localhost:%d/json/list" % port, timeout=8) as r:
+    with urllib.request.urlopen("http://%s:%d/json/list" % (DEVTOOLS_HOST, port),
+                                timeout=8) as r:
         targets = json.loads(r.read().decode("utf-8"))
     return [t.get("url", "") for t in targets if t.get("type") == "page"]
 
@@ -1028,11 +1027,25 @@ def open_tabs(port):
 # through TargetHidingProxy and never sees the tabs that were already open in
 # the shared profile, so the attach no longer waits on other sessions' starved
 # background tabs: it is Browser.getVersion and Target.setAutoAttach against the
-# browser process itself, 0.13-0.29s with 40 background tabs and every core
-# busy. 15s is generous for a browser that answers at all. It used to be 90s,
-# and even that was cut off on a busy machine, because the old wait grew with
-# (open tabs x CPU load) and had no upper bound.
+# browser process itself. Measured on cencon with 40 extra background tabs and
+# every core busy: 0.09-0.87s. 15s is generous for a browser that answers at
+# all. It used to be 90s, and even that was cut off on a busy machine, because
+# the old wait grew with (open tabs x CPU load) and had no upper bound.
+#
+# The whole attach is bounded by this PLUS the proxy's three set-up steps
+# (cdp_proxy.STEP_TIMEOUT_S each, before Playwright's timer starts): 30s for a
+# Chrome that is wedged, milliseconds for one that is alive.
 ATTACH_TIMEOUT_MS = 15000
+
+
+def attach_error_text(exc):
+    """The FAIL text for an AttachError. "Start the profile" only when nothing
+    answered on the port: every other AttachError is a Chrome that IS running,
+    and telling a reader to start it sends them hunting a dead browser."""
+    if exc.no_chrome:
+        return "%s. Start the signed-in profile first, e.g. bh-profiles.ps1 up cencon" % exc
+    return ("%s. Chrome is running but not answering DevTools properly; look at what is "
+            "holding the CPU, or restart the profile" % exc)
 
 
 def attach_cdp(pw, port, timeout_ms=ATTACH_TIMEOUT_MS):
@@ -1188,54 +1201,6 @@ def open_working_tab(browser):
 class Browser(object):
     """Attach to Chrome on `port`, hold the lock, open one working tab."""
 
-    def _stop_service_workers(self):
-        """Stop every service worker in the profile, over raw CDP, BEFORE the
-        Playwright attach. Returns how many were stopped.
-
-        A running service worker hangs connect_over_cdp for ever: Playwright
-        auto-attaches to every target and waits for each to report in, and a
-        service worker never does. Measured 2026-09-20 - 8 attach attempts lost
-        at 15s and again at 90s while Chrome answered over HTTP in 2.1s and all
-        13 targets accepted a raw attach instantly; stopping the service workers
-        made the same attach succeed at once.
-
-        Safe: a service worker restarts on its next event and holds no unsaved
-        state. Nothing of type "page" is touched - another session's unsaved
-        editor is not ours to close.
-        """
-        try:
-            # browser_ws_url: 127.0.0.1, not localhost, which costs 2s a
-            # connection on this machine (see cdp_proxy.DEVTOOLS_HOST)
-            ws = websocket.create_connection(browser_ws_url(self.port), timeout=15,
-                                             max_size=None, suppress_origin=True)
-        except Exception:                                         # noqa: BLE001
-            return 0
-        n = 0
-        try:
-            def call(method, params, mid):
-                ws.send(json.dumps({"id": mid, "method": method, "params": params}))
-                deadline = time.time() + 15
-                while time.time() < deadline:
-                    msg = json.loads(ws.recv())
-                    if msg.get("id") == mid:
-                        return msg
-                return {}
-            got = call("Target.getTargets", {}, 1)
-            for i, t in enumerate((got.get("result") or {}).get("targetInfos", [])):
-                if t.get("type") != "service_worker":
-                    continue
-                if (call("Target.closeTarget", {"targetId": t["targetId"]}, 100 + i)
-                        .get("result") or {}).get("success"):
-                    n += 1
-        except Exception:                                         # noqa: BLE001
-            pass
-        finally:
-            try:
-                ws.close()
-            except Exception:                                     # noqa: BLE001
-                pass
-        return n
-
     def _attach_failure(self, exc):
         """Which of the two very different failures this was. The old message
         said "no Chrome is listening" for BOTH, and a scheduled run spent fifteen
@@ -1245,10 +1210,10 @@ class Browser(object):
         The attach no longer waits on the profile's other tabs, so a slow one
         now means the browser process itself is not answering, and it says so."""
         if isinstance(exc, AttachError):
-            return "%s. Start the signed-in profile first, e.g. bh-profiles.ps1 up cencon" % exc
+            return attach_error_text(exc)
         first = str(exc).splitlines()[0]
         try:
-            targets = json.loads(urlopen("http://localhost:%d/json/list" % self.port,
+            targets = json.loads(urlopen("http://%s:%d/json/list" % (DEVTOOLS_HOST, self.port),
                                          timeout=10).read().decode("utf-8", "replace"))
         except Exception:                                         # noqa: BLE001
             return ("no Chrome is listening on port %d (%s). Start the signed-in profile "
@@ -1301,10 +1266,6 @@ class Browser(object):
             # still refuses the run.
             cancel_orphan_dialogs(self.port)
             try:
-                stopped = self._stop_service_workers()
-                if stopped:
-                    log("attach: stopped %d service worker(s) that would hang the attach"
-                        % stopped)
                 self.browser, self.proxy = attach_cdp(self._pw, self.port)
             except (AttachError, PWError) as exc:
                 die(self._attach_failure(exc))

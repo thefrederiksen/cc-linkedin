@@ -1,9 +1,5 @@
 playwright>=1.58
 
-# Raw CDP for Browser._stop_service_workers: a running service worker hangs
-# Playwright's connect_over_cdp, so it must be stopped BEFORE the attach.
-websocket-client>=1.7
-
 # The CDP proxy in cc_linkedin_kit/cdp_proxy.py (devthrottle#4916): Playwright
 # attaches through it so the tabs already open in the shared profile are never
 # waited on. Needs the synchronous client and server (websockets 13+).

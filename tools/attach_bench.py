@@ -7,7 +7,8 @@ with cross-site iframes and a dedicated worker - never LinkedIn), optionally
 holds every core with spinners at BELOW_NORMAL priority (above an idle
 background renderer, below every normal process), then times:
 
-  * the attach itself, both ways, holding the browser lock so no other
+  * the attach itself, both ways, both at 127.0.0.1 so neither pays the ::1
+    penalty "localhost" costs on this machine, holding the browser lock so no other
     cc-linkedin run is disturbed: Playwright straight at Chrome (the old path)
     and through TargetHidingProxy (the fix);
   * any commands given with --cmd, wall time each (for example a read-only
@@ -36,6 +37,7 @@ from websockets.sync.client import connect as ws_connect
 from playwright.sync_api import sync_playwright, Error as PWError
 
 from cc_linkedin_kit.browser import BrowserLock, attach_cdp
+from cc_linkedin_kit.cdp_proxy import DEVTOOLS_HOST, browser_ws_url
 
 BELOW_NORMAL_PRIORITY_CLASS = 0x00004000
 
@@ -68,9 +70,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
 class Cdp(object):
     def __init__(self, port):
-        url = json.loads(urlopen("http://localhost:%d/json/version" % port, timeout=10)
-                         .read().decode("utf-8"))["webSocketDebuggerUrl"]
-        self.ws = ws_connect(url, max_size=None, compression=None, ping_interval=None)
+        self.ws = ws_connect(browser_ws_url(port), max_size=None, compression=None, ping_interval=None)
         self.mid = 0
 
     def call(self, method, params=None):
@@ -85,9 +85,15 @@ class Cdp(object):
 
 
 def page_count(port):
-    return sum(1 for t in json.loads(urlopen("http://localhost:%d/json/list" % port,
+    return sum(1 for t in json.loads(urlopen("http://%s:%d/json/list" % (DEVTOOLS_HOST, port),
                                              timeout=10).read().decode("utf-8"))
                if t.get("type") == "page")
+
+
+def live_ids(port):
+    return {t.get("id") for t in json.loads(urlopen("http://%s:%d/json/list"
+                                                    % (DEVTOOLS_HOST, port),
+                                                    timeout=10).read().decode("utf-8"))}
 
 
 def spinners():
@@ -103,7 +109,7 @@ def time_attach(port, direct, timeout_ms):
             t0 = time.time()
             try:
                 if direct:
-                    browser = pw.chromium.connect_over_cdp("http://localhost:%d" % port,
+                    browser = pw.chromium.connect_over_cdp("http://%s:%d" % (DEVTOOLS_HOST, port),
                                                            timeout=timeout_ms)
                 else:
                     browser, _proxy = attach_cdp(pw, port, timeout_ms)
@@ -171,8 +177,13 @@ def main():
                     closed += 1
             except RuntimeError:
                 pass
-        print("closed %d of our %d tabs; pages after: %d"
-              % (closed, len(ours), page_count(a.port)), flush=True)
+        # closeTarget answers before the tab is gone; count once it is
+        deadline = time.time() + 15
+        while time.time() < deadline and set(ours) & live_ids(a.port):
+            time.sleep(0.25)
+        print("closed %d of our %d tabs, %d still listed; pages after: %d"
+              % (closed, len(ours), len(set(ours) & live_ids(a.port)), page_count(a.port)),
+              flush=True)
         server.shutdown()
 
 

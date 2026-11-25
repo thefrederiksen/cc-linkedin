@@ -77,7 +77,7 @@ import time
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout, Error as PWError
 
 from cc_linkedin_kit.browser import (AttachError, BrowserLock, Pace, attach_cdp,
-                                     cancel_orphan_dialogs, close_file_dialogs,
+                                     attach_error_text, cancel_orphan_dialogs, close_file_dialogs,
                                      open_working_tab, set_view_purpose)
 
 VIDEO_EXT = (".mp4", ".mov", ".webm", ".avi", ".m4v", ".mpeg", ".mpg", ".wmv", ".flv")
@@ -528,12 +528,16 @@ def connect(p, port):
         return browser
     except AttachError as exc:
         release()
-        die("%s. Start the signed-in profile first, e.g. bh-profiles.ps1 up cencon" % exc)
+        die(attach_error_text(exc))
     except PWError as exc:
         release()
         die("Chrome on port %d is running but the CDP attach did not finish (%s). The tabs "
             "already open are hidden from the attach, so the browser process itself is not "
             "answering DevTools commands" % (port, str(exc).splitlines()[0]))
+    except BaseException:
+        # anything else still gives the lock back before it propagates
+        release()
+        raise
 
 
 def attach_page(p, a, shot):

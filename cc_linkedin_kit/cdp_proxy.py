@@ -23,6 +23,12 @@ Playwright waits for nothing it cannot see. Targets created after the snapshot -
 the working tab, its iframes and workers - pass through untouched. Prototype,
 same throwaway Chrome, 40 tabs, every core busy: 0.13-0.29s.
 
+Service workers that were running are pre-existing targets too, so they are
+hidden like any tab. That retired Browser._stop_service_workers (2026-09-20),
+which closed every service worker in the shared profile - other sessions'
+included - before each attach: the proxy attach was measured on cencon with
+its two service workers left running, 0.09-0.87s under full load.
+
 The proxy serves exactly ONE connection and shuts itself down when that
 connection closes, so browser.close() on the Playwright side is the whole of the
 clean-up; stop() exists for the paths where Playwright never connected.
@@ -42,11 +48,24 @@ from websockets.sync.server import serve as ws_serve
 # integer, so the range stays below 2**31.
 OWN_ID_BASE = 2000000000
 
-SNAPSHOT_TIMEOUT_S = 10
+# Each of the three steps before Playwright's own attach - the HTTP read of
+# /json/version, the websocket open, the Target.getTargets snapshot - may take
+# this long. All three answer from the browser process, not from any tab, and
+# take milliseconds when it is alive, so the worst case before Playwright's own
+# timer starts is 3 x 5s.
+STEP_TIMEOUT_S = 5
 
 
 class AttachError(Exception):
-    """The proxy could not be put between Playwright and Chrome."""
+    """The proxy could not be put between Playwright and Chrome.
+
+    `no_chrome` is True only when nothing answered on the port at all - the one
+    case where "start the signed-in profile" is the right advice. Every other
+    AttachError is a Chrome that IS running and is not answering properly."""
+
+    def __init__(self, message, no_chrome=False):
+        Exception.__init__(self, message)
+        self.no_chrome = no_chrome
 
 
 class HiddenTargets(object):
@@ -106,13 +125,19 @@ def browser_ws_url(port):
     """Chrome's browser-level DevTools websocket, read over HTTP. The url
     Chrome gives says "localhost"; it is pointed at DEVTOOLS_HOST instead."""
     try:
-        with urlopen("http://%s:%d/json/version" % (DEVTOOLS_HOST, port), timeout=10) as r:
+        with urlopen("http://%s:%d/json/version" % (DEVTOOLS_HOST, port),
+                     timeout=STEP_TIMEOUT_S) as r:
             url = json.loads(r.read().decode("utf-8", "replace"))["webSocketDebuggerUrl"]
     except Exception as exc:                                      # noqa: BLE001
-        raise AttachError("no Chrome is listening on port %d (%s)"
-                          % (port, str(exc).splitlines()[0] if str(exc) else type(exc).__name__))
+        raise AttachError("no Chrome is listening on port %d (%s)" % (port, _first(exc)),
+                          no_chrome=True)
     parts = urlsplit(url)
     return urlunsplit(parts._replace(netloc="%s:%d" % (DEVTOOLS_HOST, parts.port or port)))
+
+
+def _first(exc):
+    text = str(exc)
+    return text.splitlines()[0] if text else type(exc).__name__
 
 
 class TargetHidingProxy(object):
@@ -134,10 +159,10 @@ class TargetHidingProxy(object):
         url = browser_ws_url(self.port)
         try:
             self._upstream = ws_connect(url, max_size=None, compression=None,
-                                        open_timeout=10, ping_interval=None)
+                                        open_timeout=STEP_TIMEOUT_S, ping_interval=None)
         except Exception as exc:                                  # noqa: BLE001
             raise AttachError("Chrome on port %d answered over HTTP but its DevTools "
-                              "websocket would not open (%s)" % (self.port, exc))
+                              "websocket would not open (%s)" % (self.port, _first(exc)))
         try:
             self.filter = HiddenTargets(self._snapshot())
             self._server = ws_serve(self._serve_one, "127.0.0.1", 0, max_size=None,
@@ -173,21 +198,33 @@ class TargetHidingProxy(object):
     def _snapshot(self):
         """Every target id that exists now, from Chrome itself (not /json/list,
         which leaves out some target types). Asked on the upstream connection
-        before Playwright is connected, so no other message can arrive."""
+        before Playwright is connected, so no other message can arrive.
+
+        Every way this can go wrong is an AttachError, so the caller prints a
+        FAIL line and gives the browser lock back: Chrome closing the socket
+        here (a profile restarting as a run attaches) used to escape as a
+        traceback and, in the posting tool, keep the lock."""
         mid = OWN_ID_BASE
-        self._upstream.send(json.dumps({"id": mid, "method": "Target.getTargets"}))
         try:
+            self._upstream.send(json.dumps({"id": mid, "method": "Target.getTargets"}))
             while True:
-                msg = json.loads(self._upstream.recv(timeout=SNAPSHOT_TIMEOUT_S))
+                msg = json.loads(self._upstream.recv(timeout=STEP_TIMEOUT_S))
                 if msg.get("id") == mid:
                     break
         except TimeoutError:
             raise AttachError("Chrome on port %d did not list its targets within %ds"
-                              % (self.port, SNAPSHOT_TIMEOUT_S))
+                              % (self.port, STEP_TIMEOUT_S))
+        except Exception as exc:                                  # noqa: BLE001
+            raise AttachError("Chrome on port %d dropped the DevTools connection while "
+                              "listing its targets (%s)" % (self.port, _first(exc)))
         if "error" in msg:
             raise AttachError("Chrome on port %d refused Target.getTargets: %s"
                               % (self.port, msg["error"]))
-        return [t["targetId"] for t in msg["result"]["targetInfos"]]
+        try:
+            return [t["targetId"] for t in msg["result"]["targetInfos"]]
+        except (KeyError, TypeError) as exc:
+            raise AttachError("Chrome on port %d answered Target.getTargets with no target "
+                              "list (%s)" % (self.port, _first(exc)))
 
     def _to_browser(self, text):
         with self._send_lock:

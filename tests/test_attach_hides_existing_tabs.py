@@ -96,9 +96,14 @@ class FakeChrome(object):
     existing targets and one new one, the way Chrome does), and
     Target.detachFromTarget."""
 
-    def __init__(self):
+    def __init__(self, snapshot="answer"):
+        # snapshot: "answer", "drop" (close the socket instead of answering
+        # Target.getTargets, as a profile restarting mid-attach does) or
+        # "garbage" (answer with no target list)
+        self.snapshot = snapshot
         self.detached = []
         self.seen = []
+        self.sockets = []
         self.server = ws_serve(self.handle, "127.0.0.1", 0, process_request=self.http)
         self.port = self.server.socket.getsockname()[1]
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
@@ -111,11 +116,18 @@ class FakeChrome(object):
         return None
 
     def handle(self, ws):
+        self.sockets.append(ws)
         sessions = {}
         for text in ws:
             msg = json.loads(text)
             self.seen.append(msg)
             method, mid = msg.get("method"), msg.get("id")
+            if method == "Target.getTargets" and self.snapshot == "drop":
+                ws.close()
+                return
+            if method == "Target.getTargets" and self.snapshot == "garbage":
+                ws.send(json.dumps({"id": mid, "result": {}}))
+                continue
             if method == "Target.getTargets":
                 ws.send(json.dumps({"id": mid, "result": {"targetInfos": [
                     {"targetId": t, "type": "page"} for t in EXISTING]}}))
@@ -175,10 +187,13 @@ class TheProxyAgainstAFakeChrome(unittest.TestCase):
         self.assertEqual([m for m in got if m.get("method") == "Target.detachedFromTarget"], [])
         self.assertEqual([m["id"] for m in got if "id" in m], [1, 2])
         # one connection, and it shuts itself down when that connection closes
+        self.assertTrue(self.wait_done(proxy), "the proxy outlived Playwright's disconnect")
+
+    def wait_done(self, proxy):
         deadline = time.time() + 5
         while not proxy._done.is_set() and time.time() < deadline:
             time.sleep(0.02)
-        self.assertTrue(proxy._done.is_set(), "the proxy outlived Playwright's disconnect")
+        return proxy._done.is_set()
 
     def test_no_chrome_is_an_attach_error_naming_the_port(self):
         self.chrome.close()
@@ -186,6 +201,71 @@ class TheProxyAgainstAFakeChrome(unittest.TestCase):
         with self.assertRaises(P.AttachError) as caught:
             P.TargetHidingProxy(port).start()
         self.assertIn("no Chrome is listening on port %d" % port, str(caught.exception))
+        self.assertTrue(caught.exception.no_chrome)
+
+    def test_chrome_dropping_the_connection_mid_snapshot_is_an_attach_error(self):
+        # review finding 1: this used to escape as ConnectionClosed - a
+        # traceback, and in the posting tool a lock that was never given back
+        self.chrome.snapshot = "drop"
+        with self.assertRaises(P.AttachError) as caught:
+            P.TargetHidingProxy(self.chrome.port).start()
+        self.assertIn("dropped the DevTools connection", str(caught.exception))
+        self.assertFalse(caught.exception.no_chrome)
+
+    def test_a_snapshot_with_no_target_list_is_an_attach_error(self):
+        self.chrome.snapshot = "garbage"
+        with self.assertRaises(P.AttachError) as caught:
+            P.TargetHidingProxy(self.chrome.port).start()
+        self.assertIn("no target list", str(caught.exception))
+
+    def test_chrome_going_away_mid_run_closes_playwright_side_and_stops(self):
+        proxy = P.TargetHidingProxy(self.chrome.port)
+        url = proxy.start()
+        self.addCleanup(proxy.stop)
+        with ws_connect(url) as client:
+            client.send(json.dumps({"id": 1, "method": "Browser.getVersion"}))
+            self.assertEqual(json.loads(client.recv(timeout=5))["id"], 1)
+            self.chrome.sockets[-1].close()
+            with self.assertRaises(Exception):
+                client.recv(timeout=5)
+        self.assertTrue(self.wait_done(proxy), "the proxy outlived Chrome")
+
+    def test_playwright_dying_without_a_close_handshake_stops_the_proxy(self):
+        proxy = P.TargetHidingProxy(self.chrome.port)
+        url = proxy.start()
+        self.addCleanup(proxy.stop)
+        client = ws_connect(url)
+        client.send(json.dumps({"id": 1, "method": "Browser.getVersion"}))
+        self.assertEqual(json.loads(client.recv(timeout=5))["id"], 1)
+        client.socket.close()                   # no close frame, like a killed driver
+        self.assertTrue(self.wait_done(proxy), "the proxy outlived a dead Playwright")
+
+    def test_a_second_connection_is_refused(self):
+        proxy = P.TargetHidingProxy(self.chrome.port)
+        url = proxy.start()
+        self.addCleanup(proxy.stop)
+        with ws_connect(url) as first:
+            with ws_connect(url) as second:
+                with self.assertRaises(Exception):
+                    second.recv(timeout=5)
+            first.send(json.dumps({"id": 1, "method": "Browser.getVersion"}))
+            self.assertEqual(json.loads(first.recv(timeout=5))["id"], 1)
+
+
+class TheAdviceFitsTheFailure(unittest.TestCase):
+    """Review finding 2: "start the signed-in profile" only when nothing
+    answered on the port. Said to a running Chrome it sends the reader hunting
+    a dead browser - the failure _attach_failure was written to prevent."""
+
+    def test_no_chrome(self):
+        text = B.attach_error_text(P.AttachError("no Chrome is listening on port 1 (x)",
+                                                 no_chrome=True))
+        self.assertIn("Start the signed-in profile", text)
+
+    def test_a_running_chrome_that_misbehaves(self):
+        text = B.attach_error_text(P.AttachError("Chrome on port 1 did not list its targets"))
+        self.assertNotIn("Start the signed-in profile", text)
+        self.assertIn("Chrome is running", text)
 
 
 class RecordingPlaywright(object):
@@ -249,6 +329,55 @@ class TheBrowserAttachesThroughTheProxy(AttachCase):
         self.assertTrue(made and made[0].stopped, "a failed attach left the proxy running")
         self.assertNotIn("BUSY profile", out.getvalue())
         self.assertFalse(self.held())
+
+
+class ThePostingToolGivesTheLockBack(AttachCase):
+    """Review finding 1, second half: cc_linkedin.py connect() named only
+    AttachError and PWError, so anything else out of the attach skipped
+    release() and kept the browser lock until the process died."""
+
+    def _connect(self, proxy_factory):
+        import contextlib
+        import io
+        from tests.test_attach import _posting_tool
+        B.TargetHidingProxy = proxy_factory
+        tool = _posting_tool()
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            try:
+                tool.connect(RecordingPlaywright(None), self.port)
+            except SystemExit:
+                pass
+            except RuntimeError:
+                out.write("RAISED RuntimeError")
+        self.assertFalse(self.held(), "connect() kept the browser lock")
+        return out.getvalue()
+
+    def test_a_running_chrome_that_will_not_list_its_targets(self):
+        class Refusing(object):
+            def __init__(self, port):
+                pass
+
+            def start(self):
+                raise P.AttachError("Chrome on port 9 did not list its targets within 5s")
+
+            def stop(self):
+                pass
+        said = self._connect(Refusing)
+        self.assertIn("FAIL Chrome on port 9 did not list its targets", said)
+        self.assertNotIn("Start the signed-in profile", said)
+
+    def test_an_unexpected_error_still_releases(self):
+        class Exploding(object):
+            def __init__(self, port):
+                pass
+
+            def start(self):
+                raise RuntimeError("something nobody expected")
+
+            def stop(self):
+                pass
+        self.assertIn("RAISED RuntimeError", self._connect(Exploding))
 
 
 if __name__ == "__main__":
