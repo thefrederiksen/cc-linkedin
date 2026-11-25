@@ -165,8 +165,12 @@ class TargetHidingProxy(object):
                               "websocket would not open (%s)" % (self.port, _first(exc)))
         try:
             self.filter = HiddenTargets(self._snapshot())
-            self._server = ws_serve(self._serve_one, "127.0.0.1", 0, max_size=None,
-                                    compression=None, ping_interval=None)
+            try:
+                self._server = ws_serve(self._serve_one, "127.0.0.1", 0, max_size=None,
+                                        compression=None, ping_interval=None)
+            except OSError as exc:
+                raise AttachError("the local proxy for Playwright could not listen on "
+                                  "127.0.0.1 (%s)" % _first(exc))
         except BaseException:
             self.stop()
             raise
